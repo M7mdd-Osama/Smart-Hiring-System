@@ -1,0 +1,23 @@
+[
+  {
+    "Name": "Mona Ibrahim",
+    "Email": "m.ibrahim@wadi-tech.eg",
+    "Password": "12345",
+    "Role": "HR",
+    "CompanyId": 1
+  },
+  {
+    "Name": "Yasmin Ahmed",
+    "Email": "y.ahmed@egypt-telecom.com",
+    "Password": "12345",
+    "Role": "HR",
+    "CompanyId": 2
+  },
+  {
+    "Name": "Omar Salah",
+    "Email": "o.salah@nbe.eg",
+    "Password": "12345",
+    "Role": "HR",
+    "CompanyId": 3
+  }
+]

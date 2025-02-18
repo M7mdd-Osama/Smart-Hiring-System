@@ -1,0 +1,32 @@
+[
+  {
+    "Date": "2025-02-01",
+    "Time": "10:00:00",
+    "Location": "Wadi Tech Office, Smart Village",
+    "InterviewStatus": "Accepted",
+    "Score": 90.5,
+    "HRId": 1,
+    "PostId": 1,
+    "ApplicantId": 1
+  },
+  {
+    "Date": "2025-02-02",
+    "Time": "11:30:00",
+    "Location": "Egyptian Telecom HQ, Nasr City",
+    "InterviewStatus": "Rejected",
+    "Score": 70,
+    "HRId": 2,
+    "PostId": 2,
+    "ApplicantId": 2
+  },
+  {
+    "Date": "2025-02-03",
+    "Time": "13:00:00",
+    "Location": "NBE Main Branch, Downtown",
+    "InterviewStatus": "Pending",
+    "Score": null,
+    "HRId": 3,
+    "PostId": 3,
+    "ApplicantId": 3
+  }
+]

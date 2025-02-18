@@ -1,0 +1,42 @@
+[
+  {
+    "Name": "Angelo",
+    "Email": "Angelo@smarthiring.com",
+    "Password": "12345"
+  },
+  {
+    "Name": "Omar",
+    "Email": "Omar@smarthiring.com",
+    "Password": "12345"
+  },
+  {
+    "Name": "Mohsen",
+    "Email": "Mohsen@smarthiring.com",
+    "Password": "12345"
+  },
+  {
+    "Name": "Rawan",
+    "Email": "Rawan@smarthiring.com",
+    "Password": "12345"
+  },
+  {
+    "Name": "Shrouk",
+    "Email": "Shrouk@smarthiring.com",
+    "Password": "12345"
+  },
+  {
+    "Name": "Ahmed",
+    "Email": "Ahmed@smarthiring.com",
+    "Password": "12345"
+  },
+  {
+    "Name": "Mohamed",
+    "Email": "Mohamed@smarthiring.com",
+    "Password": "12345"
+  },
+  {
+    "Name": "Ali",
+    "Email": "Ali@smarthiring.com",
+    "Password": "12345"
+  }
+]

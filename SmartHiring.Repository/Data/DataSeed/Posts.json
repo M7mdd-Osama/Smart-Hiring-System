@@ -1,0 +1,35 @@
+[
+  {
+    "JobTitle": "Senior Software Engineer",
+    "Description": "Looking for an experienced software engineer with strong background in web development",
+    "Requirements": "5+ years experience in .NET, Angular, SQL Server",
+    "PostDate": "2025-01-15",
+    "Deadline": "2025-02-15",
+    "JobSalary": 25000.00,
+    "JobStatus": "Active",
+    "HRId": 1,
+    "CompanyId": 1
+  },
+  {
+    "JobTitle": "Network Engineer",
+    "Description": "Seeking a network engineer to maintain and optimize our telecommunications infrastructure",
+    "Requirements": "CCNA certified, 3+ years experience in network administration",
+    "PostDate": "2025-01-20",
+    "Deadline": "2025-02-20",
+    "JobSalary": 20000.00,
+    "JobStatus": "Active",
+    "HRId": 2,
+    "CompanyId": 2
+  },
+  {
+    "JobTitle": "Financial Analyst",
+    "Description": "Looking for a financial analyst with strong analytical skills",
+    "Requirements": "Bachelor's in Finance, CFA Level 1, 2+ years experience",
+    "PostDate": "2025-01-25",
+    "Deadline": "2025-02-25",
+    "JobSalary": 18000.00,
+    "JobStatus": "Active",
+    "HRId": 3,
+    "CompanyId": 3
+  }
+]

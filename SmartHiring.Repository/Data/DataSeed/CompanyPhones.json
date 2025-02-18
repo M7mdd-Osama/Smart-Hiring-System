@@ -1,0 +1,18 @@
+[
+  {
+    "CompanyId": 1,
+    "Phone": "01203893166"
+  },
+  {
+    "CompanyId": 1,
+    "Phone": "01036458293"
+  },
+  {
+    "CompanyId": 2,
+    "Phone": "01137485942"
+  },
+  {
+    "CompanyId": 3,
+    "Phone": "01238469321"
+  }
+]

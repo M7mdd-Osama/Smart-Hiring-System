@@ -1,0 +1,14 @@
+[
+  {
+    "ApplicantId": 1,
+    "CandidateListId": 1
+  },
+  {
+    "ApplicantId": 2,
+    "CandidateListId": 2
+  },
+  {
+    "ApplicantId": 3,
+    "CandidateListId": 3
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "Name": "Karim Mahmoud",
+    "Role": "Manager",
+    "Email": "k.mahmoud@wadi-tech.eg",
+    "Password": "12345"
+  },
+  {
+    "Name": "Hany ElSayed",
+    "Role": "Manager",
+    "Email": "h.elsayed@egypt-telecom.com",
+    "Password": "12345"
+  },
+  {
+    "Name": "Amr Khalil",
+    "Role": "Manager",
+    "Email": "a.khalil@nbe.eg",
+    "Password": "12345"
+  }
+]

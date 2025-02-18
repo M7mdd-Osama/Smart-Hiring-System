@@ -1,0 +1,29 @@
+[
+  {
+    "Name": "Information Technology Institute",
+    "ApplicantPool": "IT & Technology",
+    "Address": "Cairo",
+    "Email": "info@iti.com",
+    "Phone": "01203893166",
+    "Password": "12345",
+    "Role": "Agency"
+  },
+  {
+    "Name": "Elite Staffing Egypt",
+    "ApplicantPool": "Banking & Finance",
+    "Address": "Heliopolis, Cairo",
+    "Email": "contact@elitestaffing.eg",
+    "Phone": "01123675843",
+    "Password": "12345",
+    "Role": "Agency"
+  },
+  {
+    "Name": "Cairo Recruitment Solutions",
+    "ApplicantPool": "IT & Technology",
+    "Address": "Maadi, Cairo",
+    "Email": "info@cairorecruitment.com",
+    "Phone": "01023648913",
+    "Password": "12345",
+    "Role": "Agency"
+  }
+]

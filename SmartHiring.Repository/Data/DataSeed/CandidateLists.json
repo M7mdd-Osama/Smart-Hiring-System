@@ -1,0 +1,20 @@
+[
+  {
+    "GeneratedDate": "2025-01-25",
+    "Status": "Pending Review",
+    "CompanyId": 1,
+    "PostId": 1
+  },
+  {
+    "GeneratedDate": "2025-01-26",
+    "Status": "Approved",
+    "CompanyId": 2,
+    "PostId": 2
+  },
+  {
+    "GeneratedDate": "2025-01-26",
+    "Status": "Approved",
+    "CompanyId": 3,
+    "PostId": 3
+  }
+]

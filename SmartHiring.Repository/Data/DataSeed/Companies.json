@@ -1,0 +1,26 @@
+[
+  {
+    "Name": "Wadi Technology Solutions",
+    "Location": "Smart Village, Cairo",
+    "Industry": "Information Technology",
+    "BusinessEmail": "careers@wadi-tech.eg",
+    "AdminId": 1,
+    "ManagerId": 1
+  },
+  {
+    "Name": "Egyptian Telecom Group",
+    "Location": "Nasr City, Cairo",
+    "Industry": "Telecommunications",
+    "BusinessEmail": "hr@egypt-telecom.com",
+    "AdminId": 1,
+    "ManagerId": 2
+  },
+  {
+    "Name": "National Bank of Egypt",
+    "Location": "Downtown, Cairo",
+    "Industry": "Banking",
+    "BusinessEmail": "careers@nbe.eg",
+    "AdminId": 2,
+    "ManagerId": 3
+  }
+]

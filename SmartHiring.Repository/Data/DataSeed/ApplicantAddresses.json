@@ -1,0 +1,20 @@
+[
+  {
+    "ApplicantId": 1,
+    "Country": "Egypt",
+    "City": "Cairo",
+    "ZIP": "11511"
+  },
+  {
+    "ApplicantId": 2,
+    "Country": "Egypt",
+    "City": "Alexandria",
+    "ZIP": "21511"
+  },
+  {
+    "ApplicantId": 3,
+    "Country": "Egypt",
+    "City": "Giza",
+    "ZIP": "12511"
+  }
+]

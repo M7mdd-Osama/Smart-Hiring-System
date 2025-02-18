@@ -1,0 +1,23 @@
+[
+  {
+    "FName": "Ahmed",
+    "LName": "Mohamed",
+    "Email": "ahmed.m@gmail.com",
+    "DateOfBirth": "1995-05-15",
+    "Skills": "JavaScript, React, Node.js, MongoDB"
+  },
+  {
+    "FName": "Nour",
+    "LName": "Hassan",
+    "Email": "nour.h@gmail.com",
+    "DateOfBirth": "1993-08-20",
+    "Skills": "Network Security, CCNA, Cisco Systems"
+  },
+  {
+    "FName": "Mariam",
+    "LName": "Khaled",
+    "Email": "mariam.k@gmail.com",
+    "DateOfBirth": "1997-03-10",
+    "Skills": "Financial Analysis, Excel, PowerBI, SQL"
+  }
+]
