@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartHiring.APIs.Errors;
+using SmartHiring.APIs.Extensions;
 using SmartHiring.APIs.Helpers;
 using SmartHiring.APIs.Middlewares;
 using SmartHiring.Core.Entities;
@@ -25,25 +26,10 @@ namespace SmartHiring.APIs
 			{
 				Options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 			});
-			builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
-			builder.Services.AddAutoMapper(typeof(MappingProfiles));
 
-			builder.Services.Configure<ApiBehaviorOptions>(Options =>
-			{
-				Options.InvalidModelStateResponseFactory = (actionContext) =>
-				{
-					var errors = actionContext.ModelState.Where(P => P.Value.Errors.Count() > 0)
-											  .SelectMany(P => P.Value.Errors)
-											  .Select(E => E.ErrorMessage)
-											  .ToArray();
-					var ValidationErrorResponse = new ApiValidationErrorResponse()
-					{
-						Errors = errors
-					};
-					return new BadRequestObjectResult(ValidationErrorResponse);
-				};
-			});
+			builder.Services.AddApplicationServices();
+
 
 			builder.Services.AddCors(Options =>
 			{
@@ -86,8 +72,7 @@ namespace SmartHiring.APIs
 			app.UseMiddleware<ExceptionMiddleware>();
 			if (app.Environment.IsDevelopment())
 			{
-				app.UseSwagger();
-				app.UseSwaggerUI();
+				app.UseSwaggerMiddlewares();
 			}
 			app.UseStatusCodePagesWithReExecute("/errors/{0}");
 			app.UseHttpsRedirection();

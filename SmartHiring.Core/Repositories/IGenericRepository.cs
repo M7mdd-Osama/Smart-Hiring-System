@@ -10,7 +10,17 @@ namespace SmartHiring.Core.Repositories
 {
 	public interface IGenericRepository<T> where T : BaseEntity
 	{
-		Task<IEnumerable<T>> GetAllWithSpecAsync(ISpecifications<T> Spec);
+		#region Without Specifications
+		Task<IReadOnlyList<T>> GetAllAsync();
+		Task<T> GetByIdAsync(int id);
+
+		#endregion
+
+		#region With Specifications
+		Task<IReadOnlyList<T>> GetAllWithSpecAsync(ISpecifications<T> Spec);
 		Task<T> GetByIdWithSpecAsync(ISpecifications<T> Spec);
+
+		#endregion
+		
 	}
 }

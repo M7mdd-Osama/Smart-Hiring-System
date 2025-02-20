@@ -20,11 +20,11 @@ namespace SmartHiring.APIs.Controllers
 		}
 		[HttpGet]
 		[ProducesResponseType(typeof(PostToReturnDto), StatusCodes.Status200OK)]
-		public async Task<ActionResult<IEnumerable<Post>>> GetPosts()
+		public async Task<ActionResult<IReadOnlyList<Post>>> GetPosts()
 		{
 			var Spec = new PostWithCompanySpecifications();
 			var Posts = await _postRepo.GetAllWithSpecAsync(Spec);
-			var MappedPosts = _mapper.Map<IEnumerable<Post>, IEnumerable<PostToReturnDto>>(Posts);
+			var MappedPosts = _mapper.Map<IReadOnlyList<Post>, IReadOnlyList<PostToReturnDto>>(Posts);
 			return Ok(MappedPosts);
 		}
 		[HttpGet("{id}")]

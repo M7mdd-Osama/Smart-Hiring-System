@@ -21,10 +21,19 @@ namespace SmartHiring.Repository
 			_dbContext = dbContext;
 		}
 
-		public async Task<IEnumerable<T>> GetAllWithSpecAsync(ISpecifications<T> Spec)
+		public async Task<IReadOnlyList<T>> GetAllAsync()
+		{
+			return await _dbContext.Set<T>().ToListAsync();
+		}
+		public async Task<T> GetByIdAsync(int id)
+		=> await _dbContext.Set<T>().FindAsync(id);
+
+
+		public async Task<IReadOnlyList<T>> GetAllWithSpecAsync(ISpecifications<T> Spec)
 		{
 			return await ApplySpecification(Spec).ToListAsync();
 		}
+
 
 		public async Task<T> GetByIdWithSpecAsync(ISpecifications<T> Spec)
 		{
