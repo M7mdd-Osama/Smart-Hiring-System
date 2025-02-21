@@ -88,7 +88,6 @@ namespace SmartHiring.APIs
 			#endregion
 
 
-
 			app.Run();
 		}
 	}

@@ -23,7 +23,5 @@ namespace SmartHiring.Core.Entities
 
 		public int? AgencyId { get; set; }
 		public Agency? Agency { get; set; }
-
-
 	}
 }

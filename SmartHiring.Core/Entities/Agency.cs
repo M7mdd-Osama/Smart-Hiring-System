@@ -18,8 +18,5 @@ namespace SmartHiring.Core.Entities
 
 		public ICollection<Application> Applications { get; set; } = new HashSet<Application>();
 		public ICollection<AgencyApplicant> AgencyApplicants { get; set; } = new HashSet<AgencyApplicant>();
-
-
-
 	}
 }

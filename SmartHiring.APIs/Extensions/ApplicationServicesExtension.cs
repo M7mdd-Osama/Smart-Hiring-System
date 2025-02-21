@@ -15,6 +15,7 @@ namespace SmartHiring.APIs.Extensions
 			Services.AddAutoMapper(typeof(MappingProfiles));
 
 			#region Error Handling
+
 			Services.Configure<ApiBehaviorOptions>(Options =>
 			{
 				Options.InvalidModelStateResponseFactory = (actionContext) =>

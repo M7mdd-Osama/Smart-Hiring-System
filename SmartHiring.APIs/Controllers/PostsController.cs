@@ -39,4 +39,4 @@ namespace SmartHiring.APIs.Controllers
 			return Ok(MappedPost);
 		}
 	}
-} 
+}
