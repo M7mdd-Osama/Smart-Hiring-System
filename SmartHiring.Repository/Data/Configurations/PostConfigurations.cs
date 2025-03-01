@@ -36,6 +36,11 @@ namespace SmartHiring.Repository.Data.Configurations
 			builder.Property(p => p.JobSalary)
 				.HasColumnType("decimal(18,2)");
 
+			builder.Property(p => p.JobStatus)
+				   .IsRequired()
+				   .HasMaxLength(150);
+
+
 			builder.HasOne(p => p.HR)
 				.WithMany(h => h.Posts)
 				.HasForeignKey(p => p.HRId)

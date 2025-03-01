@@ -5,11 +5,11 @@ using SmartHiring.Repository.Data;
 
 namespace SmartHiring.APIs.Controllers
 {
-	public class BuggyController : APIsBaseController
+	public class BuggyController : APIBaseController
 	{
-		private readonly SmartHiringContext _dbContext;
+		private readonly SmartHiringDbContext _dbContext;
 
-		public BuggyController(SmartHiringContext dbContext)
+		public BuggyController(SmartHiringDbContext dbContext)
 		{
 			_dbContext = dbContext;
 		}

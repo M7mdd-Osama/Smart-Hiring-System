@@ -11,7 +11,7 @@ using SmartHiring.Repository.Data;
 
 namespace SmartHiring.Repository.Data.Migrations
 {
-    [DbContext(typeof(SmartHiringContext))]
+    [DbContext(typeof(SmartHiringDbContext))]
     [Migration("20250216013315_EditInterviewStatusConfigurations")]
     partial class EditInterviewStatusConfigurations
     {

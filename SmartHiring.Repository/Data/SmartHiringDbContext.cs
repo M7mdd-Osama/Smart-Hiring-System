@@ -1,5 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SmartHiring.Core.Entities;
+using SmartHiring.Core.Entities.Identity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,24 +11,20 @@ using System.Threading.Tasks;
 
 namespace SmartHiring.Repository.Data
 {
-	public class SmartHiringContext : DbContext
+	public class SmartHiringDbContext : IdentityDbContext<AppUser>
 	{
-		public SmartHiringContext(DbContextOptions<SmartHiringContext> options) : base(options)
+		public SmartHiringDbContext(DbContextOptions<SmartHiringDbContext> options) : base(options)
 		{
-			
-		}
-		protected override void OnModelCreating(ModelBuilder modelBuilder)
-		{
-			modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
-			base.OnModelCreating(modelBuilder);
 		}
 
-		public DbSet<Admin> Admins { get; set; }
+		protected override void OnModelCreating(ModelBuilder modelBuilder)
+		{
+			base.OnModelCreating(modelBuilder);
+			modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+		}
+
 		public DbSet<Applicant> Applicants { get; set; }
-		public DbSet<HR> HRs { get; set; }
-		public DbSet<Agency> Agencies { get; set; }
 		public DbSet<Company> Companies { get; set; }
-		public DbSet<Manager> Managers { get; set; }
 		public DbSet<Post> Posts { get; set; }
 		public DbSet<Application> Applications { get; set; }
 		public DbSet<Interview> Interviews { get; set; }
