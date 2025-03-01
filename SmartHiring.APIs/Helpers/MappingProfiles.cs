@@ -9,7 +9,7 @@ namespace SmartHiring.APIs.Helpers
 		public MappingProfiles()
 		{
 			CreateMap<Post, PostToReturnDto>()
-					.ForMember(d => d.CompanyName, O => O.MapFrom(S => S.HR.Company.Name));
+					.ForMember(d => d.CompanyName, O => O.MapFrom(S => S.HR.HRCompany.Name));
 
 			CreateMap<Interview, CandidateReportToReturnDto>()
 				.ForMember(d => d.Name, o => o.MapFrom(s => s.Applicant.FName + " " + s.Applicant.LName))

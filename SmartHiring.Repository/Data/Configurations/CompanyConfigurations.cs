@@ -21,26 +21,24 @@ namespace SmartHiring.Repository.Data.Configurations
 				.IsRequired()
 				.HasMaxLength(200);
 
-			builder.Property(c => c.Location)
-				.HasMaxLength(250);
-
 			builder.Property(c => c.BusinessEmail)
 				.IsRequired()
 				.HasMaxLength(150);
 
-			builder.HasOne(c => c.Admin)
-				.WithMany(a => a.Companies)
-				.HasForeignKey(c => c.AdminId)
-				.OnDelete(DeleteBehavior.NoAction);
+			builder.Property(c => c.LogoUrl)
+				.HasMaxLength(500)
+				.IsUnicode(false);
 
 			builder.HasOne(c => c.Manager)
-				.WithOne(a => a.Company)
+				.WithOne(a => a.ManagedCompany)
 				.HasForeignKey<Company>(c => c.ManagerId)
 				.OnDelete(DeleteBehavior.Cascade);
 
-			builder.HasMany(c => c.HRs)
-				.WithOne(h => h.Company)
-				.HasForeignKey(h => h.CompanyId);
+			builder.HasOne(c => c.HR)
+				.WithOne(h => h.HRCompany)
+				.HasForeignKey<Company>(h => h.HRId)
+				.OnDelete(DeleteBehavior.NoAction);
+
 
 			builder.HasMany(c => c.CompanyPhones)
 				.WithOne()

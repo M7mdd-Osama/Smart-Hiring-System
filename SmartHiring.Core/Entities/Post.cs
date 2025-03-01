@@ -1,5 +1,7 @@
-﻿using System;
+﻿using SmartHiring.Core.Entities.Identity;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,12 +18,11 @@ namespace SmartHiring.Core.Entities
 		public decimal JobSalary { get; set; }
 		public string JobStatus { get; set; }
 
-		public int HRId { get; set; }
-		public HR HR { get; set; }
+		public string HRId { get; set; }
+		[ForeignKey("HRId")]
+		public AppUser HR { get; set; }
 
 		public ICollection<Application> Applications { get; set; } = new HashSet<Application>();
 		public ICollection<CandidateList> CandidateLists { get; set; } = new HashSet<CandidateList>();
-
-
 	}
 }
