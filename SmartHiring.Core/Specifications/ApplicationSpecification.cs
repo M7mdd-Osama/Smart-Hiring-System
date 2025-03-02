@@ -14,10 +14,10 @@ namespace SmartHiring.Core.Specifications
         {
             Criteria = application => application.Id == applicationId;
 
-            Includes.Add(application => application.Applicant); // ✅ تحميل بيانات المتقدم
-            Includes.Add(application => application.Post);      // ✅ تحميل تفاصيل الوظيفة
-            Includes.Add(application => application.Post.HR);   // ✅ تحميل بيانات الـ HR
-            Includes.Add(application => application.Agency);    // ✅ تحميل بيانات الـ Agency
+            Includes.Add(application => application.Applicant); 
+            Includes.Add(application => application.Post);      
+            Includes.Add(application => application.Post.HR);   
+            Includes.Add(application => application.Agency); 
         }
     }
 }
