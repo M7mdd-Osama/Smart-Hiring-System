@@ -163,28 +163,47 @@ namespace SmartHiring.APIs.Controllers
 		public async Task<IActionResult> ConfirmEmail(ConfirmEmailDto model)
 		{
 			var user = await _userManager.FindByEmailAsync(model.Email);
-			if (user == null) return BadRequest(new ApiResponse(400, "Invalid email"));
 
-			if (user.EmailConfirmed) return BadRequest(new ApiResponse(400, "Email already confirmed"));
+			if (user != null)
+			{
+				if (user.EmailConfirmed) return BadRequest(new ApiResponse(400, "Email already confirmed"));
 
-			if (user.ConfirmationCodeExpires < DateTime.UtcNow)
+				if (user.ConfirmationCodeExpires < DateTime.UtcNow)
+					return BadRequest(new ApiResponse(400, "OTP expired"));
+
+				if (user.ConfirmationCode != model.OTP)
+					return BadRequest(new ApiResponse(400, "Invalid OTP"));
+
+				user.EmailConfirmed = true;
+				user.ConfirmationCode = null;
+				user.ConfirmationCodeExpires = null;
+
+				await _userManager.UpdateAsync(user);
+
+				return Ok(new ApiResponse(200, "Success"));
+			}
+
+			var company = await _dbContext.Companies.FirstOrDefaultAsync(c => c.BusinessEmail == model.Email);
+
+			if (company == null)
+				return BadRequest(new ApiResponse(400, "Invalid email"));
+
+			if (company.EmailConfirmed)
+				return BadRequest(new ApiResponse(400, "Email already confirmed"));
+
+			if (company.ConfirmationCodeExpires < DateTime.UtcNow)
 				return BadRequest(new ApiResponse(400, "OTP expired"));
 
-			if (user.ConfirmationCode != model.OTP)
+			if (company.ConfirmationCode != model.OTP)
 				return BadRequest(new ApiResponse(400, "Invalid OTP"));
 
-			user.EmailConfirmed = true;
-			user.ConfirmationCode = null;
-			user.ConfirmationCodeExpires = null;
+			company.EmailConfirmed = true;
+			company.ConfirmationCode = null;
+			company.ConfirmationCodeExpires = null;
 
-			await _userManager.UpdateAsync(user);
+			await _dbContext.SaveChangesAsync();
 
-			return Ok(new UserDto
-			{
-				DisplayName = $"{user.FirstName} {user.LastName}",
-				Email = user.Email,
-				Token = await _tokenService.CreateTokenAsync(user, _userManager)
-			});
+			return Ok(new ApiResponse(200, "Success"));
 		}
 
 		[HttpPost("ResendOTP")]
@@ -234,7 +253,10 @@ namespace SmartHiring.APIs.Controllers
 		[HttpPost("Login")]
 		public async Task<ActionResult<UserDto>> Login(LoginDto model)
 		{
-			var user = await _userManager.FindByEmailAsync(model.Email);
+			var user = await _userManager.Users
+				.Include(u => u.HRCompany)
+				.Include(u => u.ManagedCompany) 
+				.FirstOrDefaultAsync(u => u.Email == model.Email);
 
 			if (user == null)
 				return Unauthorized(new ApiResponse(401, "Invalid email or password"));
@@ -246,11 +268,23 @@ namespace SmartHiring.APIs.Controllers
 			if (!result.Succeeded)
 				return Unauthorized(new ApiResponse(401, "Invalid email or password"));
 
-			return Ok(new UserDto
+			string companyLogo = null;
+
+			if (await _userManager.IsInRoleAsync(user, "HR") && user.HRCompany != null)
+			{
+				companyLogo = user.HRCompany.LogoUrl;
+			}
+			else if (await _userManager.IsInRoleAsync(user, "Manager") && user.ManagedCompany != null)
+			{
+				companyLogo = user.ManagedCompany.LogoUrl;
+			}
+
+			return Ok(new
 			{
 				DisplayName = $"{user.FirstName} {user.LastName}",
 				Email = user.Email,
-				Token = await _tokenService.CreateTokenAsync(user, _userManager)
+				Token = await _tokenService.CreateTokenAsync(user, _userManager),
+				CompanyLogoUrl = companyLogo
 			});
 		}
 
@@ -303,6 +337,6 @@ namespace SmartHiring.APIs.Controllers
 		}
 
 		#endregion
-		 
+
 	}
 }

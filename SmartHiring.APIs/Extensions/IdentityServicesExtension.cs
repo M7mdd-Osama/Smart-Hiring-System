@@ -5,6 +5,7 @@ using SmartHiring.Core.Entities.Identity;
 using SmartHiring.Core.Services;
 using SmartHiring.Repository.Data;
 using SmartHiring.Service;
+using System.Security.Claims;
 using System.Text;
 
 namespace SmartHiring.APIs.Extensions
@@ -41,7 +42,8 @@ namespace SmartHiring.APIs.Extensions
 						ValidateLifetime = true,
 						ValidateIssuerSigningKey = true,
 						IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Key"])),
-						ClockSkew = TimeSpan.Zero
+						ClockSkew = TimeSpan.Zero,
+						RoleClaimType = ClaimTypes.Role
 					};
 				});
 					
