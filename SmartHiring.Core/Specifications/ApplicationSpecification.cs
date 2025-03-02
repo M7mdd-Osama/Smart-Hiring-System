@@ -5,19 +5,24 @@ using System.Linq.Expressions;
 
 namespace SmartHiring.Core.Specifications
 {
-    public class ApplicationSpecification : ISpecifications<Application>
+    public class ApplicationSpecification : BaseSpecifications<Application>
     {
-        public Expression<Func<Application, bool>> Criteria { get; set; }
-        public List<Expression<Func<Application, object>>> Includes { get; set; } = new List<Expression<Func<Application, object>>>();
-
         public ApplicationSpecification(int applicationId)
+            : base(application => application.Id == applicationId)
         {
-            Criteria = application => application.Id == applicationId;
+            AddInclude(application => application.Applicant); // ✅ تحميل بيانات المتقدم
+            AddInclude(application => application.Post);      // ✅ تحميل تفاصيل الوظيفة
+            AddInclude(application => application.Post.HR);   // ✅ تحميل بيانات الـ HR
+            AddInclude(application => application.Agency);    // ✅ تحميل بيانات الـ Agency
+        }
 
-            Includes.Add(application => application.Applicant); // ✅ تحميل بيانات المتقدم
-            Includes.Add(application => application.Post);      // ✅ تحميل تفاصيل الوظيفة
-            Includes.Add(application => application.Post.HR);   // ✅ تحميل بيانات الـ HR
-            Includes.Add(application => application.Agency);    // ✅ تحميل بيانات الـ Agency
+        public ApplicationSpecification(int jobId, bool byJob)
+            : base(application => application.PostId == jobId)
+        {
+            AddInclude(application => application.Applicant);
+            AddInclude(application => application.Post);
+            AddInclude(application => application.Post.HR);
+            AddInclude(application => application.Agency);
         }
     }
 }
