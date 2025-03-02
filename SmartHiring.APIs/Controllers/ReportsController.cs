@@ -48,8 +48,6 @@ namespace SmartHiring.APIs.Controllers
 			if (user == null)
 				return Unauthorized(new ApiResponse(401, "User not found"));
 
-			Console.WriteLine($"User: {user.Email}, HRCompany: {user.HRCompany?.Name}, ManagedCompany: {user.ManagedCompany?.Name}");
-
 			Company? userCompany = null;
 
 			if (User.IsInRole("HR"))
@@ -68,8 +66,6 @@ namespace SmartHiring.APIs.Controllers
 				Console.WriteLine("User company not found!");
 				return BadRequest(new ApiResponse(400, "User is not associated with any company"));
 			}
-
-			Console.WriteLine($"User company: {userCompany.Name}");
 
 			var spec = new InterviewWithCandidateSpecifications();
 			var interviews = await _interviewRepo.GetAllWithSpecAsync(spec);
