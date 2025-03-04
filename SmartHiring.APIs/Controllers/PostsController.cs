@@ -60,11 +60,6 @@ namespace SmartHiring.APIs.Controllers
 			if (hr == null)
 				return NotFound(new { message = "HR not found" });
 
-			Console.WriteLine($"HR Id: {hr.Id}");
-			Console.WriteLine($"HR Name: {hr.DisplayName}");
-			Console.WriteLine($"HRCompany: {hr.HRCompany}");
-			Console.WriteLine($"HRCompany Name: {hr.HRCompany?.Name}");
-
 			if (hr.HRCompany == null)
 				return BadRequest(new { message = "HR is not associated with a company" });
 
