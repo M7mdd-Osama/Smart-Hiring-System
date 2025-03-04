@@ -9,123 +9,100 @@ using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
 using SmartHiring.Core.Repositories;
 using SmartHiring.Core.Specifications;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace SmartHiring.APIs.Controllers
 {
-	public class PostsController : APIBaseController
-	{
-		private readonly IGenericRepository<Post> _postRepo;
-		private readonly IMapper _mapper;
-		private readonly UserManager<AppUser> _userManager;
+    public class PostsController : APIBaseController
+    {
+        private readonly IGenericRepository<Post> _postRepo;
+        private readonly IMapper _mapper;
+        private readonly UserManager<AppUser> _userManager;
 
-		public PostsController(IGenericRepository<Post> postRepo, IMapper mapper, UserManager<AppUser> userManager)
-		{
-			_postRepo = postRepo;
-			_mapper = mapper;
-			_userManager = userManager;
-		}
+        public PostsController(IGenericRepository<Post> postRepo, IMapper mapper, UserManager<AppUser> userManager)
+        {
+            _postRepo = postRepo;
+            _mapper = mapper;
+            _userManager = userManager;
+        }
 
-		[HttpGet]
-		[ProducesResponseType(typeof(PostToReturnDto), StatusCodes.Status200OK)]
-		public async Task<ActionResult<IEnumerable<Post>>> GetPosts()
-		{
-			var spec = new PostWithCompanySpecifications();
-			var posts = await _postRepo.GetAllWithSpecAsync(spec);
-			var mappedPosts = _mapper.Map<IEnumerable<Post>, IEnumerable<PostToReturnDto>>(posts);
-			return Ok(mappedPosts);
-		}
+        // ✅ [GET] Get All Posts
+        [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<PostToReturnDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<PostToReturnDto>>> GetPosts()
+        {
+            var spec = new PostWithCompanySpecifications();
+            var posts = await _postRepo.GetAllWithSpecAsync(spec);
+            return Ok(_mapper.Map<IEnumerable<PostToReturnDto>>(posts));
+        }
 
-		[HttpGet("{jobId}")]
-		[ProducesResponseType(typeof(PostToReturnDto), StatusCodes.Status200OK)]
-		[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-		public async Task<ActionResult<Post>> GetPostById(int jobId)
-		{
-			var spec = new PostWithCompanySpecifications(jobId);
-			var post = await _postRepo.GetByIdWithSpecAsync(spec);
-			if (post is null) return NotFound(new ApiResponse(404));
-			var mappedPost = _mapper.Map<Post, PostToReturnDto>(post);
-			return Ok(mappedPost);
-		}
+        // ✅ [GET] Get Post by ID
+        [HttpGet("{jobId}")]
+        [ProducesResponseType(typeof(PostToReturnDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<PostToReturnDto>> GetPostById(int jobId)
+        {
+            var spec = new PostWithCompanySpecifications(jobId);
+            var post = await _postRepo.GetByIdWithSpecAsync(spec);
+            if (post == null) return NotFound(new ApiResponse(404));
 
-		[HttpPost]
-		public async Task<ActionResult<PostToReturnDto>> CreateJob([FromBody] PostToReturnDto postDto)
-		{
-			if (postDto == null)
-				return BadRequest(new { message = "Job data is required" });
+            return Ok(_mapper.Map<PostToReturnDto>(post));
+        }
 
-			var hr = await _userManager.Users
-				.Include(u => u.HRCompany) 
-				.FirstOrDefaultAsync(u => u.Id == postDto.HRId);
+        // ✅ [POST] Create Job Post
+        [HttpPost]
+        public async Task<ActionResult<PostToReturnDto>> CreateJob([FromBody] PostToReturnDto postDto)
+        {
+            if (postDto == null)
+                return BadRequest(new { message = "Job data is required" });
 
-			if (hr == null)
-				return NotFound(new { message = "HR not found" });
+            var hr = await _userManager.Users
+                .Include(u => u.HRCompany)
+                .FirstOrDefaultAsync(u => u.Id == postDto.HRId);
 
-			if (hr.HRCompany == null)
-				return BadRequest(new { message = "HR is not associated with a company" });
+            if (hr == null)
+                return NotFound(new { message = "HR not found" });
 
-			var job = new Post
-			{
-				JobTitle = postDto.JobTitle,
-				Description = postDto.Description,
-				Requirements = postDto.Requirements,
-				PostDate = DateTime.UtcNow,
-				Deadline = postDto.Deadline,
-				JobSalary = postDto.JobSalary,
-				JobStatus = "Open",
-				HRId = postDto.HRId
-			};
+            if (hr.HRCompany == null)
+                return BadRequest(new { message = "HR is not associated with a company" });
 
-			await _postRepo.AddAsync(job);
+            var job = _mapper.Map<Post>(postDto);
+            job.PostDate = DateTime.UtcNow;
 
-			var result = _mapper.Map<Post, PostToReturnDto>(job);
-			return Ok(result);
-		}
+            await _postRepo.AddAsync(job);
 
-		[HttpPut("{jobId}")]
-		public async Task<IActionResult> UpdateJob(int jobId, [FromBody] PostToReturnDto postDto)
-		{
-			if (postDto == null)
-				return BadRequest(new { message = "Job data is required" });
+            return Ok(_mapper.Map<PostToReturnDto>(job));
+        }
 
-			var job = await _postRepo.GetByIdAsync(jobId);
-			if (job == null)
-				return NotFound(new { message = "Job not found" });
+        // ✅ [PUT] Update Job Post
+        [HttpPut("{jobId}")]
+        public async Task<IActionResult> UpdateJob(int jobId, [FromBody] PostToReturnDto postDto)
+        {
+            if (postDto == null)
+                return BadRequest(new { message = "Job data is required" });
 
-			job.JobTitle = postDto.JobTitle;
-			job.Description = postDto.Description;
-			job.Requirements = postDto.Requirements;
-			job.Deadline = postDto.Deadline;
-			job.JobSalary = postDto.JobSalary;
-			job.JobStatus = postDto.JobStatus;
+            var job = await _postRepo.GetByIdAsync(jobId);
+            if (job == null)
+                return NotFound(new { message = "Job not found" });
 
-			await _postRepo.UpdateAsync(job);
+            _mapper.Map(postDto, job); // ✅ تحديث الكائن مباشرة باستخدام AutoMapper
+            await _postRepo.UpdateAsync(job);
 
-			return Ok(new
-			{
-				message = "Job updated successfully",
-				job = new
-				{
-					job.Id,
-					job.JobTitle,
-					job.Description,
-					job.Requirements,
-					job.Deadline,
-					job.JobSalary,
-					job.JobStatus
-				}
-			});
-		}
+            return Ok(new { message = "Job updated successfully", job = _mapper.Map<PostToReturnDto>(job) });
+        }
 
-		[HttpDelete("{jobId}")]
-		public async Task<IActionResult> DeleteJob(int jobId)
-		{
-			var job = await _postRepo.GetByIdAsync(jobId);
-			if (job == null)
-				return NotFound(new { message = "Job not found" });
+        // ✅ [DELETE] Delete Job Post
+        [HttpDelete("{jobId}")]
+        public async Task<IActionResult> DeleteJob(int jobId)
+        {
+            var job = await _postRepo.GetByIdAsync(jobId);
+            if (job == null)
+                return NotFound(new { message = "Job not found" });
 
-			await _postRepo.DeleteAsync(job);
+            await _postRepo.DeleteAsync(job);
 
-			return Ok(new { message = "Job deleted successfully" });
-		}
-	}
+            return Ok(new { message = "Job deleted successfully" });
+        }
+    }
 }

@@ -1,21 +1,20 @@
 ﻿using SmartHiring.Core.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartHiring.Core.Specifications
 {
-	public class PostWithCompanySpecifications : BaseSpecifications<Post>
-	{
-		public PostWithCompanySpecifications():base()
-		{
-			Includes.Add(P=>P.HR.HRCompany);
-		}
-		public PostWithCompanySpecifications(int id):base(P => P.Id == id)
-		{
-			Includes.Add(P => P.HR.HRCompany);
-		}
-	}
+    public class PostWithCompanySpecifications : BaseSpecifications<Post>
+    {
+        // ✅ جلب جميع الوظائف مع بيانات الشركة
+        public PostWithCompanySpecifications()
+        {
+            AddInclude(p => p.HR.HRCompany);
+        }
+
+        // ✅ جلب وظيفة معينة حسب الـ Id مع بيانات الشركة
+        public PostWithCompanySpecifications(int id)
+            : base(p => p.Id == id)
+        {
+            AddInclude(p => p.HR.HRCompany);
+        }
+    }
 }

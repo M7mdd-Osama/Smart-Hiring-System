@@ -14,114 +14,115 @@ using System.Threading.Tasks;
 
 namespace SmartHiring.APIs.Controllers
 {
-	public class ApplicationController : APIBaseController
-	{
-		private readonly IGenericRepository<Application> _applicationRepository;
-		private readonly IMapper _mapper;
-		private readonly UserManager<AppUser> _userManager;
 
-		public ApplicationController(
-			IGenericRepository<Application> applicationRepository,
-			IMapper mapper,
-			UserManager<AppUser> userManager)
-		{
-			_applicationRepository = applicationRepository;
-			_mapper = mapper;
-			_userManager = userManager;
-		}
+    public class ApplicationController : APIBaseController
+    {
+        private readonly IGenericRepository<Application> _applicationRepository;
+        private readonly IMapper _mapper;
+        private readonly UserManager<AppUser> _userManager;
 
-		[HttpGet]
-		[ProducesResponseType(typeof(IEnumerable<ApplicationDto>), StatusCodes.Status200OK)]
-		public async Task<ActionResult<IEnumerable<ApplicationDto>>> GetApplications()
-		{
-			var spec = new ApplicationSpecification(0); // جلب كل الطلبات
-			var applications = await _applicationRepository.GetAllWithSpecAsync(spec);
-			var mappedApplications = _mapper.Map<IEnumerable<Application>, IEnumerable<ApplicationDto>>(applications);
-			return Ok(mappedApplications);
-		}
+        public ApplicationController(
+            IGenericRepository<Application> applicationRepository,
+            IMapper mapper,
+            UserManager<AppUser> userManager)
+        {
+            _applicationRepository = applicationRepository;
+            _mapper = mapper;
+            _userManager = userManager;
+        }
 
-		[HttpGet("{applicationId}")]
-		[ProducesResponseType(typeof(ApplicationDto), StatusCodes.Status200OK)]
-		[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-		public async Task<ActionResult<ApplicationDto>> GetApplication(int applicationId)
-		{
-			var spec = new ApplicationSpecification(applicationId);
-			var application = await _applicationRepository.GetByIdWithSpecAsync(spec);
-			if (application == null) return NotFound(new ApiResponse(404));
+        [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<ApplicationDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<ApplicationDto>>> GetApplications()
+        {
+            var spec = new ApplicationSpecification(0); // جلب كل الطلبات
+            var applications = await _applicationRepository.GetAllWithSpecAsync(spec);
+            var mappedApplications = _mapper.Map<IEnumerable<Application>, IEnumerable<ApplicationDto>>(applications);
+            return Ok(mappedApplications);
+        }
 
-			var mappedApplication = _mapper.Map<Application, ApplicationDto>(application);
-			return Ok(mappedApplication);
-		}
+        [HttpGet("{applicationId}")]
+        [ProducesResponseType(typeof(ApplicationDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApplicationDto>> GetApplication(int applicationId)
+        {
+            var spec = new ApplicationSpecification(applicationId);
+            var application = await _applicationRepository.GetByIdWithSpecAsync(spec);
+            if (application == null) return NotFound(new ApiResponse(404));
 
-		[HttpGet("job/{jobId}")]
-		[ProducesResponseType(typeof(IEnumerable<ApplicationDto>), StatusCodes.Status200OK)]
-		public async Task<ActionResult<IEnumerable<ApplicationDto>>> GetApplicationsForJob(int jobId)
-		{
-			var spec = new ApplicationSpecification(jobId);
-			var applications = await _applicationRepository.GetAllWithSpecAsync(spec);
-			var mappedApplications = _mapper.Map<IEnumerable<Application>, IEnumerable<ApplicationDto>>(applications);
-			return Ok(mappedApplications);
-		}
+            var mappedApplication = _mapper.Map<Application, ApplicationDto>(application);
+            return Ok(mappedApplication);
+        }
 
-		[HttpPost]
-		public async Task<ActionResult<ApplicationDto>> CreateApplication([FromBody] ApplicationDto applicationDto)
-		{
-			if (applicationDto == null || string.IsNullOrEmpty(applicationDto.CV_Link))
-				return BadRequest(new { message = "Invalid application data. CV_Link is required." });
+        [HttpGet("job/{jobId}")]
+        [ProducesResponseType(typeof(IEnumerable<ApplicationDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<ApplicationDto>>> GetApplicationsForJob(int jobId)
+        {
+            var spec = new ApplicationSpecification(jobId);
+            var applications = await _applicationRepository.GetAllWithSpecAsync(spec);
+            var mappedApplications = _mapper.Map<IEnumerable<Application>, IEnumerable<ApplicationDto>>(applications);
+            return Ok(mappedApplications);
+        }
 
-			var agency = await _userManager.FindByIdAsync(applicationDto.AgencyId);
-			if (agency == null)
-				return NotFound(new { message = "Agency not found." });
+        [HttpPost]
+        public async Task<ActionResult<ApplicationDto>> CreateApplication([FromBody] ApplicationDto applicationDto)
+        {
+            if (applicationDto == null || string.IsNullOrEmpty(applicationDto.CV_Link))
+                return BadRequest(new { message = "Invalid application data. CV_Link is required." });
 
-			var application = new Application
-			{
-				RankScore = applicationDto.RankScore,
-				IsShortlisted = applicationDto.IsShortlisted,
-				ApplicationDate = DateTime.UtcNow,
-				CV_Link = applicationDto.CV_Link,
-				ApplicantId = applicationDto.ApplicantId,
-				PostId = applicationDto.PostId,
-				AgencyId = applicationDto.AgencyId
-			};
+            var agency = await _userManager.FindByIdAsync(applicationDto.AgencyId);
+            if (agency == null)
+                return NotFound(new { message = "Agency not found." });
 
-			await _applicationRepository.AddAsync(application);
-			var result = _mapper.Map<Application, ApplicationDto>(application);
-			return Ok(result);
-		}
+            var application = new Application
+            {
+                RankScore = applicationDto.RankScore,
+                IsShortlisted = applicationDto.IsShortlisted,
+                ApplicationDate = DateTime.UtcNow,
+                CV_Link = applicationDto.CV_Link,
+                ApplicantId = applicationDto.ApplicantId,
+                PostId = applicationDto.PostId,
+                AgencyId = applicationDto.AgencyId
+            };
 
-		[HttpPut("{applicationId}/approve")]
-		public async Task<IActionResult> ApproveApplication(int applicationId)
-		{
-			var application = await _applicationRepository.GetByIdAsync(applicationId);
-			if (application == null)
-				return NotFound(new { message = "Application not found." });
+            await _applicationRepository.AddAsync(application);
+            var result = _mapper.Map<Application, ApplicationDto>(application);
+            return Ok(result);
+        }
 
-			application.IsShortlisted = true;
-			await _applicationRepository.UpdateAsync(application);
-			return Ok(new { message = "Application approved successfully", applicationId });
-		}
+        [HttpPut("{applicationId}/approve")]
+        public async Task<IActionResult> ApproveApplication(int applicationId)
+        {
+            var application = await _applicationRepository.GetByIdAsync(applicationId);
+            if (application == null)
+                return NotFound(new { message = "Application not found." });
 
-		[HttpPut("{applicationId}/reject")]
-		public async Task<IActionResult> RejectApplication(int applicationId)
-		{
-			var application = await _applicationRepository.GetByIdAsync(applicationId);
-			if (application == null)
-				return NotFound(new { message = "Application not found." });
+            application.IsShortlisted = true;
+            await _applicationRepository.UpdateAsync(application);
+            return Ok(new { message = "Application approved successfully", applicationId });
+        }
 
-			application.IsShortlisted = false;
-			await _applicationRepository.UpdateAsync(application);
-			return Ok(new { message = "Application rejected successfully", applicationId });
-		}
+        [HttpPut("{applicationId}/reject")]
+        public async Task<IActionResult> RejectApplication(int applicationId)
+        {
+            var application = await _applicationRepository.GetByIdAsync(applicationId);
+            if (application == null)
+                return NotFound(new { message = "Application not found." });
 
-		[HttpDelete("{applicationId}")]
-		public async Task<IActionResult> DeleteApplication(int applicationId)
-		{
-			var application = await _applicationRepository.GetByIdAsync(applicationId);
-			if (application == null)
-				return NotFound(new { message = "Application not found." });
+            application.IsShortlisted = false;
+            await _applicationRepository.UpdateAsync(application);
+            return Ok(new { message = "Application rejected successfully", applicationId });
+        }
 
-			await _applicationRepository.DeleteAsync(application);
-			return Ok(new { message = "Application deleted successfully" });
-		}
-	}
+        [HttpDelete("{applicationId}")]
+        public async Task<IActionResult> DeleteApplication(int applicationId)
+        {
+            var application = await _applicationRepository.GetByIdAsync(applicationId);
+            if (application == null)
+                return NotFound(new { message = "Application not found." });
+
+            await _applicationRepository.DeleteAsync(application);
+            return Ok(new { message = "Application deleted successfully" });
+        }
+    }
 }
