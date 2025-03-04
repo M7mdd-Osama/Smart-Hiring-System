@@ -10,16 +10,16 @@ namespace SmartHiring.Core.Specifications
         public Expression<Func<T, bool>> Criteria { get; set; }
         public List<Expression<Func<T, object>>> Includes { get; set; } = new List<Expression<Func<T, object>>>();
 
-        public BaseSpecifications() { }
+		public BaseSpecifications() { }
 
-        public BaseSpecifications(Expression<Func<T, bool>> criteriaExpression)
-        {
-            Criteria = criteriaExpression;
-        }
+		public BaseSpecifications(Expression<Func<T, bool>> criteriaExpression)
+		{
+			Criteria = criteriaExpression;
+		}
 
-        protected void AddInclude(Expression<Func<T, object>> includeExpression)
-        {
-            Includes.Add(includeExpression);
-        }
-    }
+		protected void AddInclude(Expression<Func<T, object>> includeExpression)
+		{
+			Includes.Add(includeExpression);
+		}
+	}
 }

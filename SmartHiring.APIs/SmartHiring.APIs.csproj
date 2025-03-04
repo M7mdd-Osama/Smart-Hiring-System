@@ -23,8 +23,4 @@
     <ProjectReference Include="..\SmartHiring.Service\SmartHiring.Service.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="wwwroot\Files\Images\" />
-  </ItemGroup>
-
 </Project>

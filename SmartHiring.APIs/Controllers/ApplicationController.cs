@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 
 namespace SmartHiring.APIs.Controllers
 {
+
     public class ApplicationController : APIBaseController
     {
         private readonly IGenericRepository<Application> _applicationRepository;
