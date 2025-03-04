@@ -10,7 +10,7 @@ using SmartHiring.Repository.Data;
 
 namespace SmartHiring.Repository.Data.Migrations
 {
-    [DbContext(typeof(SmartHiringContext))]
+    [DbContext(typeof(SmartHiringDbContext))]
     partial class SmartHiringContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
@@ -22,35 +22,34 @@ namespace SmartHiring.Repository.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
-            modelBuilder.Entity("SmartHiring.Core.Entities.Admin", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
-                    b.Property<string>("Password")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Admins", (string)null);
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex")
+                        .HasFilter("[NormalizedName] IS NOT NULL");
+
+                    b.ToTable("AspNetRoles", (string)null);
                 });
 
-            modelBuilder.Entity("SmartHiring.Core.Entities.Agency", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -58,55 +57,125 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("ApplicantPool")
-                        .IsRequired()
+                    b.Property<string>("ClaimType")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Password")
-                        .IsRequired()
+                    b.Property<string>("ClaimValue")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Phone")
+                    b.Property<string>("RoleId")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Agencies", (string)null);
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetRoleClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ProviderKey")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserLogins", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RoleId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetUserRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("UserId", "LoginProvider", "Name");
+
+                    b.ToTable("AspNetUserTokens", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.AgencyApplicant", b =>
                 {
-                    b.Property<int>("AgencyId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<string>("AgencyId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("ApplicantId")
                         .HasColumnType("int");
 
-                    b.HasKey("AgencyId", "ApplicantId");
+                    b.HasKey("Id");
 
                     b.HasIndex("ApplicantId");
+
+                    b.HasIndex("AgencyId", "ApplicantId")
+                        .IsUnique();
 
                     b.ToTable("AgencyApplicants", (string)null);
                 });
@@ -192,8 +261,9 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<int?>("AgencyId")
-                        .HasColumnType("int");
+                    b.Property<string>("AgencyId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("ApplicantId")
                         .HasColumnType("int");
@@ -280,37 +350,49 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<int>("AdminId")
-                        .HasColumnType("int");
-
                     b.Property<string>("BusinessEmail")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<string>("Industry")
-                        .IsRequired()
+                    b.Property<string>("ConfirmationCode")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
+                    b.Property<DateTime?>("ConfirmationCodeExpires")
+                        .HasColumnType("datetime2");
 
-                    b.Property<int>("ManagerId")
-                        .HasColumnType("int");
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("HRId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("LogoUrl")
+                        .HasMaxLength(500)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("ManagerId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("AdminId");
+                    b.HasIndex("HRId")
+                        .IsUnique()
+                        .HasFilter("[HRId] IS NOT NULL");
 
                     b.HasIndex("ManagerId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[ManagerId] IS NOT NULL");
 
                     b.ToTable("Companies", (string)null);
                 });
@@ -329,7 +411,7 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.ToTable("Company_Phones", (string)null);
                 });
 
-            modelBuilder.Entity("SmartHiring.Core.Entities.HR", b =>
+            modelBuilder.Entity("SmartHiring.Core.Entities.Identity.Address", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -337,33 +419,106 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Email")
+                    b.Property<string>("AppUserId")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Password")
+                    b.Property<string>("City")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Role")
+                    b.Property<string>("Country")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CompanyId");
+                    b.HasIndex("AppUserId")
+                        .IsUnique();
 
-                    b.ToTable("HRs", (string)null);
+                    b.ToTable("Address");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.Identity.AppUser", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AgencyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ConfirmationCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ConfirmationCodeExpires")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex")
+                        .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.ToTable("AspNetUsers", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Interview", b =>
@@ -380,8 +535,9 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("date");
 
-                    b.Property<int>("HRId")
-                        .HasColumnType("int");
+                    b.Property<string>("HRId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("InterviewStatus")
                         .IsRequired()
@@ -397,8 +553,10 @@ namespace SmartHiring.Repository.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<double>("Score")
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("float");
+                        .HasColumnType("float")
+                        .HasDefaultValue(0.0);
 
                     b.Property<TimeSpan>("Time")
                         .HasColumnType("time");
@@ -412,38 +570,6 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.HasIndex("PostId");
 
                     b.ToTable("Interviews", (string)null);
-                });
-
-            modelBuilder.Entity("SmartHiring.Core.Entities.Manager", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Password")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Managers", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Post", b =>
@@ -464,15 +590,17 @@ namespace SmartHiring.Repository.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("HRId")
-                        .HasColumnType("int");
+                    b.Property<string>("HRId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("JobSalary")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("JobStatus")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<string>("JobTitle")
                         .IsRequired()
@@ -495,9 +623,60 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.ToTable("Posts", (string)null);
                 });
 
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.HasOne("SmartHiring.Core.Entities.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.HasOne("SmartHiring.Core.Entities.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartHiring.Core.Entities.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.HasOne("SmartHiring.Core.Entities.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("SmartHiring.Core.Entities.AgencyApplicant", b =>
                 {
-                    b.HasOne("SmartHiring.Core.Entities.Agency", "Agency")
+                    b.HasOne("SmartHiring.Core.Entities.Identity.AppUser", "Agency")
                         .WithMany("AgencyApplicants")
                         .HasForeignKey("AgencyId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -538,10 +717,11 @@ namespace SmartHiring.Repository.Data.Migrations
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Application", b =>
                 {
-                    b.HasOne("SmartHiring.Core.Entities.Agency", "Agency")
+                    b.HasOne("SmartHiring.Core.Entities.Identity.AppUser", "Agency")
                         .WithMany("Applications")
                         .HasForeignKey("AgencyId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("SmartHiring.Core.Entities.Applicant", "Applicant")
                         .WithMany("Applications")
@@ -602,19 +782,17 @@ namespace SmartHiring.Repository.Data.Migrations
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Company", b =>
                 {
-                    b.HasOne("SmartHiring.Core.Entities.Admin", "Admin")
-                        .WithMany("Companies")
-                        .HasForeignKey("AdminId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                    b.HasOne("SmartHiring.Core.Entities.Identity.AppUser", "HR")
+                        .WithOne("HRCompany")
+                        .HasForeignKey("SmartHiring.Core.Entities.Company", "HRId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("SmartHiring.Core.Entities.Manager", "Manager")
-                        .WithOne("Company")
+                    b.HasOne("SmartHiring.Core.Entities.Identity.AppUser", "Manager")
+                        .WithOne("ManagedCompany")
                         .HasForeignKey("SmartHiring.Core.Entities.Company", "ManagerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Navigation("Admin");
+                    b.Navigation("HR");
 
                     b.Navigation("Manager");
                 });
@@ -630,15 +808,15 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.Navigation("Company");
                 });
 
-            modelBuilder.Entity("SmartHiring.Core.Entities.HR", b =>
+            modelBuilder.Entity("SmartHiring.Core.Entities.Identity.Address", b =>
                 {
-                    b.HasOne("SmartHiring.Core.Entities.Company", "Company")
-                        .WithMany("HRs")
-                        .HasForeignKey("CompanyId")
+                    b.HasOne("SmartHiring.Core.Entities.Identity.AppUser", "User")
+                        .WithOne("Address")
+                        .HasForeignKey("SmartHiring.Core.Entities.Identity.Address", "AppUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Company");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Interview", b =>
@@ -649,7 +827,7 @@ namespace SmartHiring.Repository.Data.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("SmartHiring.Core.Entities.HR", "HR")
+                    b.HasOne("SmartHiring.Core.Entities.Identity.AppUser", "HR")
                         .WithMany("Interviews")
                         .HasForeignKey("HRId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -674,25 +852,13 @@ namespace SmartHiring.Repository.Data.Migrations
                         .WithMany("Posts")
                         .HasForeignKey("CompanyId");
 
-                    b.HasOne("SmartHiring.Core.Entities.HR", "HR")
+                    b.HasOne("SmartHiring.Core.Entities.Identity.AppUser", "HR")
                         .WithMany("Posts")
                         .HasForeignKey("HRId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("HR");
-                });
-
-            modelBuilder.Entity("SmartHiring.Core.Entities.Admin", b =>
-                {
-                    b.Navigation("Companies");
-                });
-
-            modelBuilder.Entity("SmartHiring.Core.Entities.Agency", b =>
-                {
-                    b.Navigation("AgencyApplicants");
-
-                    b.Navigation("Applications");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Applicant", b =>
@@ -715,22 +881,25 @@ namespace SmartHiring.Repository.Data.Migrations
                 {
                     b.Navigation("CompanyPhones");
 
-                    b.Navigation("HRs");
-
                     b.Navigation("Posts");
                 });
 
-            modelBuilder.Entity("SmartHiring.Core.Entities.HR", b =>
+            modelBuilder.Entity("SmartHiring.Core.Entities.Identity.AppUser", b =>
                 {
+                    b.Navigation("Address")
+                        .IsRequired();
+
+                    b.Navigation("AgencyApplicants");
+
+                    b.Navigation("Applications");
+
+                    b.Navigation("HRCompany");
+
                     b.Navigation("Interviews");
 
-                    b.Navigation("Posts");
-                });
+                    b.Navigation("ManagedCompany");
 
-            modelBuilder.Entity("SmartHiring.Core.Entities.Manager", b =>
-                {
-                    b.Navigation("Company")
-                        .IsRequired();
+                    b.Navigation("Posts");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Post", b =>

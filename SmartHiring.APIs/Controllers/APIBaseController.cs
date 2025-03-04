@@ -5,7 +5,7 @@ namespace SmartHiring.APIs.Controllers
 {
 	[Route("api/[controller]")]
 	[ApiController]
-	public class APIsBaseController : ControllerBase
+	public class APIBaseController : ControllerBase
 	{
 	}
 }

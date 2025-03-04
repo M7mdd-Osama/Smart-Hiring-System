@@ -15,7 +15,8 @@ namespace SmartHiring.Repository.Data.Configurations
 		{
 			builder.ToTable("AgencyApplicants");
 
-			builder.HasKey(aa => new { aa.AgencyId, aa.ApplicantId });
+			builder.HasKey(aa => aa.Id );
+			builder.HasIndex(aa => new { aa.AgencyId, aa.ApplicantId }).IsUnique();
 
 			builder.HasOne(aa => aa.Agency)
 				.WithMany(a => a.AgencyApplicants)
