@@ -7,13 +7,22 @@ namespace SmartHiring.Core.Specifications
 {
     public class ApplicationSpecification : BaseSpecifications<Application>
     {
+        // 🔥 Constructor جديد لجلب جميع الطلبات
+        public ApplicationSpecification() : base(application => true)
+        {
+            AddInclude(application => application.Applicant);
+            AddInclude(application => application.Post);
+            AddInclude(application => application.Post.HR);
+            AddInclude(application => application.Agency);
+        }
+
         public ApplicationSpecification(int applicationId)
             : base(application => application.Id == applicationId)
         {
-            AddInclude(application => application.Applicant); // ✅ تحميل بيانات المتقدم
-            AddInclude(application => application.Post);      // ✅ تحميل تفاصيل الوظيفة
-            AddInclude(application => application.Post.HR);   // ✅ تحميل بيانات الـ HR
-            AddInclude(application => application.Agency);    // ✅ تحميل بيانات الـ Agency
+            AddInclude(application => application.Applicant);
+            AddInclude(application => application.Post);
+            AddInclude(application => application.Post.HR);
+            AddInclude(application => application.Agency);
         }
 
         public ApplicationSpecification(int jobId, bool byJob)
