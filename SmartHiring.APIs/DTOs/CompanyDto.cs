@@ -8,7 +8,7 @@
         public int PostCount { get; set; }
         public string BusinessEmail { get; set; } // ✅ إضافة الحقل المفقود
         public string Password { get; set; } // ✅ إضافة كلمة المرور
-        public string? HRId { get; set; } // ✅ ربط الشركة بـ HR عند الإنشاء
+
 
 
 
