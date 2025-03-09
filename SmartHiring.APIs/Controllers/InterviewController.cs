@@ -51,7 +51,7 @@ namespace SmartHiring.APIs.Controllers
                 return BadRequest("User provided is not an HR.");
 
             var spec = new InterviewWithCandidateSpecifications(interviewDto.ApplicantId, interviewDto.HRId);
-            var existingInterview = await _interviewRepository.GetByIdWithSpecAsync(spec);
+            var existingInterview = await _interviewRepository.GetByEntityWithSpecAsync(spec);
 
             if (existingInterview != null
                 && existingInterview.Date == interviewDto.Date
@@ -74,7 +74,7 @@ namespace SmartHiring.APIs.Controllers
         public async Task<ActionResult<InterviewDto>> GetInterviewById(int interviewId)
         {
             var spec = new InterviewWithCandidateSpecifications(interviewId);
-            var interview = await _interviewRepository.GetByIdWithSpecAsync(spec);
+            var interview = await _interviewRepository.GetByEntityWithSpecAsync(spec);
             if (interview == null)
                 return NotFound($"Interview with ID {interviewId} not found.");
 

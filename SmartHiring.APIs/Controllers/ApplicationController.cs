@@ -47,7 +47,7 @@ namespace SmartHiring.APIs.Controllers
         public async Task<ActionResult<ApplicationDto>> GetApplication(int applicationId)
         {
             var spec = new ApplicationSpecification(applicationId);
-            var application = await _applicationRepository.GetByIdWithSpecAsync(spec);
+            var application = await _applicationRepository.GetByEntityWithSpecAsync(spec);
             if (application == null) return NotFound(new ApiResponse(404));
 
             var mappedApplication = _mapper.Map<Application, ApplicationDto>(application);

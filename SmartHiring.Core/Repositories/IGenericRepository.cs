@@ -9,7 +9,7 @@ namespace SmartHiring.Core.Repositories
     {
         Task<T> GetByIdAsync(int id); // ✅ إضافة دالة جلب كيان حسب الـ ID
         Task<IEnumerable<T>> GetAllWithSpecAsync(ISpecifications<T> Spec);
-        Task<T> GetByIdWithSpecAsync(ISpecifications<T> Spec);
+        Task<T> GetByEntityWithSpecAsync(ISpecifications<T> Spec);
         Task UpdateAsync(T entity); // ✅ إضافة دالة تحديث كيان معين
 
         // دوال خاصة بـ Application فقط

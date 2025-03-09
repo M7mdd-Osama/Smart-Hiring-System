@@ -2,12 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartHiring.Repository.Data
 {
@@ -34,5 +29,18 @@ namespace SmartHiring.Repository.Data
 		public DbSet<ApplicantAddress> ApplicantAddresses { get; set; }
 		public DbSet<CompanyPhone> CompanyPhones { get; set; }
 		public DbSet<AgencyApplicant> AgencyApplicants { get; set; }
+
+		public DbSet<JobType> JobTypes { get; set; }
+		public DbSet<ApplicantSkill> ApplicantSkills { get; set; }
+		public DbSet<Workplace> Workplaces { get; set; }
+		public DbSet<CareerLevel> CareerLevels { get; set; }
+		public DbSet<Skill> Skills { get; set; }
+		public DbSet<JobCategory> JobCategories { get; set; }
+
+		public DbSet<PostJobType> PostJobTypes { get; set; }
+		public DbSet<PostWorkplace> PostWorkplaces { get; set; }
+		public DbSet<PostCareerLevel> PostCareerLevels { get; set; }
+		public DbSet<PostSkill> PostSkills { get; set; }
+		public DbSet<PostJobCategory> PostJobCategories { get; set; }
 	}
 }
