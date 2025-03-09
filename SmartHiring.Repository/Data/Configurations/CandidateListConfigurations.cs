@@ -21,9 +21,9 @@ namespace SmartHiring.Repository.Data.Configurations
 			builder.Property(cl => cl.GeneratedDate).IsRequired();
 			builder.Property(cl => cl.Status).IsRequired().HasMaxLength(50);
 
-			builder.HasOne(cl => cl.Company)
+			builder.HasOne(cl => cl.Manager)
 				   .WithMany()
-				   .HasForeignKey(cl => cl.CompanyId)
+				   .HasForeignKey(cl => cl.ManagerId)
 				   .OnDelete(DeleteBehavior.NoAction);
 
 			builder.HasOne(cl => cl.Post)

@@ -10,25 +10,27 @@ namespace SmartHiring.APIs.Helpers
 		{
 			CreateMap<Post, PostToReturnDto>()
 					.ForMember(d => d.CompanyName, O => O.MapFrom(S => S.HR.HRCompany.Name))
-			.ForMember(dest => dest.PostDate, opt => opt.Ignore()) // سنتحكم فيه يدويًا
-            .ForMember(dest => dest.JobStatus, opt => opt.MapFrom(src => "Open")); // تعيين قيمة افتراضية
+			.ForMember(dest => dest.PostDate, opt => opt.Ignore())
+			.ForMember(dest => dest.JobStatus, opt => opt.MapFrom(src => "Open"));
 
 
-            CreateMap<Interview, CandidateReportToReturnDto>()
+			CreateMap<Interview, CandidateReportToReturnDto>()
 				.ForMember(d => d.Name, o => o.MapFrom(s => s.Applicant.FName + " " + s.Applicant.LName))
 				.ForMember(d => d.AverageScore, o => o.MapFrom(s => s.Score))
 				.ForMember(d => d.Status, o => o.MapFrom(s => s.InterviewStatus))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));
+				.ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));
 
-            CreateMap<Interview, InterviewDto>()
-    .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Date.Date))
-    .ForMember(dest => dest.Time, opt => opt.MapFrom(src => src.Time.ToString(@"hh\:mm"))); // تحويل TimeSpan إلى hh:mm
+			CreateMap<Interview, InterviewDto>()
+				.ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Date.Date))
+				.ForMember(dest => dest.Time, opt => opt.MapFrom(src => src.Time.ToString(@"hh\:mm")));
 
-            CreateMap<InterviewDto, Interview>()
-                .ForMember(dest => dest.InterviewStatus, opt => opt.Ignore())
-                .ForMember(dest => dest.Score, opt => opt.Ignore())
-                .ForMember(dest => dest.Time, opt => opt.MapFrom(src => TimeSpan.Parse(src.Time))); // تحويل string إلى TimeSpan عند الإدخال
-
-        }
-    }
+			CreateMap<InterviewDto, Interview>()
+				.ForMember(dest => dest.InterviewStatus, opt => opt.Ignore())
+				.ForMember(dest => dest.Score, opt => opt.Ignore())
+				.ForMember(dest => dest.Time, opt => opt.MapFrom(src => TimeSpan.Parse(src.Time)));
+			CreateMap<Post, PostPaymentDto>()
+				.ForMember(dest => dest.PaymentIntentId, opt => opt.NullSubstitute(null))
+				.ForMember(dest => dest.ClientSecret, opt => opt.NullSubstitute(null));
+		}
+	}
 }

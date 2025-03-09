@@ -44,7 +44,7 @@ namespace SmartHiring.APIs.Controllers
         public async Task<ActionResult<PostToReturnDto>> GetPostById(int jobId)
         {
             var spec = new PostWithCompanySpecifications(jobId);
-            var post = await _postRepo.GetByIdWithSpecAsync(spec);
+            var post = await _postRepo.GetByEntityWithSpecAsync(spec);
             if (post == null) return NotFound(new ApiResponse(404));
 
             return Ok(_mapper.Map<PostToReturnDto>(post));

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SmartHiring.Core.Entities.Identity;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,8 +12,8 @@ namespace SmartHiring.Core.Entities
 		public DateTime GeneratedDate { get; set; }
 		public string Status { get; set; }
 
-		public int CompanyId { get; set; }
-		public Company Company { get; set; }
+		public string ManagerId { get; set; }
+		public AppUser Manager { get; set; }
 		public int PostId { get; set; }
 		public Post Post { get; set; }
 
