@@ -1,164 +1,113 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SmartHiring.APIs.DTOs;
 using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
 using SmartHiring.Core.Repositories;
-using System;
+using SmartHiring.Core.Specifications;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace SmartHiring.APIs.Controllers
 {
-	public class InterviewController : APIBaseController
-	{
-		private readonly IGenericRepository<Interview> _interviewRepository;
-		private readonly UserManager<AppUser> _hrRepository;
-		private readonly IGenericRepository<Applicant> _applicantRepository;
-		private readonly IGenericRepository<Post> _postRepository;
+    public class InterviewController : APIBaseController
+    {
+        private readonly IGenericRepository<Interview> _interviewRepository;
+        private readonly UserManager<AppUser> _userManager;
+        private readonly IGenericRepository<Applicant> _applicantRepository;
+        private readonly IGenericRepository<Post> _postRepository;
+        private readonly IMapper _mapper;
 
-		public InterviewController(
-			IGenericRepository<Interview> interviewRepository,
-			UserManager<AppUser> hrRepository,
-			IGenericRepository<Applicant> applicantRepository,
-			IGenericRepository<Post> postRepository)
-		{
-			_interviewRepository = interviewRepository;
-			_hrRepository = hrRepository;
-			_applicantRepository = applicantRepository;
-			_postRepository = postRepository;
-		}
+        public InterviewController(
+            IGenericRepository<Interview> interviewRepository,
+            UserManager<AppUser> userManager,
+            IGenericRepository<Applicant> applicantRepository,
+            IGenericRepository<Post> postRepository,
+            IMapper mapper)
+        {
+            _interviewRepository = interviewRepository;
+            _userManager = userManager;
+            _applicantRepository = applicantRepository;
+            _postRepository = postRepository;
+            _mapper = mapper;
+        }
 
-		[HttpPost]
-		public async Task<ActionResult> ScheduleInterview([FromBody] InterviewDto interviewDto)
-		{
-			if (interviewDto == null)
-				return BadRequest("Invalid interview data.");
+        [HttpPost]
+        public async Task<ActionResult<InterviewDto>> ScheduleInterview([FromBody] InterviewDto interviewDto)
+        {
+            if (interviewDto == null)
+                return BadRequest("Invalid interview data.");
 
-			if (string.IsNullOrWhiteSpace(interviewDto.HRId) || interviewDto.ApplicantId <= 0 || interviewDto.PostId <= 0)
-				return BadRequest("HRId, ApplicantId, and PostId must be valid.");
+            if (string.IsNullOrWhiteSpace(interviewDto.HRId) || interviewDto.ApplicantId <= 0 || interviewDto.PostId <= 0)
+                return BadRequest("HRId, ApplicantId, and PostId must be valid.");
 
-			if (string.IsNullOrWhiteSpace(interviewDto.Location))
-				return BadRequest("Location is required.");
+            var hr = await _userManager.FindByIdAsync(interviewDto.HRId);
+            if (hr == null)
+                return NotFound("HR not found.");
 
-			var hr = await _hrRepository.FindByIdAsync(interviewDto.HRId.ToString());
-			if (hr == null)
-				return NotFound("HR not found.");
+            if (!await _userManager.IsInRoleAsync(hr, "HR"))
+                return BadRequest("User provided is not an HR.");
 
-			var isHR = await _hrRepository.IsInRoleAsync(hr, "HR");
-			if (!isHR)
-				return BadRequest("User provided is not an HR.");
+            var spec = new InterviewWithCandidateSpecifications(interviewDto.ApplicantId, interviewDto.HRId);
+            var existingInterview = await _interviewRepository.GetByIdWithSpecAsync(spec);
 
-			var applicant = await _applicantRepository.GetByIdAsync(interviewDto.ApplicantId);
-			var post = await _postRepository.GetByIdAsync(interviewDto.PostId);
+            if (existingInterview != null
+                && existingInterview.Date == interviewDto.Date
+                && existingInterview.Time.ToString(@"hh\:mm") == interviewDto.Time)
+            {
+                return Conflict("This applicant already has an interview scheduled at the same time.");
+            }
 
-			if (applicant == null || post == null)
-				return NotFound("Applicant or Post not found.");
+            var interview = _mapper.Map<Interview>(interviewDto);
+            interview.InterviewStatus = InterviewStatus.Pending;
+            interview.Score = 0;
 
-			var existingInterview = (await _interviewRepository.GetAllAsync())
-				.FirstOrDefault(i => i.ApplicantId == interviewDto.ApplicantId && i.Date == interviewDto.Date && i.Time == interviewDto.Time);
+            await _interviewRepository.AddAsync(interview);
+            var result = _mapper.Map<InterviewDto>(interview);
 
-			if (existingInterview != null)
-				return Conflict("This applicant already has an interview scheduled at the same time.");
+            return Ok(result);
+        }
 
-			var interview = new Interview
-			{
-				Date = interviewDto.Date,
-				Time = interviewDto.Time,
-				Location = interviewDto.Location,
-				InterviewStatus = InterviewStatus.Pending,
-				Score = 0,
-				HRId = interviewDto.HRId,
-				ApplicantId = interviewDto.ApplicantId,
-				PostId = interviewDto.PostId
-			};
+        [HttpGet("{interviewId}")]
+        public async Task<ActionResult<InterviewDto>> GetInterviewById(int interviewId)
+        {
+            var spec = new InterviewWithCandidateSpecifications(interviewId);
+            var interview = await _interviewRepository.GetByIdWithSpecAsync(spec);
+            if (interview == null)
+                return NotFound($"Interview with ID {interviewId} not found.");
 
-			await _interviewRepository.AddAsync(interview);
+            return Ok(_mapper.Map<InterviewDto>(interview));
+        }
 
-			return Ok(new
-			{
-				message = "Interview scheduled successfully.",
-				interviewId = interview.Id
-			});
-		}
+        [HttpGet("job/{jobId}")]
+        public async Task<ActionResult<IEnumerable<InterviewDto>>> GetInterviewsByJobId(int jobId)
+        {
+            var spec = new InterviewWithCandidateSpecifications();
+            var interviews = await _interviewRepository.GetAllWithSpecAsync(spec);
+            var jobInterviews = interviews.Where(i => i.PostId == jobId);
 
-		[HttpGet("{interviewId}")]
-		public async Task<ActionResult<InterviewDto>> GetInterviewById(int interviewId)
-		{
-			var interview = await _interviewRepository.GetByIdAsync(interviewId);
-			if (interview == null)
-				return NotFound($"Interview with ID {interviewId} not found.");
+            if (!jobInterviews.Any())
+                return NotFound($"No interviews found for job ID {jobId}.");
 
-			var interviewDto = new InterviewDto
-			{
-				Id = interview.Id,
-				Date = interview.Date,
-				Time = interview.Time,
-				Location = interview.Location,
-				InterviewStatus = interview.InterviewStatus.ToString(),
-				Score = interview.Score,
-				HRId = interview.HRId,
-				ApplicantId = interview.ApplicantId,
-				PostId = interview.PostId
-			};
+            return Ok(_mapper.Map<IEnumerable<InterviewDto>>(jobInterviews));
+        }
 
-			return Ok(interviewDto);
-		}
+        [HttpPut("{interviewId}/result")]
+        public async Task<IActionResult> UpdateInterviewResult(int interviewId, [FromBody] int score)
+        {
+            if (score < 0 || score > 100)
+                return BadRequest("Invalid score. It should be between 0 and 100.");
 
-		[HttpGet("job/{jobId}")]
-		public async Task<ActionResult<IEnumerable<InterviewDto>>> GetInterviewsByJobId(int jobId)
-		{
-			var interviews = await _interviewRepository.GetAllAsync();
-			var jobInterviews = interviews
-				.Where(i => i.PostId == jobId)
-				.Select(i => new InterviewDto
-				{
-					Id = i.Id,
-					Date = i.Date,
-					Time = i.Time,
-					Location = i.Location,
-					InterviewStatus = i.InterviewStatus.ToString(),
-					Score = i.Score,
-					HRId = i.HRId,
-					ApplicantId = i.ApplicantId,
-					PostId = i.PostId
-				})
-				.ToList();
+            var interview = await _interviewRepository.GetByIdAsync(interviewId);
+            if (interview == null)
+                return NotFound("Interview not found.");
 
-			if (!jobInterviews.Any())
-				return NotFound($"No interviews found for job ID {jobId}.");
+            interview.Score = score;
+            await _interviewRepository.UpdateAsync(interview);
 
-			return Ok(jobInterviews);
-		}
-
-		[HttpPut("{interviewId}/result")]
-		public async Task<IActionResult> UpdateInterviewResult(int interviewId, [FromBody] int score)
-		{
-			if (score < 0 || score > 100)
-				return BadRequest("Invalid score. It should be between 0 and 100.");
-
-			var interview = await _interviewRepository.GetByIdAsync(interviewId);
-			if (interview == null)
-				return NotFound("Interview not found.");
-
-			interview.Score = score;
-			await _interviewRepository.UpdateAsync(interview);
-
-			var updatedDto = new InterviewDto
-			{
-				Id = interview.Id,
-				Date = interview.Date,
-				Time = interview.Time,
-				Location = interview.Location,
-				InterviewStatus = interview.InterviewStatus.ToString(),
-				Score = interview.Score,
-				HRId = interview.HRId,
-				ApplicantId = interview.ApplicantId,
-				PostId = interview.PostId
-			};
-
-			return Ok(updatedDto);
-		}
-	}
+            return Ok(_mapper.Map<InterviewDto>(interview));
+        }
+    }
 }
