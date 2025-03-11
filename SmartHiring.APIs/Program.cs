@@ -60,6 +60,8 @@ namespace SmartHiring.APIs
 
 			var app = builder.Build();
 
+			//builder.Services.AddScoped<IGenericRepository<Company>, GenericRepository<Company>>();
+
 
 			#region Update-Database
 

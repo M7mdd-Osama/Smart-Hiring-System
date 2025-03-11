@@ -15,11 +15,11 @@ namespace SmartHiring.Core.Specifications
 
 		public BaseSpecifications()
 		{
-
+			
 		}
 		public BaseSpecifications(Expression<Func<T, bool>> criteriaExpression)
 		{
 			Criteria = criteriaExpression;
-		}
+        }
 	}
 }

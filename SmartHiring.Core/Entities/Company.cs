@@ -9,12 +9,14 @@ namespace SmartHiring.Core.Entities
 {
 	public class Company : BaseEntity
 	{
-		public string Name { get; set; }
+        public int Id { get; set; }
+        public string Name { get; set; }
 		public string Location { get; set; }
 		public string Industry { get; set; }
 		public string BusinessEmail { get; set; }
+ 
 
-		public int AdminId { get; set; }
+        public int AdminId { get; set; }
 		public Admin Admin { get; set; }
 
 		public int ManagerId { get; set; }

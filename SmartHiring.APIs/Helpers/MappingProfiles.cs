@@ -15,6 +15,14 @@ namespace SmartHiring.APIs.Helpers
 				.ForMember(d => d.Name, o => o.MapFrom(s => s.Applicant.FName + " " + s.Applicant.LName))
 				.ForMember(d => d.AverageScore, o => o.MapFrom(s => s.Score))
 				.ForMember(d => d.Status, o => o.MapFrom(s => s.InterviewStatus));
-		}
+
+            CreateMap<Company, UserToReturnDto>()
+                    .ForMember(d => d.Admin, O => O.MapFrom(S => S.Admin.Name))
+                    .ForMember(d => d.Manager, O => O.MapFrom(S => S.Manager.Name));
+
+            CreateMap<Company, CompanyToReturnDto>(); // تحقق من أن الحقول متطابقة
+            CreateMap<CompanyCreateDto, Company>();
+            CreateMap<CompanyUpdateDto, Company>();
+        }
 	}
 }
