@@ -160,13 +160,17 @@ namespace SmartHiring.APIs.Controllers
 		}
 
 		[HttpPost("ConfirmEmail")]
-		public async Task<IActionResult> ConfirmEmail(ConfirmEmailDto model)
+		public async Task<ActionResult<UserDto>> ConfirmEmail(ConfirmEmailDto model)
 		{
-			var user = await _userManager.FindByEmailAsync(model.Email);
+			var user = await _userManager.Users
+				.Include(u => u.HRCompany)
+				.Include(u => u.ManagedCompany)
+				.FirstOrDefaultAsync(u => u.Email == model.Email);
 
 			if (user != null)
 			{
-				if (user.EmailConfirmed) return BadRequest(new ApiResponse(400, "Email already confirmed"));
+				if (user.EmailConfirmed)
+					return BadRequest(new ApiResponse(400, "Email already confirmed"));
 
 				if (user.ConfirmationCodeExpires < DateTime.UtcNow)
 					return BadRequest(new ApiResponse(400, "OTP expired"));
@@ -177,10 +181,25 @@ namespace SmartHiring.APIs.Controllers
 				user.EmailConfirmed = true;
 				user.ConfirmationCode = null;
 				user.ConfirmationCodeExpires = null;
-
 				await _userManager.UpdateAsync(user);
 
-				return Ok(new ApiResponse(200, "Success"));
+				string companyLogo = null;
+				if (await _userManager.IsInRoleAsync(user, "HR") && user.HRCompany != null)
+				{
+					companyLogo = user.HRCompany.LogoUrl;
+				}
+				else if (await _userManager.IsInRoleAsync(user, "Manager") && user.ManagedCompany != null)
+				{
+					companyLogo = user.ManagedCompany.LogoUrl;
+				}
+
+				return Ok(new
+				{
+					DisplayName = $"{user.FirstName} {user.LastName}",
+					Email = user.Email,
+					Token = await _tokenService.CreateTokenAsync(user, _userManager),
+					CompanyLogoUrl = companyLogo
+				});
 			}
 
 			var company = await _dbContext.Companies.FirstOrDefaultAsync(c => c.BusinessEmail == model.Email);
@@ -200,10 +219,9 @@ namespace SmartHiring.APIs.Controllers
 			company.EmailConfirmed = true;
 			company.ConfirmationCode = null;
 			company.ConfirmationCodeExpires = null;
-
 			await _dbContext.SaveChangesAsync();
 
-			return Ok(new ApiResponse(200, "Success"));
+			return Ok(new ApiResponse(200, "Email confirmed successfully."));
 		}
 
 		[HttpPost("ResendOTP")]
