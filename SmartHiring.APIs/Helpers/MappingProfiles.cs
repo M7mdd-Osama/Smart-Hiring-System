@@ -37,8 +37,7 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.PostCount, opt => opt.MapFrom(src => src.Posts.Count));
             
         CreateMap<Company, UserToReturnDto>()
-            .ForMember(d => d.Admin, O => O.MapFrom(S => S.Admin.Name))
-            .ForMember(d => d.Manager, O => O.MapFrom(S => S.Manager.Name));
+            .ForMember(d => d.Manager, O => O.MapFrom(S => S.Manager.DisplayName));
 
             CreateMap<Company, CompanyToReturnDto>(); // تحقق من أن الحقول متطابقة
             CreateMap<CompanyCreateDto, Company>();

@@ -12,9 +12,8 @@ using System.Threading.Tasks;
 
 namespace SmartHiring.APIs.Controllers
 {
-    [Route("api/admin")]
-    [ApiController]
-    public class AdminController : ControllerBase
+
+    public class AdminController : APIBaseController
     {
         private readonly IGenericRepository<Company> _companyRepository;
         private readonly UserManager<AppUser> _userManager;
@@ -83,7 +82,7 @@ namespace SmartHiring.APIs.Controllers
         public async Task<IActionResult> GetHRByCompanyId(int companyId)
         {
             var spec = new CompaniesWithDetailsSpecification(companyId);
-            var company = await _companyRepository.GetByIdWithSpecAsync(spec);
+            var company = await _companyRepository.GetByEntityWithSpecAsync(spec);
 
             if (company == null || company.HR == null)
                 return NotFound($"No HR found for company with ID {companyId}.");
@@ -130,7 +129,7 @@ namespace SmartHiring.APIs.Controllers
         {
             // ✅ استخدام الـ Specification لجلب الشركة والمانجر
             var spec = new CompaniesWithDetailsSpecification (companyId);
-            var company = await _companyRepository.GetByIdWithSpecAsync(spec);
+            var company = await _companyRepository.GetByEntityWithSpecAsync(spec);
 
             if (company == null || company.Manager == null)
                 return NotFound(new { message = "لم يتم العثور على المانجر لهذه الشركة" });

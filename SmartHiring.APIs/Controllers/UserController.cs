@@ -9,7 +9,7 @@ using SmartHiring.Core.Specifications;
 
 namespace SmartHiring.APIs.Controllers
 {
-    public class UserController : APIsBaseController
+    public class UserController : APIBaseController
     {
         private readonly IGenericRepository<Company> _userRepo;
         private readonly IMapper _mapper;
@@ -33,7 +33,7 @@ namespace SmartHiring.APIs.Controllers
         public async Task<ActionResult<Company>> GetUser(int id)
         {
             var spec = new CompanyWithHrandAdminSpacifications(id);
-            var user = await _userRepo.GetByIdWithSpecAsync(spec);
+            var user = await _userRepo.GetByEntityWithSpecAsync(spec);
             var MappedPosts = _mapper.Map<Company, UserToReturnDto>(user);
             if (user == null)
             {
@@ -46,7 +46,7 @@ namespace SmartHiring.APIs.Controllers
         public async Task<ActionResult> UpdateUser(int id, [FromBody] UserUpdateDto userUpdateDto)
         {
             var spec = new CompanyWithHrandAdminSpacifications(id);
-            var user = await _userRepo.GetByIdWithSpecAsync(spec);
+            var user = await _userRepo.GetByEntityWithSpecAsync(spec);
 
             if (user == null)
             {
@@ -54,8 +54,6 @@ namespace SmartHiring.APIs.Controllers
             }
 
             user.Name = userUpdateDto.Name ?? user.Name;
-            user.Location = userUpdateDto.Location ?? user.Location;
-            user.Industry = userUpdateDto.Industry ?? user.Industry;
             user.BusinessEmail = userUpdateDto.BusinessEmail ?? user.BusinessEmail;
 
             await _userRepo.UpdateAsync(user);

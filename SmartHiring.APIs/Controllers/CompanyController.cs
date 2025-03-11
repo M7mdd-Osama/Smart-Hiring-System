@@ -8,7 +8,7 @@ using SmartHiring.Core.Specifications;
 
 namespace SmartHiring.APIs.Controllers
 {
-    public class CompanyController : APIsBaseController
+    public class CompanyController : APIBaseController
     {
         private readonly IGenericRepository<Company> _companyRepo;
         private readonly IMapper _mapper;
@@ -32,7 +32,7 @@ namespace SmartHiring.APIs.Controllers
         public async Task<ActionResult<CompanyToReturnDto>> GetCompany(int companyId)
         {
             var spec = new CompanySpecifications(companyId);
-            var company = await _companyRepo.GetByIdWithSpecAsync(spec);
+            var company = await _companyRepo.GetByEntityWithSpecAsync(spec);
             if (company == null) return NotFound();
 
             var mappedCompany = _mapper.Map<Company, CompanyToReturnDto>(company);
@@ -57,7 +57,7 @@ namespace SmartHiring.APIs.Controllers
         public async Task<IActionResult> UpdateCompany(int companyId, [FromBody] CompanyUpdateDto companyDto)
         {
             var spec = new CompanySpecifications(companyId);
-            var company = await _companyRepo.GetByIdWithSpecAsync(spec);
+            var company = await _companyRepo.GetByEntityWithSpecAsync(spec);
 
             if (company == null) return NotFound();
 

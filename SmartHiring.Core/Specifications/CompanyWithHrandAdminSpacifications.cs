@@ -11,12 +11,10 @@ namespace SmartHiring.Core.Specifications
     {
         public CompanyWithHrandAdminSpacifications():base()
         {
-            Includes.Add(c => c.Admin);
             Includes.Add(c => c.Manager);
         }
         public CompanyWithHrandAdminSpacifications(int id) : base(c => c.Id == id)
         {
-            Includes.Add(c => c.Admin);
             Includes.Add(c => c.Manager);
         }
 
