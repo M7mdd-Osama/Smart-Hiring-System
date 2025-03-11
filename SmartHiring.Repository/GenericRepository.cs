@@ -28,7 +28,7 @@ namespace SmartHiring.Repository
             return await ApplySpecification(Spec).ToListAsync();
         }
 
-        public async Task<T> GetByIdWithSpecAsync(ISpecifications<T> Spec)
+        public async Task<T> GetByEntityWithSpecAsync(ISpecifications<T> Spec)
         {
             return await ApplySpecification(Spec).FirstOrDefaultAsync();
         }

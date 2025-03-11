@@ -12,8 +12,7 @@ namespace SmartHiring.Core.Entities
 		public string LName { get; set; }
 		public string Email { get; set; }
 		public DateTime DateOfBirth { get; set; }
-		public string Skills { get; set; }
-
+		public ICollection<ApplicantSkill> ApplicantSkills { get; set; } = new HashSet<ApplicantSkill>();
 		public ICollection<ApplicantPhone> ApplicantPhones { get; set; } = new HashSet<ApplicantPhone>();
 		public ICollection<ApplicantAddress> ApplicantAddresses { get; set; } = new HashSet<ApplicantAddress>();
 		public ICollection<Application> Applications { get; set; } = new HashSet<Application>();

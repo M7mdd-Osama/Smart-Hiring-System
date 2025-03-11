@@ -206,11 +206,6 @@ namespace SmartHiring.Repository.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Skills")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.HasKey("Id");
 
                     b.ToTable("Applicants", (string)null);
@@ -251,6 +246,21 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.HasKey("ApplicantId", "Phone");
 
                     b.ToTable("Applicant_Phones", (string)null);
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.ApplicantSkill", b =>
+                {
+                    b.Property<int>("ApplicantId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SkillId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ApplicantId", "SkillId");
+
+                    b.HasIndex("SkillId");
+
+                    b.ToTable("ApplicantSkills");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Application", b =>
@@ -304,11 +314,12 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("GeneratedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("ManagerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("PostId")
                         .HasColumnType("int");
@@ -320,7 +331,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CompanyId");
+                    b.HasIndex("ManagerId");
 
                     b.HasIndex("PostId");
 
@@ -340,6 +351,23 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.HasIndex("ApplicantId");
 
                     b.ToTable("CandidateListApplicants", (string)null);
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.CareerLevel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<string>("LevelName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CareerLevels");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Company", b =>
@@ -572,6 +600,40 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.ToTable("Interviews", (string)null);
                 });
 
+            modelBuilder.Entity("SmartHiring.Core.Entities.JobCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("JobCategories");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.JobType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<string>("TypeName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("JobTypes");
+                });
+
             modelBuilder.Entity("SmartHiring.Core.Entities.Post", b =>
                 {
                     b.Property<int>("Id")
@@ -580,8 +642,23 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClientSecret")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("CompanyId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("Deadline")
                         .HasColumnType("datetime2");
@@ -594,18 +671,36 @@ namespace SmartHiring.Repository.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<decimal>("JobSalary")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<bool>("HideSalary")
+                        .HasColumnType("bit");
 
                     b.Property<string>("JobStatus")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("JobTitle")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("MaxExperience")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("MaxSalary")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("MinExperience")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("MinSalary")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PaymentIntentId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("PostDate")
                         .HasColumnType("datetime2");
@@ -621,6 +716,115 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.HasIndex("HRId");
 
                     b.ToTable("Posts", (string)null);
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.PostCareerLevel", b =>
+                {
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CareerLevelId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PostId", "CareerLevelId");
+
+                    b.HasIndex("CareerLevelId");
+
+                    b.ToTable("PostCareerLevels");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.PostJobCategory", b =>
+                {
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("JobCategoryId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PostId", "JobCategoryId");
+
+                    b.HasIndex("JobCategoryId");
+
+                    b.ToTable("PostJobCategories");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.PostJobType", b =>
+                {
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("JobTypeId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PostId", "JobTypeId");
+
+                    b.HasIndex("JobTypeId");
+
+                    b.ToTable("PostJobTypes");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.PostSkill", b =>
+                {
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SkillId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PostId", "SkillId");
+
+                    b.HasIndex("SkillId");
+
+                    b.ToTable("PostSkills");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.PostWorkplace", b =>
+                {
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WorkplaceId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PostId", "WorkplaceId");
+
+                    b.HasIndex("WorkplaceId");
+
+                    b.ToTable("PostWorkplaces");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.Skill", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<string>("SkillName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Skills");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.Workplace", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<string>("WorkplaceType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Workplaces");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -715,6 +919,25 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.Navigation("Applicant");
                 });
 
+            modelBuilder.Entity("SmartHiring.Core.Entities.ApplicantSkill", b =>
+                {
+                    b.HasOne("SmartHiring.Core.Entities.Applicant", "Applicant")
+                        .WithMany("ApplicantSkills")
+                        .HasForeignKey("ApplicantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartHiring.Core.Entities.Skill", "Skill")
+                        .WithMany("ApplicantSkills")
+                        .HasForeignKey("SkillId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Applicant");
+
+                    b.Navigation("Skill");
+                });
+
             modelBuilder.Entity("SmartHiring.Core.Entities.Application", b =>
                 {
                     b.HasOne("SmartHiring.Core.Entities.Identity.AppUser", "Agency")
@@ -744,9 +967,9 @@ namespace SmartHiring.Repository.Data.Migrations
 
             modelBuilder.Entity("SmartHiring.Core.Entities.CandidateList", b =>
                 {
-                    b.HasOne("SmartHiring.Core.Entities.Company", "Company")
+                    b.HasOne("SmartHiring.Core.Entities.Identity.AppUser", "Manager")
                         .WithMany()
-                        .HasForeignKey("CompanyId")
+                        .HasForeignKey("ManagerId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
@@ -756,7 +979,7 @@ namespace SmartHiring.Repository.Data.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("Company");
+                    b.Navigation("Manager");
 
                     b.Navigation("Post");
                 });
@@ -861,11 +1084,108 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.Navigation("HR");
                 });
 
+            modelBuilder.Entity("SmartHiring.Core.Entities.PostCareerLevel", b =>
+                {
+                    b.HasOne("SmartHiring.Core.Entities.CareerLevel", "CareerLevel")
+                        .WithMany("PostCareerLevels")
+                        .HasForeignKey("CareerLevelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartHiring.Core.Entities.Post", "Post")
+                        .WithMany("PostCareerLevels")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CareerLevel");
+
+                    b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.PostJobCategory", b =>
+                {
+                    b.HasOne("SmartHiring.Core.Entities.JobCategory", "JobCategory")
+                        .WithMany("PostJobCategories")
+                        .HasForeignKey("JobCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartHiring.Core.Entities.Post", "Post")
+                        .WithMany("PostJobCategories")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JobCategory");
+
+                    b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.PostJobType", b =>
+                {
+                    b.HasOne("SmartHiring.Core.Entities.JobType", "JobType")
+                        .WithMany("PostJobTypes")
+                        .HasForeignKey("JobTypeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("SmartHiring.Core.Entities.Post", "Post")
+                        .WithMany("PostJobTypes")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JobType");
+
+                    b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.PostSkill", b =>
+                {
+                    b.HasOne("SmartHiring.Core.Entities.Post", "Post")
+                        .WithMany("PostSkills")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartHiring.Core.Entities.Skill", "Skill")
+                        .WithMany("PostSkills")
+                        .HasForeignKey("SkillId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+
+                    b.Navigation("Skill");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.PostWorkplace", b =>
+                {
+                    b.HasOne("SmartHiring.Core.Entities.Post", "Post")
+                        .WithMany("PostWorkplaces")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartHiring.Core.Entities.Workplace", "Workplace")
+                        .WithMany("PostWorkplaces")
+                        .HasForeignKey("WorkplaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+
+                    b.Navigation("Workplace");
+                });
+
             modelBuilder.Entity("SmartHiring.Core.Entities.Applicant", b =>
                 {
                     b.Navigation("ApplicantAddresses");
 
                     b.Navigation("ApplicantPhones");
+
+                    b.Navigation("ApplicantSkills");
 
                     b.Navigation("Applications");
 
@@ -875,6 +1195,11 @@ namespace SmartHiring.Repository.Data.Migrations
             modelBuilder.Entity("SmartHiring.Core.Entities.CandidateList", b =>
                 {
                     b.Navigation("CandidateListApplicants");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.CareerLevel", b =>
+                {
+                    b.Navigation("PostCareerLevels");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Company", b =>
@@ -902,11 +1227,43 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.Navigation("Posts");
                 });
 
+            modelBuilder.Entity("SmartHiring.Core.Entities.JobCategory", b =>
+                {
+                    b.Navigation("PostJobCategories");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.JobType", b =>
+                {
+                    b.Navigation("PostJobTypes");
+                });
+
             modelBuilder.Entity("SmartHiring.Core.Entities.Post", b =>
                 {
                     b.Navigation("Applications");
 
                     b.Navigation("CandidateLists");
+
+                    b.Navigation("PostCareerLevels");
+
+                    b.Navigation("PostJobCategories");
+
+                    b.Navigation("PostJobTypes");
+
+                    b.Navigation("PostSkills");
+
+                    b.Navigation("PostWorkplaces");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.Skill", b =>
+                {
+                    b.Navigation("ApplicantSkills");
+
+                    b.Navigation("PostSkills");
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.Workplace", b =>
+                {
+                    b.Navigation("PostWorkplaces");
                 });
 #pragma warning restore 612, 618
         }

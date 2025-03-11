@@ -69,6 +69,10 @@ public class MappingProfiles : Profile
     .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))
     .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
     .ForMember(dest => dest.Address, opt => opt.MapFrom(src =>
-        src.Address != null ? $"{src.Address.City}, {src.Address.Country}" : "N/A")); // ✅ تحويل Address لكلام مفهوم
+        src.Address != null ? $"{src.Address.City}, {src.Address.Country}" : "N/A"));
+        
+        CreateMap<Post, PostPaymentDto>()
+				.ForMember(dest => dest.PaymentIntentId, opt => opt.NullSubstitute(null))
+				.ForMember(dest => dest.ClientSecret, opt => opt.NullSubstitute(null));
     }
 }

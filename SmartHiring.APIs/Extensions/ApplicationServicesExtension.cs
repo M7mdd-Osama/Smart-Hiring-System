@@ -1,8 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using SmartHiring.APIs.Errors;
 using SmartHiring.APIs.Helpers;
+using SmartHiring.Core.Entities;
 using SmartHiring.Core.Repositories;
+using SmartHiring.Core.Services;
 using SmartHiring.Repository;
+using SmartHiring.Service;
 
 namespace SmartHiring.APIs.Extensions
 {
@@ -31,6 +35,11 @@ namespace SmartHiring.APIs.Extensions
 					return new BadRequestObjectResult(ValidationErrorResponse);
 				};
 			});
+
+			Services.AddScoped<IPasswordHasher<Company>, PasswordHasher<Company>>();
+			Services.AddTransient<ImailSettings, EmailSettings>(); // Send Email by mailKit and mimeKit
+			Services.AddScoped<IPaymentService,PaymentService>();
+
 
 			#endregion
 
