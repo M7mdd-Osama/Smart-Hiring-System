@@ -42,28 +42,9 @@ namespace SmartHiring.APIs
 
 			builder.Services.AddApplicationServices();
 			builder.Services.AddIdentityServices(builder.Configuration);
-			builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-			builder.Services.AddAutoMapper(typeof(MappingProfiles));
 
-			builder.Services.Configure<ApiBehaviorOptions>(Options =>
-			{
-				Options.InvalidModelStateResponseFactory = (actionContext) =>
-				{
-					var errors = actionContext.ModelState.Where(P => P.Value.Errors.Count() > 0)
-											  .SelectMany(P => P.Value.Errors)
-											  .Select(E => E.ErrorMessage)
-											  .ToArray();
-					var ValidationErrorResponse = new ApiValidationErrorResponse()
-					{
-						Errors = errors
-					};
-					return new BadRequestObjectResult(ValidationErrorResponse);
-				};
-			});
 
 			builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
-			builder.Services.AddTransient<ImailSettings, EmailSettings>(); // Send Email by mailKit and mimeKit
-			builder.Services.AddScoped<IPasswordHasher<Company>, PasswordHasher<Company>>();
 
 
 			builder.Services.AddCors(Options =>
