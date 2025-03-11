@@ -35,11 +35,18 @@ namespace SmartHiring.APIs.Controllers
         [ProducesResponseType(typeof(IEnumerable<ApplicationDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<ApplicationDto>>> GetApplications()
         {
-            var spec = new ApplicationSpecification(0); // جلب كل الطلبات
+            var spec = new ApplicationSpecification(); // ✅ استخدم Constructor الجديد لجلب كل الطلبات
             var applications = await _applicationRepository.GetAllWithSpecAsync(spec);
+
+            if (!applications.Any()) // ✅ تحقق إذا لم تكن هناك أي بيانات
+            {
+                return NotFound(new { message = "No applications found." });
+            }
+
             var mappedApplications = _mapper.Map<IEnumerable<Application>, IEnumerable<ApplicationDto>>(applications);
             return Ok(mappedApplications);
         }
+
 
         [HttpGet("{applicationId}")]
         [ProducesResponseType(typeof(ApplicationDto), StatusCodes.Status200OK)]

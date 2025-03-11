@@ -10,5 +10,10 @@
         public int ApplicantId { get; set; }
         public int PostId { get; set; }
         public string? AgencyId { get; set; }
+
+        // ✅ الحقول الإضافية لتسهيل عرض البيانات في الـ DTO
+        public string ApplicantName { get; set; } // اسم المتقدم
+        public string JobTitle { get; set; } // عنوان الوظيفة
+        public string AgencyName { get; set; } // اسم الوكالة (Agency)
     }
 }
