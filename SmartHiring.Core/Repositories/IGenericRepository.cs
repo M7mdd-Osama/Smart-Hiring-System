@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace SmartHiring.Core.Repositories
 {
+
     public interface IGenericRepository<T> where T : BaseEntity
     {
         Task<T> GetByIdAsync(int id); // ✅ إضافة دالة جلب كيان حسب الـ ID
@@ -19,5 +20,6 @@ namespace SmartHiring.Core.Repositories
         Task AddAsync(T entity); // ✅ تأكد من وجود هذه الميثود
         Task DeleteAsync(T entity);
         Task SaveChangesAsync();
+
     }
 }

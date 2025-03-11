@@ -61,6 +61,7 @@ namespace SmartHiring.APIs
 
 			var app = builder.Build();
 
+
 			#region Update-Database
 
 			using var Scope = app.Services.CreateScope();

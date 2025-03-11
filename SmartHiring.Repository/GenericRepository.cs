@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace SmartHiring.Repository
 {
+
     public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
     {
         private readonly SmartHiringDbContext _dbContext;
@@ -18,10 +19,12 @@ namespace SmartHiring.Repository
             _dbContext = dbContext;
         }
 
+
         public async Task<T> GetByIdAsync(int id)
         {
             return await _dbContext.Set<T>().FindAsync(id);
         }
+
 
         public async Task<IEnumerable<T>> GetAllWithSpecAsync(ISpecifications<T> Spec)
         {
@@ -31,6 +34,7 @@ namespace SmartHiring.Repository
         public async Task<T> GetByEntityWithSpecAsync(ISpecifications<T> Spec)
         {
             return await ApplySpecification(Spec).FirstOrDefaultAsync();
+
         }
 
         public async Task UpdateAsync(T entity)
@@ -38,6 +42,7 @@ namespace SmartHiring.Repository
             _dbContext.Set<T>().Update(entity);
             await _dbContext.SaveChangesAsync();
         }
+
 
         public async Task<IEnumerable<Application>> GetApplicationsByJobIdAsync(int jobId)
         {
@@ -97,3 +102,4 @@ namespace SmartHiring.Repository
 
     }
 }
+

@@ -21,5 +21,6 @@ namespace SmartHiring.Core.Specifications
 		{
 			Includes.Add(includeExpression);
 		}
+
 	}
 }

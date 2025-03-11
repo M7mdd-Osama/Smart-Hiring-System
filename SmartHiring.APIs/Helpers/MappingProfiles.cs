@@ -5,6 +5,7 @@ using SmartHiring.Core.Entities.Identity;
 
 public class MappingProfiles : Profile
 {
+
     public MappingProfiles()
     {
         CreateMap<Post, PostToReturnDto>()
@@ -34,7 +35,15 @@ public class MappingProfiles : Profile
         CreateMap<Company, CompanyDto>()
             .ForMember(dest => dest.HRCount, opt => opt.MapFrom(src => src.HR != null ? 1 : 0))
             .ForMember(dest => dest.PostCount, opt => opt.MapFrom(src => src.Posts.Count));
+            
+        CreateMap<Company, UserToReturnDto>()
+            .ForMember(d => d.Admin, O => O.MapFrom(S => S.Admin.Name))
+            .ForMember(d => d.Manager, O => O.MapFrom(S => S.Manager.Name));
 
+            CreateMap<Company, CompanyToReturnDto>(); // تحقق من أن الحقول متطابقة
+            CreateMap<CompanyCreateDto, Company>();
+            CreateMap<CompanyUpdateDto, Company>();
+            
         CreateMap<CompanyDto, Company>()
             .ForMember(dest => dest.HR, opt => opt.Ignore())
             .ForMember(dest => dest.Posts, opt => opt.Ignore())
@@ -76,3 +85,4 @@ public class MappingProfiles : Profile
 				.ForMember(dest => dest.ClientSecret, opt => opt.NullSubstitute(null));
     }
 }
+

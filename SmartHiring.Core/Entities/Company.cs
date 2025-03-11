@@ -1,4 +1,4 @@
-﻿using SmartHiring.Core.Entities;
+using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
 using System;
 using System.Collections.Generic;
