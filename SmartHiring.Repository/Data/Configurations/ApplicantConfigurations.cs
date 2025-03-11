@@ -33,9 +33,6 @@ namespace SmartHiring.Repository.Data.Configurations
 				.IsRequired()
 				.HasColumnType("date");
 
-			builder.Property(a => a.Skills)
-				.HasMaxLength(500);
-
 			builder.HasMany(a => a.ApplicantPhones)
 				.WithOne()
 				.HasForeignKey(p => p.ApplicantId);

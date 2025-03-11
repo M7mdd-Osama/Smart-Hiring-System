@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SmartHiring.Core.Entities.Identity;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -21,9 +22,8 @@ namespace SmartHiring.Core.Entities
 		public int PostId { get; set; }
 		public Post Post { get; set; }
 
-		public int? AgencyId { get; set; }
-		public Agency? Agency { get; set; }
-
-
+		public string AgencyId { get; set; }
+		[ForeignKey("AgencyId")]
+		public AppUser Agency { get; set; }
 	}
 }

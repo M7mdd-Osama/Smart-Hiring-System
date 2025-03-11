@@ -1,9 +1,15 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartHiring.APIs.Errors;
+using SmartHiring.APIs.Extensions;
 using SmartHiring.APIs.Helpers;
 using SmartHiring.APIs.Middlewares;
+using SmartHiring.APIs.Settings;
 using SmartHiring.Core.Entities;
+using SmartHiring.Core.Entities.Identity;
 using SmartHiring.Core.Repositories;
 using SmartHiring.Repository;
 using SmartHiring.Repository.Data;
@@ -14,36 +20,32 @@ namespace SmartHiring.APIs
 	{
 		public static async Task Main(string[] args)
 		{
+			
 			var builder = WebApplication.CreateBuilder(args);
 
 			#region Configure Services - Add services to the container.
 
-			builder.Services.AddControllers();
+			builder.Services.AddControllers()
+			 .AddJsonOptions(options =>
+			 {
+				 options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+				 options.JsonSerializerOptions.WriteIndented = true;
+				 options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+			 });
+
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen();
-			builder.Services.AddDbContext<SmartHiringContext>(Options =>
+			builder.Services.AddDbContext<SmartHiringDbContext>(Options =>
 			{
 				Options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 			});
-			builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
-			builder.Services.AddAutoMapper(typeof(MappingProfiles));
+			builder.Services.AddApplicationServices();
+			builder.Services.AddIdentityServices(builder.Configuration);
 
-			builder.Services.Configure<ApiBehaviorOptions>(Options =>
-			{
-				Options.InvalidModelStateResponseFactory = (actionContext) =>
-				{
-					var errors = actionContext.ModelState.Where(P => P.Value.Errors.Count() > 0)
-											  .SelectMany(P => P.Value.Errors)
-											  .Select(E => E.ErrorMessage)
-											  .ToArray();
-					var ValidationErrorResponse = new ApiValidationErrorResponse()
-					{
-						Errors = errors
-					};
-					return new BadRequestObjectResult(ValidationErrorResponse);
-				};
-			});
+
+			builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
+
 
 			builder.Services.AddCors(Options =>
 			{
@@ -54,13 +56,10 @@ namespace SmartHiring.APIs
 					options.AllowAnyOrigin();
 				});
 			});
-			
+
 			#endregion
 
-
 			var app = builder.Build();
-
-			//builder.Services.AddScoped<IGenericRepository<Company>, GenericRepository<Company>>();
 
 
 			#region Update-Database
@@ -71,14 +70,18 @@ namespace SmartHiring.APIs
 			var LoggerFactory = Services.GetRequiredService<ILoggerFactory>();
 			try
 			{
-				var dbContext = Services.GetRequiredService<SmartHiringContext>();
+				var dbContext = Services.GetRequiredService<SmartHiringDbContext>();
 				await dbContext.Database.MigrateAsync();
-				await SmartHiringContextSeed.SeedAsync(dbContext);
+
+				var UserManager = Services.GetRequiredService<UserManager<AppUser>>();
+				var RoleManager = Services.GetRequiredService<RoleManager<IdentityRole>>();
+				await AppIdentitySmartHiringContextSeed.SeedUserAsync(UserManager, RoleManager);
+				//await SmartHiringContextSeed.SeedAsync(dbContext);
 			}
 			catch (Exception ex)
 			{
 				var Logger = LoggerFactory.CreateLogger<Program>();
-				Logger.LogError(ex, "An Error Occured During Appling The Migration");
+				Logger.LogError(ex, "An Error Occurred During Applying The Migration");
 			}
 
 			#endregion
@@ -88,23 +91,19 @@ namespace SmartHiring.APIs
 			app.UseMiddleware<ExceptionMiddleware>();
 			if (app.Environment.IsDevelopment())
 			{
-				app.UseSwagger();
-				app.UseSwaggerUI();
+				app.UseSwaggerMiddlewares();
 			}
 			app.UseStatusCodePagesWithReExecute("/errors/{0}");
 			app.UseHttpsRedirection();
-
-			app.UseStaticFiles(); // CVs
+			app.UseStaticFiles();
 			app.UseCors("MyPolicy");
 
+			app.UseAuthentication();
 			app.UseAuthorization();
-
 
 			app.MapControllers();
 
 			#endregion
-
-
 
 			app.Run();
 		}

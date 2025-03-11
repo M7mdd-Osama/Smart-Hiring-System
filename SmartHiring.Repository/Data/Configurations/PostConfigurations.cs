@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reflection.Emit;
 
 namespace SmartHiring.Repository.Data.Configurations
 {
@@ -33,8 +34,12 @@ namespace SmartHiring.Repository.Data.Configurations
 			builder.Property(p => p.Deadline)
 				.IsRequired();
 
-			builder.Property(p => p.JobSalary)
-				.HasColumnType("decimal(18,2)");
+
+			builder.Property(p => p.MinSalary)
+			.HasColumnType("decimal(18,2)");
+
+			builder.Property(p => p.MaxSalary)
+			.HasColumnType("decimal(18,2)");
 
 			builder.HasOne(p => p.HR)
 				.WithMany(h => h.Posts)

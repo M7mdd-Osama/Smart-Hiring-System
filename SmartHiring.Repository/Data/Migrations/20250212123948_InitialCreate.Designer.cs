@@ -11,7 +11,7 @@ using SmartHiring.Repository.Data;
 
 namespace SmartHiring.Repository.Data.Migrations
 {
-    [DbContext(typeof(SmartHiringContext))]
+    [DbContext(typeof(SmartHiringDbContext))]
     [Migration("20250212123948_InitialCreate")]
     partial class InitialCreate
     {
