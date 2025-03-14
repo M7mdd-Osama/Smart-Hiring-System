@@ -39,8 +39,7 @@ namespace SmartHiring.APIs.Extensions
 			Services.AddScoped<IPasswordHasher<Company>, PasswordHasher<Company>>();
 			Services.AddTransient<ImailSettings, EmailSettings>(); // Send Email by mailKit and mimeKit
 			Services.AddScoped<IPaymentService,PaymentService>();
-
-
+			Services.AddScoped(typeof(PictureUrlResolver<,>));
 			#endregion
 
 			return Services;

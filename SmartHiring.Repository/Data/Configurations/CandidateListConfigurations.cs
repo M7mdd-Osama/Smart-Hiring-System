@@ -1,11 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using SmartHiring.Core.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartHiring.Repository.Data.Configurations
 {
@@ -29,8 +24,7 @@ namespace SmartHiring.Repository.Data.Configurations
 			builder.HasOne(cl => cl.Post)
 				   .WithMany(p => p.CandidateLists)
 				   .HasForeignKey(cl => cl.PostId)
-				   .OnDelete(DeleteBehavior.NoAction);
-
+				   .OnDelete(DeleteBehavior.Cascade);
 		}
 	}
 }

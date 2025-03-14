@@ -10,12 +10,14 @@ namespace SmartHiring.APIs.Helpers
 {
 	public class EmailSettings : ImailSettings
 	{
-		private MailSettings _options;
+		private readonly MailSettings _options;
+
 		public EmailSettings(IOptions<MailSettings> options)
 		{
 			_options = options.Value;
 		}
-		public void SendMail(Email email)
+
+		public async Task SendMail(Email email)
 		{
 			var mail = new MimeMessage
 			{
@@ -36,12 +38,10 @@ namespace SmartHiring.APIs.Helpers
 
 			using var smtp = new SmtpClient();
 
-			smtp.Connect(_options.Host, _options.Port, SecureSocketOptions.StartTls);
-
-			smtp.Authenticate(_options.Email, _options.Password);
-			smtp.Send(mail);
-
-			smtp.Disconnect(true);
+			await smtp.ConnectAsync(_options.Host, _options.Port, SecureSocketOptions.StartTls);
+			await smtp.AuthenticateAsync(_options.Email, _options.Password);
+			await smtp.SendAsync(mail);
+			await smtp.DisconnectAsync(true);
 		}
 	}
 }

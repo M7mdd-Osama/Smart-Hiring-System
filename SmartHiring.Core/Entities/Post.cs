@@ -1,11 +1,5 @@
 ﻿using SmartHiring.Core.Entities.Identity;
-using Stripe.Terminal;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartHiring.Core.Entities
 {
@@ -29,6 +23,9 @@ namespace SmartHiring.Core.Entities
 		public string HRId { get; set; }
 		[ForeignKey("HRId")]
 		public AppUser HR { get; set; }
+		public int CompanyId { get; set; } = 4;
+		[ForeignKey("CompanyId")]
+		public Company Company { get; set; }
 
 		public ICollection<PostJobCategory> PostJobCategories { get; set; } = new HashSet<PostJobCategory>();
 		public ICollection<PostJobType> PostJobTypes { get; set; } = new HashSet<PostJobType>();

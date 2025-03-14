@@ -1,11 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using SmartHiring.Core.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartHiring.Repository.Data.Configurations
 {
@@ -32,17 +27,17 @@ namespace SmartHiring.Repository.Data.Configurations
 			builder.HasOne(c => c.Manager)
 				.WithOne(a => a.ManagedCompany)
 				.HasForeignKey<Company>(c => c.ManagerId)
-				.OnDelete(DeleteBehavior.Cascade);
+				.OnDelete(DeleteBehavior.NoAction);
 
 			builder.HasOne(c => c.HR)
 				.WithOne(h => h.HRCompany)
 				.HasForeignKey<Company>(h => h.HRId)
 				.OnDelete(DeleteBehavior.NoAction);
 
-
 			builder.HasMany(c => c.CompanyPhones)
 				.WithOne()
-				.HasForeignKey(p => p.CompanyId);
+				.HasForeignKey(p => p.CompanyId)
+				.OnDelete(DeleteBehavior.Cascade);
 		}
 	}
 }

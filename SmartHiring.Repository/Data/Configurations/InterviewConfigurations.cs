@@ -1,11 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using SmartHiring.Core.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartHiring.Repository.Data.Configurations
 {
@@ -19,7 +14,7 @@ namespace SmartHiring.Repository.Data.Configurations
 
 			builder.Property(i => i.Date)
 				.IsRequired()
-				.HasColumnType("date"); 
+				.HasColumnType("date");
 
 			builder.Property(i => i.Time)
 				.IsRequired()
@@ -40,7 +35,7 @@ namespace SmartHiring.Repository.Data.Configurations
 			builder.HasOne(i => i.HR)
 				.WithMany(h => h.Interviews)
 				.HasForeignKey(i => i.HRId)
-				.OnDelete(DeleteBehavior.NoAction);
+				.OnDelete(DeleteBehavior.Cascade);
 
 			builder.HasOne(i => i.Post)
 				.WithMany()

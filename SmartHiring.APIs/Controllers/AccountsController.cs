@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartHiring.APIs.DTOs;
@@ -67,7 +68,7 @@ namespace SmartHiring.APIs.Controllers
 				Password = _passwordHasher.HashPassword(null, model.Password),
 				LogoUrl = logoPath,
 				EmailConfirmed = false,
-				ConfirmationCode = GenerateOTP(),
+				ConfirmationCode = AuthHelper.GenerateOTP(),
 				ConfirmationCodeExpires = DateTime.UtcNow.AddMinutes(10)
 			};
 
@@ -83,12 +84,12 @@ namespace SmartHiring.APIs.Controllers
 			_dbContext.CompanyPhones.Add(companyPhone);
 			await _dbContext.SaveChangesAsync();
 
-			await SendConfirmationEmail(company.BusinessEmail, company.ConfirmationCode);
+			await AuthHelper.SendConfirmationEmail(_mailSettings, company.BusinessEmail, company.ConfirmationCode);
 
 			return Ok(new ApiResponse(200, "Company registered successfully. Please confirm your email."));
 		}
 
-		[HttpPost("Register")]
+		[HttpPost("RegisterUsers")]
 		public async Task<ActionResult<UserDto>> Register(RegisterDto model)
 		{
 			if (model.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
@@ -112,7 +113,7 @@ namespace SmartHiring.APIs.Controllers
 				UserName = model.Email.Split('@')[0],
 				PhoneNumber = model.PhoneNumber,
 				EmailConfirmed = false,
-				ConfirmationCode = GenerateOTP(),
+				ConfirmationCode = AuthHelper.GenerateOTP(),
 				ConfirmationCodeExpires = DateTime.UtcNow.AddMinutes(10)
 			};
 
@@ -154,7 +155,7 @@ namespace SmartHiring.APIs.Controllers
 			await _userManager.AddToRoleAsync(user, model.Role);
 			await _dbContext.SaveChangesAsync();
 
-			await SendConfirmationEmail(user.Email, user.ConfirmationCode);
+			await AuthHelper.SendConfirmationEmail(_mailSettings, user.Email, user.ConfirmationCode);
 
 			return Ok(new ApiResponse(200, "User registered successfully. Please confirm your email."));
 		}
@@ -231,37 +232,14 @@ namespace SmartHiring.APIs.Controllers
 			if (user == null || user.EmailConfirmed)
 				return NotFound(new ApiResponse(404, "Not found or already confirmed"));
 
-			var otp = GenerateOTP();
+			var otp = AuthHelper.GenerateOTP();
 			user.ConfirmationCode = otp;
 			user.ConfirmationCodeExpires = DateTime.UtcNow.AddMinutes(10);
 
 			await _userManager.UpdateAsync(user);
-			await SendConfirmationEmail(user.Email, otp);
+			await AuthHelper.SendConfirmationEmail(_mailSettings, user.Email, otp);
 
 			return Ok(new ApiResponse(200, "New OTP has been sent"));
-		}
-
-		private string GenerateOTP()
-		{
-			var bytes = new byte[4];
-			using (var rng = RandomNumberGenerator.Create())
-			{
-				rng.GetBytes(bytes);
-			}
-
-			int otp = Math.Abs(BitConverter.ToInt32(bytes, 0)) % 1000000;
-			return otp.ToString("D6");
-		}
-		private async Task SendConfirmationEmail(string email, string otp)
-		{
-			var emailMessage = new Email
-			{
-				To = email,
-				Subject = "Email Confirmation - Smart Hiring System",
-				Body = $"Your OTP for email confirmation is: {otp}"
-			};
-
-			_mailSettings.SendMail(emailMessage);
 		}
 
 		#endregion
@@ -273,7 +251,7 @@ namespace SmartHiring.APIs.Controllers
 		{
 			var user = await _userManager.Users
 				.Include(u => u.HRCompany)
-				.Include(u => u.ManagedCompany) 
+				.Include(u => u.ManagedCompany)
 				.FirstOrDefaultAsync(u => u.Email == model.Email);
 
 			if (user == null)
@@ -317,12 +295,12 @@ namespace SmartHiring.APIs.Controllers
 			if (user == null)
 				return BadRequest(new ApiResponse(400, "User not found"));
 
-			var otp = GenerateOTP();
+			var otp = AuthHelper.GenerateOTP();
 			user.ConfirmationCode = otp;
 			user.ConfirmationCodeExpires = DateTime.UtcNow.AddMinutes(10);
 
 			await _userManager.UpdateAsync(user);
-			await SendConfirmationEmail(user.Email, otp);
+			await AuthHelper.SendConfirmationEmail(_mailSettings, user.Email, otp);
 
 			return Ok(new ApiResponse(200, "OTP has been sent to your email."));
 		}
@@ -354,6 +332,16 @@ namespace SmartHiring.APIs.Controllers
 			return Ok(new ApiResponse(200, "Password has been reset successfully."));
 		}
 
+		#endregion
+
+		#region Logout
+		[Authorize]
+		[HttpPost("Logout")]
+		public async Task<IActionResult> Logout()
+		{
+			await _signInManager.SignOutAsync();
+			return Ok(new ApiResponse(200, "Logged out successfully."));
+		}
 		#endregion
 
 	}
