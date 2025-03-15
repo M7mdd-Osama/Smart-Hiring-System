@@ -18,7 +18,7 @@ namespace SmartHiring.APIs.Controllers
             _companyRepo = CompanyRepo;
             _mapper = mapper;
         }
-        //------------------------------------------------------------------------------------------
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CompanyToReturnDto>>> GetCompanies()
         {
@@ -27,7 +27,7 @@ namespace SmartHiring.APIs.Controllers
             var mappedCompanies = _mapper.Map<IEnumerable<Company>, IEnumerable<CompanyToReturnDto>>(companies);
             return Ok(mappedCompanies);
         }
-        //------------------------------------------------------------------------------------------
+
         [HttpGet("{companyId}")]
         public async Task<ActionResult<CompanyToReturnDto>> GetCompany(int companyId)
         {
@@ -39,7 +39,6 @@ namespace SmartHiring.APIs.Controllers
             return Ok(mappedCompany);
         }
 
-        //------------------------------------------------------------------------------------------
         [HttpPost]
         public async Task<ActionResult<CompanyToReturnDto>> CreateCompany([FromBody] CompanyCreateDto companyDto)
         {
@@ -52,7 +51,6 @@ namespace SmartHiring.APIs.Controllers
             return CreatedAtAction(nameof(GetCompany), new { companyId = company.Id }, createdCompany);
         }
 
-        //------------------------------------------------------------------------------------------
         [HttpPut("{companyId}")]
         public async Task<IActionResult> UpdateCompany(int companyId, [FromBody] CompanyUpdateDto companyDto)
         {
@@ -67,7 +65,6 @@ namespace SmartHiring.APIs.Controllers
             return NoContent();
         }
 
-        //------------------------------------------------------------------------------------------
         [HttpDelete("{companyId}")]
         public async Task<IActionResult> DeleteCompany(int companyId)
         {

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartHiring.Repository.Data;
 
@@ -11,9 +12,10 @@ using SmartHiring.Repository.Data;
 namespace SmartHiring.Repository.Data.Migrations
 {
     [DbContext(typeof(SmartHiringDbContext))]
-    partial class SmartHiringContextModelSnapshot : ModelSnapshot
+    [Migration("20250314211158_Test")]
+    partial class Test
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -260,7 +262,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("SkillId");
 
-                    b.ToTable("ApplicantSkills", (string)null);
+                    b.ToTable("ApplicantSkills");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Application", b =>
@@ -367,7 +369,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CareerLevels", (string)null);
+                    b.ToTable("CareerLevels");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Company", b =>
@@ -464,7 +466,7 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.HasIndex("AppUserId")
                         .IsUnique();
 
-                    b.ToTable("Address", (string)null);
+                    b.ToTable("Address");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Identity.AppUser", b =>
@@ -614,7 +616,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("JobCategories", (string)null);
+                    b.ToTable("JobCategories");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.JobType", b =>
@@ -631,7 +633,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("JobTypes", (string)null);
+                    b.ToTable("JobTypes");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Post", b =>
@@ -730,7 +732,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("CareerLevelId");
 
-                    b.ToTable("PostCareerLevels", (string)null);
+                    b.ToTable("PostCareerLevels");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.PostJobCategory", b =>
@@ -745,7 +747,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("JobCategoryId");
 
-                    b.ToTable("PostJobCategories", (string)null);
+                    b.ToTable("PostJobCategories");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.PostJobType", b =>
@@ -760,7 +762,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("JobTypeId");
 
-                    b.ToTable("PostJobTypes", (string)null);
+                    b.ToTable("PostJobTypes");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.PostSkill", b =>
@@ -775,7 +777,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("SkillId");
 
-                    b.ToTable("PostSkills", (string)null);
+                    b.ToTable("PostSkills");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.PostWorkplace", b =>
@@ -790,7 +792,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("WorkplaceId");
 
-                    b.ToTable("PostWorkplaces", (string)null);
+                    b.ToTable("PostWorkplaces");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Skill", b =>
@@ -807,7 +809,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Skills", (string)null);
+                    b.ToTable("Skills");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Workplace", b =>
@@ -824,7 +826,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Workplaces", (string)null);
+                    b.ToTable("Workplaces");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -970,13 +972,13 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.HasOne("SmartHiring.Core.Entities.Identity.AppUser", "Manager")
                         .WithMany()
                         .HasForeignKey("ManagerId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("SmartHiring.Core.Entities.Post", "Post")
                         .WithMany("CandidateLists")
                         .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Manager");

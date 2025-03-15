@@ -19,20 +19,20 @@ namespace SmartHiring.APIs.Controllers
             _userRepo = UserRepo;
             _mapper = mapper;
         }
-        //------------------------------------------------------------------------------------------
+
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Company>>> GetUsers() 
+        public async Task<ActionResult<IEnumerable<UserToReturnDto>>> GetUsers() 
         {
-            var spec = new CompanyWithHrandAdminSpacifications();
+            var spec = new CompanyWithHrAndManagerSpacifications();
             var Users = await _userRepo.GetAllWithSpecAsync(spec);
             var MappedPosts = _mapper.Map<IEnumerable<Company>, IEnumerable<UserToReturnDto>>(Users);
             return Ok(MappedPosts);
         }
-        //------------------------------------------------------------------------------------------
+
         [HttpGet("{id}")]
-        public async Task<ActionResult<Company>> GetUser(int id)
+        public async Task<ActionResult<UserToReturnDto>> GetUser(int id)
         {
-            var spec = new CompanyWithHrandAdminSpacifications(id);
+            var spec = new CompanyWithHrAndManagerSpacifications(id);
             var user = await _userRepo.GetByEntityWithSpecAsync(spec);
             var MappedPosts = _mapper.Map<Company, UserToReturnDto>(user);
             if (user == null)
@@ -41,11 +41,10 @@ namespace SmartHiring.APIs.Controllers
             }
             return Ok(MappedPosts);
         }
-        //------------------------------------------------------------------------------------------
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateUser(int id, [FromBody] UserUpdateDto userUpdateDto)
         {
-            var spec = new CompanyWithHrandAdminSpacifications(id);
+            var spec = new CompanyWithHrAndManagerSpacifications(id);
             var user = await _userRepo.GetByEntityWithSpecAsync(spec);
 
             if (user == null)
@@ -59,7 +58,6 @@ namespace SmartHiring.APIs.Controllers
             await _userRepo.UpdateAsync(user);
             return NoContent();
         }
-        //------------------------------------------------------------------------------------------
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteUser(int id)
         {

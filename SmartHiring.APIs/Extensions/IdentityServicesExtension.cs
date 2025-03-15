@@ -12,7 +12,7 @@ namespace SmartHiring.APIs.Extensions
 {
 	public static class IdentityServicesExtension
 	{
-		public static IServiceCollection AddIdentityServices(this IServiceCollection Services,IConfiguration configuration)
+		public static IServiceCollection AddIdentityServices(this IServiceCollection Services, IConfiguration configuration)
 		{
 			Services.AddScoped<ITokenService, TokenService>();
 
@@ -24,6 +24,7 @@ namespace SmartHiring.APIs.Extensions
 				options.Password.RequireNonAlphanumeric = true;
 				options.Password.RequiredLength = 8;
 			})
+					.AddDefaultTokenProviders()
 					.AddEntityFrameworkStores<SmartHiringDbContext>();
 
 			Services.AddAuthentication(Options =>
@@ -46,7 +47,7 @@ namespace SmartHiring.APIs.Extensions
 						RoleClaimType = ClaimTypes.Role
 					};
 				});
-					
+
 
 			return Services;
 		}

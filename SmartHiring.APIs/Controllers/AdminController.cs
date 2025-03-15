@@ -1,168 +1,157 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SmartHiring.APIs.DTOs;
+using SmartHiring.APIs.Errors;
 using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
 using SmartHiring.Core.Repositories;
 using SmartHiring.Core.Specifications;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using SmartHiring.Repository.Data;
 
 namespace SmartHiring.APIs.Controllers
 {
+	[Authorize(Roles = "Admin")]
+	public class AdminController : APIBaseController
+	{
+		private readonly IGenericRepository<Company> _companyRepo;
+		private readonly UserManager<AppUser> _userManager;
+		private readonly IMapper _mapper;
+		private readonly IGenericRepository<Post> _postRepo;
+		private readonly IGenericRepository<CandidateList> _candidateListRepo;
+		private readonly IGenericRepository<Application> _applicationRepo;
+		private readonly IGenericRepository<Interview> _interviewRepo;
+		private readonly SmartHiringDbContext _dbContext;
 
-    public class AdminController : APIBaseController
-    {
-        private readonly IGenericRepository<Company> _companyRepository;
-        private readonly UserManager<AppUser> _userManager;
-        private readonly IMapper _mapper;
+		public AdminController(
+			IGenericRepository<Company> companyRepo,
+			UserManager<AppUser> userManager,
+			IMapper mapper,
+			IGenericRepository<Post> postRepo,
+			IGenericRepository<CandidateList> candidateListRepo,
+			IGenericRepository<Application> applicationRepo,
+			IGenericRepository<Interview> interviewRepo,
+			SmartHiringDbContext dbContext)
+		{
+			_companyRepo = companyRepo;
+			_userManager = userManager;
+			_mapper = mapper;
+			_postRepo = postRepo;
+			_candidateListRepo = candidateListRepo;
+			_applicationRepo = applicationRepo;
+			_interviewRepo = interviewRepo;
+			_dbContext = dbContext;
+		}
 
-        public AdminController(
-            IGenericRepository<Company> companyRepository,
-            UserManager<AppUser> userManager,
-            IMapper mapper)
-        {
-            _companyRepository = companyRepository;
-            _userManager = userManager;
-            _mapper = mapper;
-        }
+		#region Companies
 
-        [HttpGet("companies")]
-        public async Task<ActionResult<IEnumerable<CompanyDto>>> GetAllCompanies()
-        {
-            var spec = new CompaniesWithDetailsSpecification();
-            var companies = await _companyRepository.GetAllWithSpecAsync(spec);
+		[HttpGet("companies")]
+		public async Task<ActionResult<IEnumerable<CompanyDto>>> GetCompanies()
+		{
+			var spec = new CompaniesWithDetailsSpecification();
+			var companies = await _companyRepo.GetAllWithSpecAsync(spec);
+			return Ok(_mapper.Map<IEnumerable<CompanyDto>>(companies));
+		}
 
-            if (!companies.Any())
-                return NotFound("No companies found.");
+		[HttpDelete("companies/{companyId}")]
+		public async Task<IActionResult> DeleteCompany(int companyId)
+		{
+			try
+			{
+				var company = await _dbContext.Companies.FindAsync(companyId);
+				if (company == null)
+				{
+					return NotFound(new ApiResponse(404, "Company not found"));
+				}
 
-            return Ok(_mapper.Map<IEnumerable<CompanyDto>>(companies));
-        }
+				var postIds = await _dbContext.Posts
+					.Where(p => p.CompanyId == companyId)
+					.Select(p => p.Id)
+					.ToListAsync();
 
-        [HttpDelete("company/{companyId}")]
-        public async Task<IActionResult> DeleteCompany(int companyId)
-        {
-            var company = await _companyRepository.GetByIdAsync(companyId);
-            if (company == null)
-                return NotFound($"Company with ID {companyId} not found.");
+				var applicationIds = await _dbContext.Applications
+					.Where(a => postIds.Contains(a.PostId))
+					.Select(a => a.Id)
+					.ToListAsync();
 
-            await _companyRepository.DeleteAsync(company);
-            return Ok($"Company with ID {companyId} has been deleted successfully.");
-        }
+				_dbContext.CandidateLists.RemoveRange(_dbContext.CandidateLists.Where(c => applicationIds.Contains(c.PostId)));
 
-        [HttpPost("company")]
-        public async Task<IActionResult> CreateCompany([FromBody] CompanyDto companyDto)
-        {
-            if (companyDto == null)
-                return BadRequest("Invalid company data.");
+				_dbContext.Interviews.RemoveRange(_dbContext.Interviews.Where(i => postIds.Contains(i.PostId)));
 
-            var company = _mapper.Map<Company>(companyDto);
-            await _companyRepository.AddAsync(company);
+				_dbContext.Applications.RemoveRange(_dbContext.Applications.Where(a => postIds.Contains(a.PostId)));
 
-            return Ok(_mapper.Map<CompanyDto>(company));
-        }
+				_dbContext.Posts.RemoveRange(_dbContext.Posts.Where(p => postIds.Contains(p.Id)));
 
-        [HttpPut("company/{companyId}")]
-        public async Task<IActionResult> UpdateCompany(int companyId, [FromBody] CompanyDto companyDto)
-        {
-            var existingCompany = await _companyRepository.GetByIdAsync(companyId);
-            if (existingCompany == null)
-                return NotFound($"Company with ID {companyId} not found.");
+				_dbContext.CompanyPhones.RemoveRange(_dbContext.CompanyPhones.Where(cp => cp.CompanyId == companyId));
 
-            _mapper.Map(companyDto, existingCompany);
-            await _companyRepository.UpdateAsync(existingCompany);
+				_dbContext.Companies.Remove(company);
 
-            return Ok(_mapper.Map<CompanyDto>(existingCompany));
-        }
+				var usersToDelete = new List<AppUser>();
 
+				if (!string.IsNullOrEmpty(company.HRId))
+				{
+					bool hrHasOtherCompanies = await _dbContext.Companies
+						.AnyAsync(c => c.HRId == company.HRId && c.Id != companyId);
 
-        [HttpGet("company/{companyId}/hr")]
-        public async Task<IActionResult> GetHRByCompanyId(int companyId)
-        {
-            var spec = new CompaniesWithDetailsSpecification(companyId);
-            var company = await _companyRepository.GetByEntityWithSpecAsync(spec);
+					if (!hrHasOtherCompanies)
+					{
+						var hr = await _userManager.FindByIdAsync(company.HRId);
+						if (hr != null) usersToDelete.Add(hr);
+					}
+				}
 
-            if (company == null || company.HR == null)
-                return NotFound($"No HR found for company with ID {companyId}.");
+				if (!string.IsNullOrEmpty(company.ManagerId))
+				{
+					bool managerHasOtherCompanies = await _dbContext.Companies
+						.AnyAsync(c => c.ManagerId == company.ManagerId && c.Id != companyId);
 
-            return Ok(_mapper.Map<HRDto>(company.HR));
-        }
+					if (!managerHasOtherCompanies)
+					{
+						var manager = await _userManager.FindByIdAsync(company.ManagerId);
+						if (manager != null) usersToDelete.Add(manager);
+					}
+				}
 
-        [HttpPost("company/{companyId}/manager")]
-        public async Task<IActionResult> CreateManager(int companyId, [FromBody] ManagerDto managerDto)
-        {
-            var company = await _companyRepository.GetByIdAsync(companyId);
-            if (company == null)
-                return NotFound($"Company with ID {companyId} not found.");
+				foreach (var user in usersToDelete)
+				{
+					await _userManager.DeleteAsync(user);
+				}
 
-            if (!string.IsNullOrEmpty(company.ManagerId))
-                return BadRequest($"Company with ID {companyId} already has a manager.");
+				await _dbContext.SaveChangesAsync();
 
-            var manager = _mapper.Map<AppUser>(managerDto);
-            manager.UserName = managerDto.Email;
+				return Ok(new ApiResponse(200, "Company and related data deleted successfully"));
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new ApiResponse(500, $"An error occurred: {ex.Message}"));
+			}
+		}
 
-            // ✅ تقسيم Address إلى City و Country
-            if (!string.IsNullOrEmpty(managerDto.Address))
-            {
-                var addressParts = managerDto.Address.Split(',', 2); // نقسم النص عند أول "،"
-                manager.Address = new Address
-                {
-                    City = addressParts.Length > 0 ? addressParts[0].Trim() : "",
-                    Country = addressParts.Length > 1 ? addressParts[1].Trim() : ""
-                };
-            }
+		#endregion
 
-            var result = await _userManager.CreateAsync(manager, managerDto.Password);
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
+		#region Agencies
 
-            company.ManagerId = manager.Id;
-            await _companyRepository.UpdateAsync(company);
+		[HttpGet("agencies")]
+		public async Task<ActionResult<IEnumerable<AgencyDto>>> GetAgencies()
+		{
+			var agencies = await _userManager.GetUsersInRoleAsync("Agency");
+			return Ok(_mapper.Map<IEnumerable<AgencyDto>>(agencies));
+		}
 
-            return Ok(_mapper.Map<ManagerDto>(manager));
-        }
+		[HttpDelete("agencies/{agencyId}")]
+		public async Task<IActionResult> DeleteAgency(string agencyId)
+		{
+			var agency = await _userManager.FindByIdAsync(agencyId);
+			if (agency == null)
+				return NotFound(new ApiResponse(404, "Agency not found."));
 
-        [HttpGet("company/{companyId}/manager")]
-        public async Task<IActionResult> GetCompanyManager(int companyId)
-        {
-            // ✅ استخدام الـ Specification لجلب الشركة والمانجر
-            var spec = new CompaniesWithDetailsSpecification (companyId);
-            var company = await _companyRepository.GetByEntityWithSpecAsync(spec);
+			await _userManager.DeleteAsync(agency);
+			return Ok(new ApiResponse(200, $"Agency has been deleted."));
+		}
 
-            if (company == null || company.Manager == null)
-                return NotFound(new { message = "لم يتم العثور على المانجر لهذه الشركة" });
+		#endregion
 
-            // ✅ تحويل بيانات المانجر باستخدام المابر
-            var managerDto = _mapper.Map<ManagerDto>(company.Manager);
-
-            return Ok(managerDto);
-        }
-
-        [HttpPost("company/{companyId}/hr")]
-        public async Task<IActionResult> CreateHR(int companyId, [FromBody] HRDto hrDto)
-        {
-            var company = await _companyRepository.GetByIdAsync(companyId);
-            if (company == null)
-                return NotFound($"Company with ID {companyId} not found.");
-
-            if (company.HR != null)
-                return BadRequest($"Company with ID {companyId} already has an HR.");
-
-            var hr = _mapper.Map<AppUser>(hrDto);
-            hr.HRCompany = company;
-
-            var result = await _userManager.CreateAsync(hr);
-
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
-
-            company.HR = hr;
-            await _companyRepository.UpdateAsync(company);
-
-            return Ok(_mapper.Map<HRDto>(hr));
-        }
-
-    }
+	}
 }
