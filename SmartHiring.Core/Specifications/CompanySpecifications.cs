@@ -12,11 +12,16 @@ namespace SmartHiring.Core.Specifications
 
 		public CompanySpecifications() : base()
 		{
-			Includes.Add(p => p.CompanyPhones);
-			Includes.Add(p => p.HR);
-			Includes.Add(p => p.Manager);
+			AddInclude(p => p.CompanyPhones);
+			AddInclude(p => p.HR);
+			AddInclude(p => p.Manager);
 		}
 
-		public CompanySpecifications(int companyId) : base(c => c.Id == companyId) { }
+		public CompanySpecifications(int companyId) : base(c => c.Id == companyId)
+		{
+			AddInclude(p => p.CompanyPhones);
+			AddInclude(p => p.HR);
+			AddInclude(p => p.Manager);
+		}
 	}
 }

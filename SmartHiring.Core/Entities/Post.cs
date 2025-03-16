@@ -23,7 +23,7 @@ namespace SmartHiring.Core.Entities
 		public string HRId { get; set; }
 		[ForeignKey("HRId")]
 		public AppUser HR { get; set; }
-		public int CompanyId { get; set; } = 4;
+		public int CompanyId { get; set; } 
 		[ForeignKey("CompanyId")]
 		public Company Company { get; set; }
 

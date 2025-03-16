@@ -1,17 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SmartHiring.APIs.Errors;
 using SmartHiring.APIs.Extensions;
-using SmartHiring.APIs.Helpers;
 using SmartHiring.APIs.Middlewares;
 using SmartHiring.APIs.Settings;
-using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
-using SmartHiring.Core.Repositories;
-using SmartHiring.Repository;
 using SmartHiring.Repository.Data;
 
 namespace SmartHiring.APIs

@@ -41,6 +41,12 @@ namespace SmartHiring.Repository
 
 		#endregion
 
+		public async Task<int> GetCountWithSpecAsync(ISpecifications<T> Spec)
+		{
+			return await ApplySpecification(Spec).CountAsync();
+		}
+
+
 		public async Task UpdateAsync(T entity)
 		{
 			_dbContext.Set<T>().Update(entity);
@@ -99,6 +105,7 @@ namespace SmartHiring.Repository
 		{
 			return await _dbContext.Set<T>().Where(predicate).ToListAsync();
 		}
+
 	}
 }
 

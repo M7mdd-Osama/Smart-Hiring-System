@@ -19,6 +19,7 @@ namespace SmartHiring.Core.Repositories
 		Task<T> GetByEntityWithSpecAsync(ISpecifications<T> Spec);
 		#endregion
 
+		Task<int> GetCountWithSpecAsync(ISpecifications<T> Spec);
 
 		Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> predicate);
 
