@@ -6,8 +6,6 @@ using SmartHiring.APIs.Errors;
 using SmartHiring.Core.Entities;
 using SmartHiring.Core.Services;
 using Stripe;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace SmartHiring.APIs.Controllers
 {
@@ -23,8 +21,6 @@ namespace SmartHiring.APIs.Controllers
 			_mapper = mapper;
 		}
 		[Authorize]
-		[ProducesResponseType(typeof(PostPaymentDto), StatusCodes.Status200OK)]
-		[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
 		[HttpPost("{postId}")]
 		public async Task<ActionResult<PostPaymentDto>> CreateOrUpdatePaymentIntent(int postId)
 		{
@@ -57,7 +53,7 @@ namespace SmartHiring.APIs.Controllers
 			}
 			catch (StripeException)
 			{
-				return BadRequest();
+				return BadRequest(new ApiResponse(400));
 			}
 		}
 	}

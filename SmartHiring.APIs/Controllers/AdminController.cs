@@ -19,29 +19,17 @@ namespace SmartHiring.APIs.Controllers
 		private readonly IGenericRepository<Company> _companyRepo;
 		private readonly UserManager<AppUser> _userManager;
 		private readonly IMapper _mapper;
-		private readonly IGenericRepository<Post> _postRepo;
-		private readonly IGenericRepository<CandidateList> _candidateListRepo;
-		private readonly IGenericRepository<Application> _applicationRepo;
-		private readonly IGenericRepository<Interview> _interviewRepo;
 		private readonly SmartHiringDbContext _dbContext;
 
 		public AdminController(
 			IGenericRepository<Company> companyRepo,
 			UserManager<AppUser> userManager,
 			IMapper mapper,
-			IGenericRepository<Post> postRepo,
-			IGenericRepository<CandidateList> candidateListRepo,
-			IGenericRepository<Application> applicationRepo,
-			IGenericRepository<Interview> interviewRepo,
 			SmartHiringDbContext dbContext)
 		{
 			_companyRepo = companyRepo;
 			_userManager = userManager;
 			_mapper = mapper;
-			_postRepo = postRepo;
-			_candidateListRepo = candidateListRepo;
-			_applicationRepo = applicationRepo;
-			_interviewRepo = interviewRepo;
 			_dbContext = dbContext;
 		}
 

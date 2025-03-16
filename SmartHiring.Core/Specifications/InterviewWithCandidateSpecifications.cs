@@ -7,27 +7,27 @@ namespace SmartHiring.Core.Specifications
         public InterviewWithCandidateSpecifications()
             : base()
         {
-            Includes.Add(i => i.Applicant);
-            Includes.Add(i => i.HR);
-            Includes.Add(i => i.Post);
+			AddInclude(i => i.Applicant);
+            AddInclude(i => i.HR);
+            AddInclude(i => i.Post);
         }
 
         public InterviewWithCandidateSpecifications(int interviewId)
             : base(i => i.Id == interviewId)
         {
-            Includes.Add(i => i.Applicant);
-            Includes.Add(i => i.HR);
-            Includes.Add(i => i.Post);
+            AddInclude(i => i.Applicant);
+            AddInclude(i => i.HR);
+            AddInclude(i => i.Post);
         }
 
         public InterviewWithCandidateSpecifications(int? applicantId, string? hrId)
             : base(i =>
                 (!applicantId.HasValue || i.ApplicantId == applicantId.Value) &&
-                (string.IsNullOrEmpty(hrId) || i.HRId == hrId)) // ✅ الحل الصحيح هنا
+                (string.IsNullOrEmpty(hrId) || i.HRId == hrId))
         {
-            Includes.Add(i => i.Applicant);
-            Includes.Add(i => i.HR);
-            Includes.Add(i => i.Post);
+			AddInclude(i => i.Applicant);
+            AddInclude(i => i.HR);
+            AddInclude(i => i.Post);
         }
     }
 }

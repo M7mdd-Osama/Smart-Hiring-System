@@ -6,13 +6,13 @@ namespace SmartHiring.Core.Specifications
     {
         public CompaniesWithDetailsSpecification()
         {
-            Includes.Add(c => c.HR);
-            Includes.Add(c => c.Manager);
+			AddInclude(c => c.HR);
+            AddInclude(c => c.Manager);
         }
         public CompaniesWithDetailsSpecification(int companyId) : base(c => c.Id == companyId)
         {
-            Includes.Add(c => c.HR);
-            Includes.Add(c => c.Manager);
+            AddInclude(c => c.HR);
+            AddInclude(c => c.Manager);
         }
     }
 }
