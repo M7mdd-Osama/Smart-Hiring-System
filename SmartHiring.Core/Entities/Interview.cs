@@ -1,11 +1,6 @@
 ﻿using SmartHiring.Core.Entities.Identity;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartHiring.Core.Entities
 {
@@ -33,6 +28,7 @@ namespace SmartHiring.Core.Entities
 		public AppUser HR { get; set; }
 
 		public int PostId { get; set; }
+		[ForeignKey("PostId")]
 		public Post Post { get; set; }
 
 		public int ApplicantId { get; set; }

@@ -4,7 +4,6 @@ using SmartHiring.Core.Repositories;
 using SmartHiring.Core.Services;
 using SmartHiring.Core.Specifications;
 using Stripe;
-using System.Threading.Tasks;
 
 namespace SmartHiring.Service
 {

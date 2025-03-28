@@ -1,10 +1,4 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartHiring.Core.Entities.Identity
 {
@@ -27,5 +21,6 @@ namespace SmartHiring.Core.Entities.Identity
 		public ICollection<AgencyApplicant>? AgencyApplicants { get; set; } = new HashSet<AgencyApplicant>(); 
 		public ICollection<Interview>? Interviews { get; set; } = new HashSet<Interview>();
 		public ICollection<Post>? Posts { get; set; } = new HashSet<Post>();
+		public ICollection<SavedPost> SavedPosts { get; set; } = new HashSet<SavedPost>();
 	}
 }

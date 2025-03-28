@@ -29,10 +29,12 @@
 		public int TotalApplications { get; set; }
 		public int SelectedCandidates { get; set; }
 
-		public List<string> JobCategories { get; set; }
-		public List<string> JobTypes { get; set; }
-		public List<string> Workplaces { get; set; }
-		public List<string> Skills { get; set; }
-		public List<string> CareerLevels { get; set; }
+		public ICollection<string> JobCategories { get; set; }
+		public ICollection<string> JobTypes { get; set; }
+		public ICollection<string> Workplaces { get; set; }
+		public ICollection<string> Skills { get; set; }
+		public ICollection<string> CareerLevels { get; set; }
+
+		public bool IsSaved { get; set; }
 	}
 }

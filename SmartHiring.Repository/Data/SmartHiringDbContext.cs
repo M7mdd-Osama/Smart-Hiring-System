@@ -42,5 +42,6 @@ namespace SmartHiring.Repository.Data
 		public DbSet<PostCareerLevel> PostCareerLevels { get; set; }
 		public DbSet<PostSkill> PostSkills { get; set; }
 		public DbSet<PostJobCategory> PostJobCategories { get; set; }
+		public DbSet<SavedPost> SavedPosts { get; set; }
 	}
 }
