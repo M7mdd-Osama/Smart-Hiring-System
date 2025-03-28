@@ -3,15 +3,11 @@ using SmartHiring.Core.Entities;
 using SmartHiring.Core.Repositories;
 using SmartHiring.Core.Specifications;
 using SmartHiring.Repository.Data;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 
 namespace SmartHiring.Repository
 {
-
-	public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
+	public class GenericRepository<T> : IGenericRepository<T> where T : class
 	{
 		private readonly SmartHiringDbContext _dbContext;
 
@@ -22,23 +18,21 @@ namespace SmartHiring.Repository
 
 		#region Without Spec
 		public async Task<IEnumerable<T>> GetAllAsync()
-		=> await _dbContext.Set<T>().ToListAsync();
+			=> await _dbContext.Set<T>().ToListAsync();
 
-		public async Task<T> GetByIdAsync(int id)
-		=> await _dbContext.Set<T>().FindAsync(id);
-
+		public async Task<T> GetByIdAsync(object id)
+			=> await _dbContext.Set<T>().FindAsync(id);
 		#endregion
 
 		#region With Spec
 		public async Task<IEnumerable<T>> GetAllWithSpecAsync(ISpecifications<T> Spec)
-		=> await ApplySpecification(Spec).ToListAsync();
+			=> await ApplySpecification(Spec).ToListAsync();
 
 		public async Task<T> GetByEntityWithSpecAsync(ISpecifications<T> Spec)
-		=> await ApplySpecification(Spec).FirstOrDefaultAsync();
+			=> await ApplySpecification(Spec).FirstOrDefaultAsync();
 
 		private IQueryable<T> ApplySpecification(ISpecifications<T> Spec)
-		=> SpecificationEvaluator<T>.GetQuery(_dbContext.Set<T>(), Spec);
-
+			=> SpecificationEvaluator<T>.GetQuery(_dbContext.Set<T>(), Spec);
 		#endregion
 
 		public async Task<int> GetCountWithSpecAsync(ISpecifications<T> Spec)
@@ -46,13 +40,18 @@ namespace SmartHiring.Repository
 			return await ApplySpecification(Spec).CountAsync();
 		}
 
+		public async Task<T> GetFirstOrDefaultAsync(Expression<Func<T, bool>> predicate)
+		{
+			return await _dbContext.Set<T>().FirstOrDefaultAsync(predicate);
+		}
+
+		// ------------------------------------------------------
 
 		public async Task UpdateAsync(T entity)
 		{
 			_dbContext.Set<T>().Update(entity);
 			await _dbContext.SaveChangesAsync();
 		}
-
 
 		public async Task<IEnumerable<Application>> GetApplicationsByJobIdAsync(int jobId)
 		{
@@ -65,15 +64,12 @@ namespace SmartHiring.Repository
 			return application != null ? (application.IsShortlisted ? "Approved" : "Rejected") : null;
 		}
 
-
-
 		public async Task AddAsync(T entity)
 		{
 			try
 			{
 				await _dbContext.Set<T>().AddAsync(entity);
 				await _dbContext.SaveChangesAsync();
-
 				await _dbContext.Entry(entity).GetDatabaseValuesAsync();
 			}
 			catch (DbUpdateException dbEx)
@@ -85,7 +81,6 @@ namespace SmartHiring.Repository
 				throw new Exception($"خطأ غير متوقع: {ex.Message}");
 			}
 		}
-
 
 		public async Task DeleteAsync(T entity)
 		{
@@ -105,7 +100,6 @@ namespace SmartHiring.Repository
 		{
 			return await _dbContext.Set<T>().Where(predicate).ToListAsync();
 		}
-
 	}
 }
 

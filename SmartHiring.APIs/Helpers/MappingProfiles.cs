@@ -39,8 +39,25 @@ public class MappingProfiles : Profile
 			.ForMember(dest => dest.Skills, opt => opt.MapFrom(src => src.PostSkills.Select(s => s.Skill.SkillName)))
 			.ForMember(dest => dest.CareerLevels, opt => opt.MapFrom(src => src.PostCareerLevels.Select(cl => cl.CareerLevel.LevelName)));
 
+		CreateMap<PostCreationDto, Post>()
+			.ForMember(dest => dest.PostDate, opt => opt.MapFrom(src => DateTime.UtcNow))
+			.ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => "Pending Payment"))
+			.ForMember(dest => dest.HRId, opt => opt.Ignore())
+			.ForMember(dest => dest.CompanyId, opt => opt.Ignore())
+			.ForMember(dest => dest.PostJobCategories, opt => opt.MapFrom(src => src.JobCategories.Select(name => new PostJobCategory { JobCategory = new JobCategory { Name = name } })))
+			.ForMember(dest => dest.PostJobTypes, opt => opt.MapFrom(src => src.JobTypes.Select(id => new PostJobType { JobTypeId = id })))
+			.ForMember(dest => dest.PostWorkplaces, opt => opt.MapFrom(src => src.Workplaces.Select(id => new PostWorkplace { WorkplaceId = id })))
+			.ForMember(dest => dest.PostCareerLevels, opt => opt.MapFrom(src => src.CareerLevels.Select(id => new PostCareerLevel { CareerLevelId = id })))
+			.ForMember(dest => dest.PostSkills, opt => opt.MapFrom(src => src.Skills.Select(name => new PostSkill { Skill = new Skill { SkillName = name } })));
+
+		CreateMap<PostUpdateDto, Post>()
+			.ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null)); // يمنع تحديث الفيلد لو كان null
+
 		#endregion
 
+		CreateMap<Post, PostPaymentDto>()
+			.ForMember(dest => dest.PaymentIntentId, opt => opt.NullSubstitute(null))
+			.ForMember(dest => dest.ClientSecret, opt => opt.NullSubstitute(null));
 
 		//CreateMap<Post, PostToReturnDto>()
 		//	.ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.HR.HRCompany.Name))
@@ -112,9 +129,6 @@ public class MappingProfiles : Profile
 			.ForMember(dest => dest.Address, opt => opt.MapFrom(src =>
 				src.Address != null ? $"{src.Address.City}, {src.Address.Country}" : "N/A"));
 
-		CreateMap<Post, PostPaymentDto>()
-			.ForMember(dest => dest.PaymentIntentId, opt => opt.NullSubstitute(null))
-			.ForMember(dest => dest.ClientSecret, opt => opt.NullSubstitute(null));
 	}
 }
 

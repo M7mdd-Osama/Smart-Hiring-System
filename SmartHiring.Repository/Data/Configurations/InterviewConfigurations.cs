@@ -38,7 +38,7 @@ namespace SmartHiring.Repository.Data.Configurations
 				.OnDelete(DeleteBehavior.Cascade);
 
 			builder.HasOne(i => i.Post)
-				.WithMany()
+				.WithMany(p => p.Interviews)
 				.HasForeignKey(i => i.PostId)
 				.OnDelete(DeleteBehavior.NoAction);
 

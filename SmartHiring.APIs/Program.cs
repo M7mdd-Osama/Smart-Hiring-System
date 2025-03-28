@@ -14,7 +14,7 @@ namespace SmartHiring.APIs
 	{
 		public static async Task Main(string[] args)
 		{
-			
+
 			var builder = WebApplication.CreateBuilder(args);
 
 			#region Configure Services - Add services to the container.
@@ -29,10 +29,12 @@ namespace SmartHiring.APIs
 
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen();
+
 			builder.Services.AddDbContext<SmartHiringDbContext>(Options =>
-			{
-				Options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-			});
+				Options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), sqlOptions =>
+				{
+					sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+				}));
 
 			builder.Services.AddApplicationServices();
 			builder.Services.AddIdentityServices(builder.Configuration);

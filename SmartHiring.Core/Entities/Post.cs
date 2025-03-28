@@ -23,7 +23,7 @@ namespace SmartHiring.Core.Entities
 		public string HRId { get; set; }
 		[ForeignKey("HRId")]
 		public AppUser HR { get; set; }
-		public int CompanyId { get; set; } 
+		public int CompanyId { get; set; }
 		[ForeignKey("CompanyId")]
 		public Company Company { get; set; }
 
@@ -34,6 +34,8 @@ namespace SmartHiring.Core.Entities
 		public ICollection<PostCareerLevel> PostCareerLevels { get; set; } = new HashSet<PostCareerLevel>();
 		public ICollection<Application> Applications { get; set; } = new HashSet<Application>();
 		public ICollection<CandidateList> CandidateLists { get; set; } = new HashSet<CandidateList>();
+		public ICollection<Interview> Interviews { get; set; } = new HashSet<Interview>();
+		public ICollection<SavedPost> SavedPosts { get; set; } = new HashSet<SavedPost>();
 
 		public string? PaymentIntentId { get; set; }
 		public string? ClientSecret { get; set; }

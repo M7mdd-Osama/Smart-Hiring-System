@@ -4,7 +4,7 @@ using SmartHiring.Core.Specifications;
 
 namespace SmartHiring.Repository
 {
-	public static class SpecificationEvaluator<T> where T : BaseEntity
+	public static class SpecificationEvaluator<T> where T : class
 	{
 		public static IQueryable<T> GetQuery(IQueryable<T> inputQuery, ISpecifications<T> Spec)
 		{
