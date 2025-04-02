@@ -1,113 +1,268 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SmartHiring.APIs.DTOs;
+using SmartHiring.APIs.Errors;
+using SmartHiring.APIs.Helpers;
 using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
 using SmartHiring.Core.Repositories;
 using SmartHiring.Core.Specifications;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace SmartHiring.APIs.Controllers
 {
-    public class InterviewController : APIBaseController
-    {
-        private readonly IGenericRepository<Interview> _interviewRepository;
-        private readonly UserManager<AppUser> _userManager;
-        private readonly IGenericRepository<Applicant> _applicantRepository;
-        private readonly IGenericRepository<Post> _postRepository;
-        private readonly IMapper _mapper;
+	public class InterviewController : APIBaseController
+	{
+		private readonly IGenericRepository<CandidateList> _candidateListRepo;
+		private readonly IGenericRepository<CandidateListApplicant> _candidateListApplicantRepo;
+		private readonly IGenericRepository<Interview> _interviewRepo;
+		private readonly UserManager<AppUser> _userManager;
+		private readonly IGenericRepository<Applicant> _applicantRepository;
+		private readonly IGenericRepository<Post> _postRepository;
+		private readonly IMapper _mapper;
+		private readonly ImailSettings _mailSettings;
 
-        public InterviewController(
-            IGenericRepository<Interview> interviewRepository,
-            UserManager<AppUser> userManager,
-            IGenericRepository<Applicant> applicantRepository,
-            IGenericRepository<Post> postRepository,
-            IMapper mapper)
-        {
-            _interviewRepository = interviewRepository;
-            _userManager = userManager;
-            _applicantRepository = applicantRepository;
-            _postRepository = postRepository;
-            _mapper = mapper;
-        }
+		public InterviewController(
+			IGenericRepository<CandidateList> candidateListRepo,
+			IGenericRepository<CandidateListApplicant> candidateListApplicantRepo,
+			IGenericRepository<Interview> interviewRepo,
+			UserManager<AppUser> userManager,
+			IGenericRepository<Applicant> applicantRepository,
+			IGenericRepository<Post> postRepository,
+			IMapper mapper,
+			ImailSettings mailSettings)
+		{
+			_candidateListRepo = candidateListRepo;
+			_candidateListApplicantRepo = candidateListApplicantRepo;
+			_interviewRepo = interviewRepo;
+			_userManager = userManager;
+			_applicantRepository = applicantRepository;
+			_postRepository = postRepository;
+			_mapper = mapper;
+			_mailSettings = mailSettings;
+		}
 
-        [HttpPost]
-        public async Task<ActionResult<InterviewDto>> ScheduleInterview([FromBody] InterviewDto interviewDto)
-        {
-            if (interviewDto == null)
-                return BadRequest("Invalid interview data.");
+		#region Get Accepted CandidateLists
 
-            if (string.IsNullOrWhiteSpace(interviewDto.HRId) || interviewDto.ApplicantId <= 0 || interviewDto.PostId <= 0)
-                return BadRequest("HRId, ApplicantId, and PostId must be valid.");
+		[Authorize(Roles = "HR")]
+		[HttpGet("accepted-candidate-lists")]
+		public async Task<IActionResult> GetAcceptedCandidateLists()
+		{
+			var userEmail = User.FindFirstValue(ClaimTypes.Email);
+			if (string.IsNullOrEmpty(userEmail))
+				return Unauthorized(new ApiResponse(401, "User email not found in token"));
 
-            var hr = await _userManager.FindByIdAsync(interviewDto.HRId);
-            if (hr == null)
-                return NotFound("HR not found.");
+			var user = await _userManager.Users
+				.Include(u => u.HRCompany)
+				.FirstOrDefaultAsync(u => u.Email == userEmail);
 
-            if (!await _userManager.IsInRoleAsync(hr, "HR"))
-                return BadRequest("User provided is not an HR.");
+			if (user == null)
+				return Unauthorized(new ApiResponse(401, "User not found"));
 
-            var spec = new InterviewWithCandidateSpecifications(interviewDto.ApplicantId, interviewDto.HRId);
-            var existingInterview = await _interviewRepository.GetByEntityWithSpecAsync(spec);
+			var spec = new AcceptedCandidateListsSpecification(user.HRCompany.Id);
+			var candidateLists = await _candidateListRepo.GetAllWithSpecAsync(spec);
 
-            if (existingInterview != null
-                && existingInterview.Date == interviewDto.Date
-                && existingInterview.Time.ToString(@"hh\:mm") == interviewDto.Time)
-            {
-                return Conflict("This applicant already has an interview scheduled at the same time.");
-            }
+			if (candidateLists == null || !candidateLists.Any())
+				return NotFound(new ApiResponse(404, "No accepted candidate lists found."));
 
-            var interview = _mapper.Map<Interview>(interviewDto);
-            interview.InterviewStatus = InterviewStatus.Pending;
-            interview.Score = 0;
+			var result = _mapper.Map<List<CandidateListDto>>(candidateLists);
 
-            await _interviewRepository.AddAsync(interview);
-            var result = _mapper.Map<InterviewDto>(interview);
+			return Ok(result);
+		}
 
-            return Ok(result);
-        }
+		#endregion
 
-        [HttpGet("{interviewId}")]
-        public async Task<ActionResult<InterviewDto>> GetInterviewById(int interviewId)
-        {
-            var spec = new InterviewWithCandidateSpecifications(interviewId);
-            var interview = await _interviewRepository.GetByEntityWithSpecAsync(spec);
-            if (interview == null)
-                return NotFound($"Interview with ID {interviewId} not found.");
+		#region Get Applicants In CandidateList
 
-            return Ok(_mapper.Map<InterviewDto>(interview));
-        }
+		[Authorize(Roles = "HR")]
+		[HttpGet("{candidateListId}/applicants")]
+		public async Task<IActionResult> GetApplicantsInCandidateList(int candidateListId)
+		{
+			var userEmail = User.FindFirstValue(ClaimTypes.Email);
+			if (string.IsNullOrEmpty(userEmail))
+				return Unauthorized(new ApiResponse(401, "User email not found in token"));
 
-        [HttpGet("job/{jobId}")]
-        public async Task<ActionResult<IEnumerable<InterviewDto>>> GetInterviewsByJobId(int jobId)
-        {
-            var spec = new InterviewWithCandidateSpecifications();
-            var interviews = await _interviewRepository.GetAllWithSpecAsync(spec);
-            var jobInterviews = interviews.Where(i => i.PostId == jobId);
+			var hrUser = await _userManager.Users
+				.Include(u => u.HRCompany)
+				.FirstOrDefaultAsync(u => u.Email == userEmail);
 
-            if (!jobInterviews.Any())
-                return NotFound($"No interviews found for job ID {jobId}.");
+			if (hrUser == null || hrUser.HRCompany == null)
+				return Unauthorized(new ApiResponse(401, "HR user not found or does not belong to a company."));
 
-            return Ok(_mapper.Map<IEnumerable<InterviewDto>>(jobInterviews));
-        }
+			var spec = new CandidateListApplicantsSpecification(candidateListId, hrUser.Id);
+			var candidateListApplicants = await _candidateListApplicantRepo.GetAllWithSpecAsync(spec);
 
-        [HttpPut("{interviewId}/result")]
-        public async Task<IActionResult> UpdateInterviewResult(int interviewId, [FromBody] int score)
-        {
-            if (score < 0 || score > 100)
-                return BadRequest("Invalid score. It should be between 0 and 100.");
+			if (candidateListApplicants == null || !candidateListApplicants.Any())
+				return NotFound(new ApiResponse(404, "No applicants found for this Candidate List."));
 
-            var interview = await _interviewRepository.GetByIdAsync(interviewId);
-            if (interview == null)
-                return NotFound("Interview not found.");
+			var applicantsDto = _mapper.Map<IEnumerable<CandidateListApplicantDto>>(candidateListApplicants);
 
-            interview.Score = score;
-            await _interviewRepository.UpdateAsync(interview);
+			return Ok(applicantsDto);
+		}
 
-            return Ok(_mapper.Map<InterviewDto>(interview));
-        }
-    }
+		#endregion
+
+		#region Schedule Interview
+
+		[Authorize(Roles = "HR")]
+		[HttpPost("schedule-interview")]
+		public async Task<IActionResult> ScheduleInterview([FromQuery] int candidateListId, [FromQuery] int applicantId, [FromBody] InterviewSchedulingDto dto)
+		{
+			var userEmail = User.FindFirstValue(ClaimTypes.Email);
+			if (string.IsNullOrEmpty(userEmail))
+				return Unauthorized(new ApiResponse(401, "User email not found in token"));
+
+			var hr = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+			if (hr == null)
+				return Unauthorized(new ApiResponse(401, "HR not found"));
+
+			var spec = new ApplicantSpecification(candidateListId, applicantId);
+			var candidateListApplicant = await _candidateListApplicantRepo.GetByEntityWithSpecAsync(spec);
+
+			if (candidateListApplicant == null)
+				return NotFound(new ApiResponse(404, "Applicant not found in Candidate List."));
+
+			var applicant = candidateListApplicant.Applicant;
+			var post = candidateListApplicant.CandidateList.Post;
+			var company = post.Company;
+
+			if (applicant == null || post == null || company == null)
+				return NotFound(new ApiResponse(404, "Applicant, Job Post, or Company not found."));
+
+			var interview = _mapper.Map<Interview>(dto);
+			interview.HRId = hr.Id;
+			interview.PostId = post.Id;
+			interview.ApplicantId = applicant.Id;
+
+			await _interviewRepo.AddAsync(interview);
+			await _interviewRepo.SaveChangesAsync();
+
+			var agency = applicant.Applications.FirstOrDefault()?.Agency;
+			var agencyName = agency != null ? agency.AgencyName : "N/A";
+
+			var emailBody = $@"
+					<h3>Dear {applicant.FName} {applicant.LName},</h3>
+					<p>We are pleased to inform you that you have been shortlisted for an interview for the <b>{post.JobTitle}</b> position at <b>{company.Name}</b>.</p>
+
+					<p>Your application was evaluated through our <b>AI-powered Smart Hiring System</b>, which identified you as a highly suitable candidate for this role based on your skills, experience, and qualifications.</p>
+
+					<p>Your application was submitted via <b>{agencyName}</b>, and we appreciate your interest in this opportunity.</p>
+
+					<p><b>Interview Details:</b></p>
+					<ul>
+						<li><b>Date:</b> {dto.Date:yyyy-MM-dd}</li>
+						<li><b>Time:</b> {dto.Time}</li>
+						<li><b>Location:</b> {dto.Location}</li>
+					</ul>
+
+					<p>If you need to reschedule or have any questions, please contact us at <b>{company.BusinessEmail}</b>.</p>
+
+					<p>We look forward to meeting you and wish you the best of luck in your interview.</p>
+
+					<p>Best regards,</p>
+					<p><b>Smart Hiring Team</b></p>";
+
+			var email = new Email
+			{
+				To = applicant.Email,
+				Subject = "Interview Invitation - Smart Hiring",
+				Body = emailBody
+			};
+
+			await _mailSettings.SendMail(email, false);
+
+			var response = new
+			{
+				message = "Interview scheduled successfully and email sent.",
+				interviewId = interview.Id
+			};
+
+			return Ok(response);
+		}
+
+		#endregion
+
+		#region Update Interview Status
+
+		[Authorize(Roles = "HR")]
+		[HttpPatch("update-interview-status")]
+		public async Task<IActionResult> UpdateInterviewStatus([FromQuery] int interviewId, [FromBody] UpdateInterviewStatusDto dto)
+		{
+			var userEmail = User.FindFirstValue(ClaimTypes.Email);
+			if (string.IsNullOrEmpty(userEmail))
+				return Unauthorized(new ApiResponse(401, "User email not found in token"));
+
+			var hr = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+			if (hr == null)
+				return Unauthorized(new ApiResponse(401, "HR not found"));
+
+			var spec = new InterviewSpecification(interviewId);
+			var interview = await _interviewRepo.GetByEntityWithSpecAsync(spec);
+			if (interview == null)
+				return NotFound(new ApiResponse(404, "Interview not found"));
+
+			var interviewDateTime = interview.Date.Add(interview.Time);
+			if (interviewDateTime > DateTime.UtcNow)
+				return BadRequest(new ApiResponse(400, "Interview has not yet taken place"));
+
+			if (dto.Status != "Hired" && dto.Status != "Rejected")
+				return BadRequest(new ApiResponse(400, "Invalid status. Use 'Hired' or 'Rejected'"));
+
+			interview.InterviewStatus = dto.Status == "Hired" ? InterviewStatus.Hired : InterviewStatus.Rejected;
+			interview.HRId = hr.Id;
+
+			await _interviewRepo.SaveChangesAsync();
+
+			if (dto.Status == "Hired" && interview.Applicant.Applications.Any())
+			{
+				var application = interview.Applicant.Applications.FirstOrDefault(a => a.PostId == interview.PostId);
+				var agency = application?.Agency;
+
+				if (agency != null)
+				{
+					var emailBody = $@"
+					<h3>Dear {agency.FirstName} {agency.LastName},</h3>
+
+					<p>We are pleased to inform you that a candidate submitted through your agency, <b>{agency.AgencyName}</b>, has successfully secured a position!</p>
+
+					<h4>- Candidate Details:</h4>
+					<ul>
+						<li><b>Name:</b> {interview.Applicant.FName} {interview.Applicant.LName}</li>
+						<li><b>Email:</b> {interview.Applicant.Email}</li>
+						<li><b>Phone:</b> {interview.Applicant.Phone}</li>
+					</ul>
+
+					<h4>- Job Details:</h4>
+					<ul>
+						<li><b>Position:</b> {interview.Post.JobTitle}</li>
+						<li><b>Company:</b> {interview.Post.Company.Name}</li>
+						<li><b>Business Contact:</b> {interview.Post.Company.BusinessEmail}</li>
+					</ul>
+
+					<p>We appreciate your efforts in connecting top talent with leading companies. To discuss commission details or any follow-up, please feel free to contact the business email above.</p>
+
+					<p>Thank you for your continued partnership!</p>
+
+					<p>Best regards,</p>
+					<p><b>Smart Hiring Team</b></p>";
+
+					var email = new Email
+					{
+						To = agency.Email,
+						Subject = "Candidate Hired Notification - Smart Hiring",
+						Body = emailBody
+					};
+
+					await _mailSettings.SendMail(email, false);
+				}
+			}
+
+			return Ok(new ApiResponse(200, $"Interview status updated to '{dto.Status}' successfully."));
+		}
+
+		#endregion
+	}
 }

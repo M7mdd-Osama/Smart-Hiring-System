@@ -26,7 +26,7 @@ namespace SmartHiring.APIs.Helpers
 				Body = $"Your OTP for email confirmation is: {otp}"
 			};
 
-			await mailSettings.SendMail(emailMessage);
+			await mailSettings.SendMail(emailMessage,true);
 		}
 	}
 }

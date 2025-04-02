@@ -45,6 +45,11 @@ namespace SmartHiring.Repository
 			return await _dbContext.Set<T>().FirstOrDefaultAsync(predicate);
 		}
 
+		public async Task AddRangeAsync(IEnumerable<T> entities)
+		{
+			await _dbContext.Set<T>().AddRangeAsync(entities);
+		}
+
 		// ------------------------------------------------------
 
 		public async Task UpdateAsync(T entity)

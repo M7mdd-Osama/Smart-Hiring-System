@@ -18,6 +18,7 @@ namespace SmartHiring.Core.Repositories
 
 		Task<int> GetCountWithSpecAsync(ISpecifications<T> Spec);
 		Task<T> GetFirstOrDefaultAsync(Expression<Func<T, bool>> predicate);
+		Task AddRangeAsync(IEnumerable<T> entities);
 
 		// -----------------------------------------
 

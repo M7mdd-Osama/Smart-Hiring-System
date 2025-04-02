@@ -50,9 +50,7 @@ namespace SmartHiring.APIs.Controllers
 			{
 				var company = await _dbContext.Companies.FindAsync(companyId);
 				if (company == null)
-				{
 					return NotFound(new ApiResponse(404, "Company not found"));
-				}
 
 				var postIds = await _dbContext.Posts
 					.Where(p => p.CompanyId == companyId)

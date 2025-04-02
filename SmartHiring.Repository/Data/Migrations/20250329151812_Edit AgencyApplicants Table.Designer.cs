@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartHiring.Repository.Data;
 
@@ -11,9 +12,10 @@ using SmartHiring.Repository.Data;
 namespace SmartHiring.Repository.Data.Migrations
 {
     [DbContext(typeof(SmartHiringDbContext))]
-    partial class SmartHiringContextModelSnapshot : ModelSnapshot
+    [Migration("20250329151812_Edit AgencyApplicants Table")]
+    partial class EditAgencyApplicantsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -196,10 +198,6 @@ namespace SmartHiring.Repository.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Phone")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
 
                     b.ToTable("Applicants", (string)null);
@@ -226,6 +224,20 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.HasKey("ApplicantId", "Country");
 
                     b.ToTable("Applicant_Addresses", (string)null);
+                });
+
+            modelBuilder.Entity("SmartHiring.Core.Entities.ApplicantPhone", b =>
+                {
+                    b.Property<int>("ApplicantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("ApplicantId", "Phone");
+
+                    b.ToTable("Applicant_Phones", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.ApplicantSkill", b =>
@@ -559,6 +571,12 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.Property<int>("PostId")
                         .HasColumnType("int");
+
+                    b.Property<double>("Score")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("float")
+                        .HasDefaultValue(0.0);
 
                     b.Property<TimeSpan>("Time")
                         .HasColumnType("time");
@@ -897,6 +915,17 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.Navigation("Applicant");
                 });
 
+            modelBuilder.Entity("SmartHiring.Core.Entities.ApplicantPhone", b =>
+                {
+                    b.HasOne("SmartHiring.Core.Entities.Applicant", "Applicant")
+                        .WithMany("ApplicantPhones")
+                        .HasForeignKey("ApplicantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Applicant");
+                });
+
             modelBuilder.Entity("SmartHiring.Core.Entities.ApplicantSkill", b =>
                 {
                     b.HasOne("SmartHiring.Core.Entities.Applicant", "Applicant")
@@ -1183,6 +1212,8 @@ namespace SmartHiring.Repository.Data.Migrations
             modelBuilder.Entity("SmartHiring.Core.Entities.Applicant", b =>
                 {
                     b.Navigation("ApplicantAddresses");
+
+                    b.Navigation("ApplicantPhones");
 
                     b.Navigation("ApplicantSkills");
 

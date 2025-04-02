@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -75,7 +74,7 @@ namespace SmartHiring.APIs.Controllers
 				.Where(i => i.HR != null && i.HR.HRCompany != null && i.HR.HRCompany.Id == userCompany.Id)
 				.ToList();
 
-			var acceptedCandidates = filteredInterviews.Count(i => i.InterviewStatus == InterviewStatus.Accepted);
+			var acceptedCandidates = filteredInterviews.Count(i => i.InterviewStatus == InterviewStatus.Hired);
 			var rejectedCandidates = filteredInterviews.Count(i => i.InterviewStatus == InterviewStatus.Rejected);
 			var totalCandidates = acceptedCandidates + rejectedCandidates;
 

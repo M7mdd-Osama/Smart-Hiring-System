@@ -4,6 +4,6 @@ namespace SmartHiring.APIs.Helpers
 {
 	public interface ImailSettings
 	{
-		public Task SendMail(Email email);
+		Task SendMail(Email email, bool includeOtpMessage);
 	}
 }

@@ -1,12 +1,4 @@
-﻿using SmartHiring.Core.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-
-namespace SmartHiring.Repository.Data
+﻿namespace SmartHiring.Repository.Data
 {
 	public static class SmartHiringDbContextSeed
 	{

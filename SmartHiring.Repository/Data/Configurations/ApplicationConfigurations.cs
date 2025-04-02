@@ -32,7 +32,6 @@ namespace SmartHiring.Repository.Data.Configurations
 				   .WithMany(p => p.Applications)
 				   .HasForeignKey(a => a.PostId)
 				   .OnDelete(DeleteBehavior.NoAction);
-
 		}
 	}
 }

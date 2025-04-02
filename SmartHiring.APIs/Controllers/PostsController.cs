@@ -23,7 +23,8 @@ namespace SmartHiring.APIs.Controllers
 		private readonly IPostRepository _postRepository;
 
 		public PostsController(IGenericRepository<Post> postRepo,
-			 IMapper mapper, UserManager<AppUser> userManager,
+			 IMapper mapper,
+			 UserManager<AppUser> userManager,
 			 IGenericRepository<SavedPost> savedPostRepo,
 			 IPostRepository postRepository)
 		{
