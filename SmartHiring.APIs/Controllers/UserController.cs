@@ -1,7 +1,5 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting;
 using SmartHiring.APIs.DTOs;
 using SmartHiring.Core.Entities;
 using SmartHiring.Core.Repositories;

@@ -1,16 +1,13 @@
 ﻿using SmartHiring.Core.Entities.Identity;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Runtime.Serialization;
 
 namespace SmartHiring.Core.Entities
 {
 	public enum InterviewStatus
 	{
-		[EnumMember(Value = "Pending")]
 		Pending,
-		[EnumMember(Value = "Accepted")]
-		Accepted,
-		[EnumMember(Value = "Rejected")]
+		Under_Interview,
+		Hired,
 		Rejected
 	}
 	public class Interview : BaseEntity
@@ -20,8 +17,6 @@ namespace SmartHiring.Core.Entities
 		public string Location { get; set; }
 
 		public InterviewStatus InterviewStatus { get; set; }
-		public double Score { get; set; }
-
 
 		public string HRId { get; set; }
 		[ForeignKey("HRId")]

@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -9,127 +9,273 @@ using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
 using SmartHiring.Core.Repositories;
 using SmartHiring.Core.Specifications;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace SmartHiring.APIs.Controllers
 {
+	public class ApplicationController : APIBaseController
+	{
+		private readonly IGenericRepository<Application> _applicationRepo;
+		private readonly IGenericRepository<CandidateListApplicant> _candidateListApplicantRepo;
+		private readonly IGenericRepository<CandidateList> _candidateListRepo;
+		private readonly IGenericRepository<Post> _postRepo;
+		private readonly IMapper _mapper;
+		private readonly UserManager<AppUser> _userManager;
 
-    public class ApplicationController : APIBaseController
-    {
-        private readonly IGenericRepository<Application> _applicationRepository;
-        private readonly IMapper _mapper;
-        private readonly UserManager<AppUser> _userManager;
+		public ApplicationController(
+			IGenericRepository<Application> applicationRepo,
+			IGenericRepository<CandidateListApplicant> candidateListApplicantRepo,
+			IGenericRepository<CandidateList> candidateListRepo,
+			IGenericRepository<Post> postRepo,
+			IMapper mapper,
+			UserManager<AppUser> userManager)
+		{
+			_applicationRepo = applicationRepo;
+			_candidateListApplicantRepo = candidateListApplicantRepo;
+			_candidateListRepo = candidateListRepo;
+			_postRepo = postRepo;
+			_mapper = mapper;
+			_userManager = userManager;
+		}
 
-        public ApplicationController(
-            IGenericRepository<Application> applicationRepository,
-            IMapper mapper,
-            UserManager<AppUser> userManager)
-        {
-            _applicationRepository = applicationRepository;
-            _mapper = mapper;
-            _userManager = userManager;
-        }
+		#region Get Applications For Post
 
-        [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<ApplicationDto>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<ApplicationDto>>> GetApplications()
-        {
-            var spec = new ApplicationSpecification(); // ✅ استخدم Constructor الجديد لجلب كل الطلبات
-            var applications = await _applicationRepository.GetAllWithSpecAsync(spec);
+		[Authorize(Roles = "HR")]
+		[HttpGet("{postId}/applications")]
+		public async Task<IActionResult> GetApplicationsForPost(int postId)
+		{
+			var userEmail = User.FindFirstValue(ClaimTypes.Email);
+			if (string.IsNullOrEmpty(userEmail))
+				return Unauthorized(new ApiResponse(401, "User email not found in token"));
 
-            if (!applications.Any()) // ✅ تحقق إذا لم تكن هناك أي بيانات
-            {
-                return NotFound(new { message = "No applications found." });
-            }
+			var user = await _userManager.Users
+				.Include(u => u.HRCompany)
+				.FirstOrDefaultAsync(u => u.Email == userEmail);
 
-            var mappedApplications = _mapper.Map<IEnumerable<Application>, IEnumerable<ApplicationDto>>(applications);
-            return Ok(mappedApplications);
-        }
+			if (user == null)
+				return Unauthorized(new ApiResponse(401, "User not found"));
 
+			var post = await _postRepo.GetByIdAsync(postId);
 
-        [HttpGet("{applicationId}")]
-        [ProducesResponseType(typeof(ApplicationDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApplicationDto>> GetApplication(int applicationId)
-        {
-            var spec = new ApplicationSpecification(applicationId);
-            var application = await _applicationRepository.GetByEntityWithSpecAsync(spec);
-            if (application == null) return NotFound(new ApiResponse(404));
+			if (post == null || post.CompanyId != user.HRCompany.Id)
+				return Forbid();
 
-            var mappedApplication = _mapper.Map<Application, ApplicationDto>(application);
-            return Ok(mappedApplication);
-        }
+			var spec = new ApplicationsByPostIdSpecification(postId);
+			var allApplications = await _applicationRepo.GetAllWithSpecAsync(spec);
 
-        [HttpGet("job/{jobId}")]
-        [ProducesResponseType(typeof(IEnumerable<ApplicationDto>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<ApplicationDto>>> GetApplicationsForJob(int jobId)
-        {
-            var spec = new ApplicationSpecification(jobId);
-            var applications = await _applicationRepository.GetAllWithSpecAsync(spec);
-            var mappedApplications = _mapper.Map<IEnumerable<Application>, IEnumerable<ApplicationDto>>(applications);
-            return Ok(mappedApplications);
-        }
+			if (allApplications == null || !allApplications.Any())
+				return NotFound(new ApiResponse(404, "No applications found for this post."));
 
-        [HttpPost]
-        public async Task<ActionResult<ApplicationDto>> CreateApplication([FromBody] ApplicationDto applicationDto)
-        {
-            if (applicationDto == null || string.IsNullOrEmpty(applicationDto.CV_Link))
-                return BadRequest(new { message = "Invalid application data. CV_Link is required." });
+			var appliedDtos = _mapper.Map<List<ApplicationDto>>(allApplications);
 
-            var agency = await _userManager.FindByIdAsync(applicationDto.AgencyId);
-            if (agency == null)
-                return NotFound(new { message = "Agency not found." });
+			var filtered = appliedDtos
+				.Where(a => allApplications.Any(app => app.Id == a.Id && app.IsShortlisted))
+				.ToList();
 
-            var application = new Application
-            {
-                RankScore = applicationDto.RankScore,
-                IsShortlisted = applicationDto.IsShortlisted,
-                ApplicationDate = DateTime.UtcNow,
-                CV_Link = applicationDto.CV_Link,
-                ApplicantId = applicationDto.ApplicantId,
-                PostId = applicationDto.PostId,
-                AgencyId = applicationDto.AgencyId
-            };
+			var disqualified = appliedDtos
+				.Where(a => allApplications.Any(app => app.Id == a.Id && !app.IsShortlisted))
+				.ToList();
 
-            await _applicationRepository.AddAsync(application);
-            var result = _mapper.Map<Application, ApplicationDto>(application);
-            return Ok(result);
-        }
+			var result = new
+			{
+				Applied = new { Data = appliedDtos, appliedDtos.Count },
+				Filtered = new { Data = filtered, filtered.Count },
+				Disqualified = new { Data = disqualified, disqualified.Count }
+			};
 
-        [HttpPut("{applicationId}/approve")]
-        public async Task<IActionResult> ApproveApplication(int applicationId)
-        {
-            var application = await _applicationRepository.GetByIdAsync(applicationId);
-            if (application == null)
-                return NotFound(new { message = "Application not found." });
+			return Ok(result);
+		}
 
-            application.IsShortlisted = true;
-            await _applicationRepository.UpdateAsync(application);
-            return Ok(new { message = "Application approved successfully", applicationId });
-        }
+		#endregion
 
-        [HttpPut("{applicationId}/reject")]
-        public async Task<IActionResult> RejectApplication(int applicationId)
-        {
-            var application = await _applicationRepository.GetByIdAsync(applicationId);
-            if (application == null)
-                return NotFound(new { message = "Application not found." });
+		#region Shortlisted Candidates
 
-            application.IsShortlisted = false;
-            await _applicationRepository.UpdateAsync(application);
-            return Ok(new { message = "Application rejected successfully", applicationId });
-        }
+		[Authorize(Roles = "HR")]
+		[HttpGet("{postId}/ShortlistedCandidates")]
+		public async Task<IActionResult> GetFilteredCandidates(int postId)
+		{
+			var userEmail = User.FindFirstValue(ClaimTypes.Email);
+			if (string.IsNullOrEmpty(userEmail))
+				return Unauthorized(new ApiResponse(401, "User email not found in token"));
 
-        [HttpDelete("{applicationId}")]
-        public async Task<IActionResult> DeleteApplication(int applicationId)
-        {
-            var application = await _applicationRepository.GetByIdAsync(applicationId);
-            if (application == null)
-                return NotFound(new { message = "Application not found." });
+			var user = await _userManager.Users
+				.Include(u => u.HRCompany)
+				.FirstOrDefaultAsync(u => u.Email == userEmail);
 
-            await _applicationRepository.DeleteAsync(application);
-            return Ok(new { message = "Application deleted successfully" });
-        }
-    }
+			if (user == null)
+				return Unauthorized(new ApiResponse(401, "User not found"));
+
+			var post = await _postRepo.GetByIdAsync(postId);
+
+			if (post == null || post.CompanyId != user.HRCompany.Id)
+				return Forbid();
+
+			var spec = new AcceptedApplicationsByPostIdSpecification(postId);
+			var filteredCandidates = await _applicationRepo.GetAllWithSpecAsync(spec);
+
+			if (filteredCandidates == null || !filteredCandidates.Any())
+				return NotFound(new ApiResponse(404, "No filtered candidates found for this post."));
+
+			var sortedCandidates = filteredCandidates
+				.OrderByDescending(app => app.RankScore)
+				.ToList();
+
+			var mappedCandidates = _mapper.Map<List<CandidateForManagerDto>>(sortedCandidates);
+
+			for (int i = 0; i < mappedCandidates.Count; i++)
+			{
+				mappedCandidates[i].Rank = i + 1;
+			}
+
+			var result = new
+			{
+				TotalCount = mappedCandidates.Count,
+				Candidates = mappedCandidates
+			};
+
+			return Ok(result);
+		}
+
+		#endregion
+
+		#region Create CandidateList For Manager
+
+		[Authorize(Roles = "HR")]
+		[HttpPost("{postId}/CreateCandidateList")]
+		public async Task<IActionResult> CreateCandidateList(int postId, [FromBody] CandidateListRequestDto request)
+		{
+			var userEmail = User.FindFirstValue(ClaimTypes.Email);
+			if (string.IsNullOrEmpty(userEmail))
+				return Unauthorized(new ApiResponse(401, "User email not found in token"));
+
+			var user = await _userManager.Users
+				.Include(u => u.HRCompany)
+				.FirstOrDefaultAsync(u => u.Email == userEmail);
+
+			if (user == null)
+				return Unauthorized(new ApiResponse(401, "User not found"));
+
+			var post = await _postRepo.GetByIdAsync(postId);
+			if (post == null || post.CompanyId != user.HRCompany.Id)
+				return Forbid();
+
+			var manager = await _userManager.Users
+				.FirstOrDefaultAsync(u => u.ManagedCompany != null && u.ManagedCompany.Id == user.HRCompany.Id);
+
+			if (manager == null)
+				return NotFound(new ApiResponse(404, "No manager found for this company."));
+
+			var spec = new AcceptedApplicationsByPostIdSpecification(postId);
+			var filteredCandidates = await _applicationRepo.GetAllWithSpecAsync(spec);
+
+			if (filteredCandidates == null || !filteredCandidates.Any())
+				return NotFound(new ApiResponse(404, "No filtered candidates found for this post."));
+
+			var topCandidates = filteredCandidates
+				.OrderByDescending(app => app.RankScore)
+				.Take(request.TopN)
+				.ToList();
+
+			if (!topCandidates.Any())
+				return BadRequest(new ApiResponse(400, "No candidates available for selection."));
+
+			var candidateList = new CandidateList
+			{
+				PostId = postId,
+				ManagerId = manager.Id,
+				Status = "Pending",
+				GeneratedDate = DateTime.UtcNow
+			};
+
+			await _candidateListRepo.AddAsync(candidateList);
+			await _candidateListRepo.SaveChangesAsync();
+
+			var candidateListApplicants = topCandidates.Select(c => new CandidateListApplicant
+			{
+				CandidateListId = candidateList.Id,
+				ApplicantId = c.ApplicantId
+			}).ToList();
+
+			await _candidateListApplicantRepo.AddRangeAsync(candidateListApplicants);
+			await _candidateListApplicantRepo.SaveChangesAsync();
+
+			return Ok(new { CandidateListId = candidateList.Id, SelectedCandidates = topCandidates.Count });
+		}
+
+		#endregion
+
+		#region Candidate List Approval by manager
+
+		[Authorize(Roles = "Manager")]
+		[HttpPatch("CandidateList/{candidateListId}/Approval")]
+		public async Task<IActionResult> ApproveCandidateList(int candidateListId, [FromBody] CandidateListApprovalDto request)
+		{
+			var userEmail = User.FindFirstValue(ClaimTypes.Email);
+			if (string.IsNullOrEmpty(userEmail))
+				return Unauthorized(new ApiResponse(401, "User email not found in token"));
+
+			var manager = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+			if (manager == null)
+				return Unauthorized(new ApiResponse(401, "Manager not found"));
+
+			var candidateList = await _candidateListRepo.GetByIdAsync(candidateListId);
+			if (candidateList == null || candidateList.ManagerId != manager.Id)
+				return Forbid();
+
+			if (candidateList.Status != "Pending")
+				return BadRequest(new ApiResponse(400, "This list has already been processed."));
+
+			candidateList.Status = request.IsApproved ? "Accepted" : "Rejected";
+
+			await _candidateListRepo.UpdateAsync(candidateList);
+			await _candidateListRepo.SaveChangesAsync();
+
+			if (request.IsApproved)
+			{
+				return Ok(new { message = "Candidate list approved and moved to interview scheduling." });
+			}
+			return Ok(new { message = "Candidate list rejected." });
+		}
+
+		#endregion
+
+		#region Before Refactor
+
+		[HttpPut("{applicationId}/approve")]
+		public async Task<IActionResult> ApproveApplication(int applicationId)
+		{
+			var application = await _applicationRepo.GetByIdAsync(applicationId);
+			if (application == null)
+				return NotFound(new { message = "Application not found." });
+
+			application.IsShortlisted = true;
+			await _applicationRepo.UpdateAsync(application);
+			return Ok(new { message = "Application approved successfully", applicationId });
+		}
+
+		[HttpPut("{applicationId}/reject")]
+		public async Task<IActionResult> RejectApplication(int applicationId)
+		{
+			var application = await _applicationRepo.GetByIdAsync(applicationId);
+			if (application == null)
+				return NotFound(new { message = "Application not found." });
+
+			application.IsShortlisted = false;
+			await _applicationRepo.UpdateAsync(application);
+			return Ok(new { message = "Application rejected successfully", applicationId });
+		}
+
+		[HttpDelete("{applicationId}")]
+		public async Task<IActionResult> DeleteApplication(int applicationId)
+		{
+			var application = await _applicationRepo.GetByIdAsync(applicationId);
+			if (application == null)
+				return NotFound(new { message = "Application not found." });
+
+			await _applicationRepo.DeleteAsync(application);
+			return Ok(new { message = "Application deleted successfully" });
+		}
+
+		#endregion
+	}
 }

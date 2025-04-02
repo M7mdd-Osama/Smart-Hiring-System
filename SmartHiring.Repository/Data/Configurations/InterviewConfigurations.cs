@@ -25,10 +25,6 @@ namespace SmartHiring.Repository.Data.Configurations
 				.HasColumnType("nvarchar(20)")
 				.HasMaxLength(50);
 
-			builder.Property(i => i.Score)
-				.HasMaxLength(50)
-				.HasDefaultValue(0);
-
 			builder.Property(i => i.Location)
 				.HasMaxLength(200);
 

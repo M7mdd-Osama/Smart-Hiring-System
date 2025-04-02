@@ -1,11 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using SmartHiring.Core.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartHiring.Repository.Data.Configurations
 {
@@ -32,10 +27,6 @@ namespace SmartHiring.Repository.Data.Configurations
 			builder.Property(a => a.DateOfBirth)
 				.IsRequired()
 				.HasColumnType("date");
-
-			builder.HasMany(a => a.ApplicantPhones)
-				.WithOne()
-				.HasForeignKey(p => p.ApplicantId);
 
 			builder.HasMany(a => a.ApplicantAddresses)
 				.WithOne(a => a.Applicant)

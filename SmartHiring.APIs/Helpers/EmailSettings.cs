@@ -17,7 +17,7 @@ namespace SmartHiring.APIs.Helpers
 			_options = options.Value;
 		}
 
-		public async Task SendMail(Email email)
+		public async Task SendMail(Email email, bool includeOtpMessage)
 		{
 			var mail = new MimeMessage
 			{
@@ -31,9 +31,14 @@ namespace SmartHiring.APIs.Helpers
 			{
 				HtmlBody = $@"
             <h2>Welcome to Smart Hiring!</h2>
-            <p>{email.Body}</p>
-            <p style='color:gray;'>This OTP is valid for 10 minutes only.</p> "
+            <p>{email.Body}</p>"
 			};
+
+			if (includeOtpMessage)
+			{
+				builder.HtmlBody += "<p style='color:gray;'>This OTP is valid for 10 minutes only.</p>";
+			}
+
 			mail.Body = builder.ToMessageBody();
 
 			using var smtp = new SmtpClient();

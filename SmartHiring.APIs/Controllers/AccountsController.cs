@@ -9,7 +9,6 @@ using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
 using SmartHiring.Core.Services;
 using SmartHiring.Repository.Data;
-using System.Security.Cryptography;
 
 namespace SmartHiring.APIs.Controllers
 {

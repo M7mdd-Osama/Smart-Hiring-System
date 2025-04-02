@@ -1,9 +1,9 @@
 ﻿namespace SmartHiring.APIs.DTOs
 {
-    public class ApplicationDto
-    {
+	public class CandidateForManagerDto
+	{
 		public int Id { get; set; }
 		public string ApplicantName { get; set; }
-		public string AgencyName { get; set; }
+		public int Rank { get; set; }
 	}
 }
