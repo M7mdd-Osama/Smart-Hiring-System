@@ -9,7 +9,6 @@
 		public decimal MinSalary { get; set; }
 		public decimal MaxSalary { get; set; }
 		public string Currency { get; set; }
-		public bool HideSalary { get; set; }
 		public int MinExperience { get; set; }
 		public int MaxExperience { get; set; }
 		public string Country { get; set; }

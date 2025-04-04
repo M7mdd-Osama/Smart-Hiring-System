@@ -153,6 +153,13 @@ public class MappingProfiles : Profile
 
         #endregion
 
+        #region For Agency API
+
+        CreateMap<Post, PostToReturnForAgencyDto>();
+
+        #endregion
+
+
 
         //CreateMap<Post, PostToReturnDto>()
         //	.ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.HR.HRCompany.Name))

@@ -35,11 +35,11 @@ namespace SmartHiring.APIs.Controllers
 			_postRepository = postRepository;
 		}
 
-        #region Get All Posts & Get Post By Id
+        #region Get All Posts for HR & Manager
 
-        [Authorize(Roles = "HR,Manager,Agency")]
-        [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<PostToReturnDto>>> GetPosts([FromQuery] PostSpecParams Params)
+        [Authorize(Roles = "HR,Manager")]
+        [HttpGet("hr-manager-posts")]
+        public async Task<ActionResult> GetHRManagerPosts([FromQuery] PostSpecParams Params)
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(userEmail))
@@ -55,61 +55,100 @@ namespace SmartHiring.APIs.Controllers
 
             var userRole = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
             int? companyId = userRole == "HR" ? user.HRCompany?.Id
-                                        : userRole == "Manager" ? user.ManagedCompany?.Id
-                                        : null;
+                                                : user.ManagedCompany?.Id;
 
-            bool onlyPaid = userRole == "Manager";
-
-            var spec = new PostWithCompanySpecifications(Params, companyId, userRole, user.Id);
+            var spec = new PostWithCompanySpecifications(Params, companyId, userRole, user.Id, false);
             var jobs = await _postRepo.GetAllWithSpecAsync(spec);
 
             if (!jobs.Any())
                 return NotFound(new ApiResponse(404, "No posts found"));
+
+            var savedPostIds = (await _savedPostRepo.GetAllWithSpecAsync(new SavedPostSpecification(user.Id)))
+                                    .Select(s => s.PostId)
+                                    .ToHashSet();
+
+            var countSpec = new PostWithFiltrationForCountAsync(Params, companyId, userRole, userRole == "Manager"); 
+            var count = await _postRepo.GetCountWithSpecAsync(countSpec);
 
             var mappedPosts = _mapper.Map<IReadOnlyList<PostToReturnDto>>(jobs);
 
             foreach (var post in jobs)
             {
                 var unreadNotes = post.Notes?.Any(note => !note.IsSeen && note.UserId != user.Id) ?? false;
-
                 var postDto = mappedPosts.FirstOrDefault(dto => dto.Id == post.Id);
                 if (postDto != null)
-                {
                     postDto.HasUnreadNotes = unreadNotes;
-                }
             }
-
-            var savedPostIds = (await _savedPostRepo.GetAllWithSpecAsync(new SavedPostSpecification(user.Id)))
-                                .Select(s => s.PostId)
-                                .ToHashSet();
 
             foreach (var post in mappedPosts)
                 post.IsSaved = savedPostIds.Contains(post.Id);
 
-            var countSpec = new PostWithFiltrationForCountAsync(Params, companyId, userRole, onlyPaid);
-            var count = await _postRepo.GetCountWithSpecAsync(countSpec);
-
             return Ok(new Pagination<PostToReturnDto>(Params.PageIndex, Params.PageSize, mappedPosts, count));
         }
 
+        #endregion
+
+        #region Get All Posts for Agency
+
+        [Authorize(Roles = "Agency")]
+        [HttpGet("agency-posts")]
+        public async Task<ActionResult> GetAgencyPosts([FromQuery] PostSpecParams Params)
+        {
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new ApiResponse(401, "User email not found in token"));
+
+            var user = await _userManager.Users
+                .FirstOrDefaultAsync(u => u.Email == userEmail);
+
+            if (user == null)
+                return Unauthorized(new ApiResponse(401, "User not found"));
+
+            // تحديد الـ specification بحيث يظهر فقط البوستات المدفوعة للـ Agency
+            var spec = new PostWithCompanySpecifications(Params, null, "Agency", user.Id, true); // true للـ Agency لعرض المدفوع فقط
+            var jobs = await _postRepo.GetAllWithSpecAsync(spec);
+
+            if (!jobs.Any())
+                return NotFound(new ApiResponse(404, "No posts found"));
+
+            var savedPostIds = (await _savedPostRepo.GetAllWithSpecAsync(new SavedPostSpecification(user.Id)))
+                                    .Select(s => s.PostId)
+                                    .ToHashSet();
+
+            // حساب الكاونت فقط للبوستات المدفوعة للـ Agency
+            var countSpec = new PostWithFiltrationForCountAsync(Params, null, "Agency", true); // true للـ Agency لحساب المدفوع فقط
+            var count = await _postRepo.GetCountWithSpecAsync(countSpec);
+
+            var mappedAgencyPosts = _mapper.Map<IReadOnlyList<PostToReturnForAgencyDto>>(jobs);
+
+            foreach (var post in mappedAgencyPosts)
+                post.IsSaved = savedPostIds.Contains(post.Id);
+
+            return Ok(new Pagination<PostToReturnForAgencyDto>(Params.PageIndex, Params.PageSize, mappedAgencyPosts, count));
+        }
+
+        #endregion
+
+        #region Get Post By Id
+
         [Authorize(Roles = "HR,Manager,Agency")]
-		[HttpGet("{postId}")]
-		public async Task<ActionResult<PostToReturnDto>> GetPostById(int postId)
-		{
-			var spec = new PostWithCompanySpecifications(postId);
-			var post = await _postRepo.GetByEntityWithSpecAsync(spec);
+        [HttpGet("{postId}")]
+        public async Task<ActionResult<PostToReturnDto>> GetPostById(int postId)
+        {
+            var spec = new PostWithCompanySpecifications(postId);
+            var post = await _postRepo.GetByEntityWithSpecAsync(spec);
 
-			if (post == null || post.PaymentStatus != "Paid")
-				return NotFound(new ApiResponse(404, "Post not found"));
+            if (post == null || post.PaymentStatus != "Paid")
+                return NotFound(new ApiResponse(404, "Post not found"));
 
-			return Ok(_mapper.Map<PostToReturnDto>(post));
-		}
+            return Ok(_mapper.Map<PostToReturnDto>(post));
+        }
 
-		#endregion
+        #endregion
 
-		#region Save & Unsave Post
+        #region Save & Unsave Post
 
-		[Authorize(Roles = "HR,Manager,Agency")]
+        [Authorize(Roles = "HR,Manager,Agency")]
 		[HttpPatch("post_save_status")]
 		public async Task<IActionResult> UpdateSaveStatus([FromQuery] int post_id, [FromBody] SaveStatusDto request)
 		{
@@ -246,7 +285,6 @@ namespace SmartHiring.APIs.Controllers
 				post.MinSalary = updateDto.MinSalary ?? post.MinSalary;
 				post.MaxSalary = updateDto.MaxSalary ?? post.MaxSalary;
 				post.Currency = updateDto.Currency ?? post.Currency;
-				post.HideSalary = updateDto.HideSalary ?? post.HideSalary;
 				post.MinExperience = updateDto.MinExperience ?? post.MinExperience;
 				post.MaxExperience = updateDto.MaxExperience ?? post.MaxExperience;
 
@@ -277,7 +315,6 @@ namespace SmartHiring.APIs.Controllers
 				post.MinSalary = updateDto.MinSalary ?? post.MinSalary;
 				post.MaxSalary = updateDto.MaxSalary ?? post.MaxSalary;
 				post.Currency = updateDto.Currency ?? post.Currency;
-				post.HideSalary = updateDto.HideSalary ?? post.HideSalary;
 				post.MinExperience = updateDto.MinExperience ?? post.MinExperience;
 				post.MaxExperience = updateDto.MaxExperience ?? post.MaxExperience;
 

@@ -4,13 +4,15 @@ namespace SmartHiring.Core.Specifications
 {
     public class PostWithCompanySpecifications : BaseSpecifications<Post>
     {
-        public PostWithCompanySpecifications(PostSpecParams Params, int? companyId, string userRole, string userId)
+        public PostWithCompanySpecifications(PostSpecParams Params, int? companyId, string userRole, string userId, bool onlyPaid = false)
             : base(P =>
                 (!companyId.HasValue || P.CompanyId == companyId) &&
                 (!Params.typeId.HasValue || P.PostJobTypes.Any(jt => jt.JobTypeId == Params.typeId)) &&
                 (!Params.careerLevelId.HasValue || P.PostCareerLevels.Any(cl => cl.CareerLevelId == Params.careerLevelId)) &&
                 (!Params.workplaceId.HasValue || P.PostWorkplaces.Any(wp => wp.WorkplaceId == Params.workplaceId)) &&
-                (userRole == "HR" || P.PaymentStatus == "Paid" || P.SavedPosts.Any(sp => sp.UserId == userId)))
+                (userRole == "HR" || P.PaymentStatus == "Paid" || P.SavedPosts.Any(sp => sp.UserId == userId)) &&
+                (userRole == "HR" || P.PaymentStatus == "Paid" || !onlyPaid || P.PaymentStatus == "Paid") // للموافقة على كل البوستات للـ HR وحساب المدفوع فقط للبقية
+            )
         {
             AddIncludes();
 
@@ -42,7 +44,6 @@ namespace SmartHiring.Core.Specifications
 
             ApplyPagination(Params.PageSize * (Params.PageIndex - 1), Params.PageSize);
         }
-
         public PostWithCompanySpecifications(int postId)
             : base(p => p.Id == postId)
         {

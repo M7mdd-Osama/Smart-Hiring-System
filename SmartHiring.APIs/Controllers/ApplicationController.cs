@@ -239,43 +239,9 @@ namespace SmartHiring.APIs.Controllers
 
 		#endregion
 
-		#region Before Refactor
 
-		[HttpPut("{applicationId}/approve")]
-		public async Task<IActionResult> ApproveApplication(int applicationId)
-		{
-			var application = await _applicationRepo.GetByIdAsync(applicationId);
-			if (application == null)
-				return NotFound(new { message = "Application not found." });
 
-			application.IsShortlisted = true;
-			await _applicationRepo.UpdateAsync(application);
-			return Ok(new { message = "Application approved successfully", applicationId });
-		}
 
-		[HttpPut("{applicationId}/reject")]
-		public async Task<IActionResult> RejectApplication(int applicationId)
-		{
-			var application = await _applicationRepo.GetByIdAsync(applicationId);
-			if (application == null)
-				return NotFound(new { message = "Application not found." });
 
-			application.IsShortlisted = false;
-			await _applicationRepo.UpdateAsync(application);
-			return Ok(new { message = "Application rejected successfully", applicationId });
-		}
-
-		[HttpDelete("{applicationId}")]
-		public async Task<IActionResult> DeleteApplication(int applicationId)
-		{
-			var application = await _applicationRepo.GetByIdAsync(applicationId);
-			if (application == null)
-				return NotFound(new { message = "Application not found." });
-
-			await _applicationRepo.DeleteAsync(application);
-			return Ok(new { message = "Application deleted successfully" });
-		}
-
-		#endregion
 	}
 }
