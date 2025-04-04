@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartHiring.Repository.Data;
 
@@ -11,9 +12,10 @@ using SmartHiring.Repository.Data;
 namespace SmartHiring.Repository.Data.Migrations
 {
     [DbContext(typeof(SmartHiringDbContext))]
-    partial class SmartHiringContextModelSnapshot : ModelSnapshot
+    [Migration("20250404152400_AddAgencyNameAttributeAgain")]
+    partial class AddAgencyNameAttributeAgain
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -631,16 +633,11 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.Property<bool>("IsSeen")
                         .HasColumnType("bit");
 
-                    b.Property<int>("PostId")
-                        .HasColumnType("int");
-
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PostId");
 
                     b.HasIndex("UserId");
 
@@ -1088,19 +1085,11 @@ namespace SmartHiring.Repository.Data.Migrations
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Note", b =>
                 {
-                    b.HasOne("SmartHiring.Core.Entities.Post", "Post")
-                        .WithMany("Notes")
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
                     b.HasOne("SmartHiring.Core.Entities.Identity.AppUser", "User")
                         .WithMany("Notes")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Post");
 
                     b.Navigation("User");
                 });
@@ -1305,8 +1294,6 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.Navigation("CandidateLists");
 
                     b.Navigation("Interviews");
-
-                    b.Navigation("Notes");
 
                     b.Navigation("PostCareerLevels");
 

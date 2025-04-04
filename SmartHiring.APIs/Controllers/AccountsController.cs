@@ -139,19 +139,19 @@ namespace SmartHiring.APIs.Controllers
 
 				await _dbContext.SaveChangesAsync();
 			}
-			else if (model.Role.Equals("Agency", StringComparison.OrdinalIgnoreCase))
-			{
+            else if (model.Role.Equals("Agency", StringComparison.OrdinalIgnoreCase))
+            {
 				if (await _userManager.Users.AnyAsync(u => u.AgencyName == model.AgencyName))
-					return BadRequest(new ApiResponse(400, "Agency name already exists"));
+                    return BadRequest(new ApiResponse(400, "Agency name already exists"));
 
 				user.AgencyName = model.AgencyName;
 
-				var result = await _userManager.CreateAsync(user, model.Password);
-				if (!result.Succeeded)
-					return BadRequest(new ApiResponse(400, $"Failed to create user: {string.Join(", ", result.Errors.Select(e => e.Description))}"));
-			}
+                var result = await _userManager.CreateAsync(user, model.Password);
+                if (!result.Succeeded)
+                    return BadRequest(new ApiResponse(400, $"Failed to create user: {string.Join(", ", result.Errors.Select(e => e.Description))}"));
+            }
 
-			await _userManager.AddToRoleAsync(user, model.Role);
+            await _userManager.AddToRoleAsync(user, model.Role);
 			await _dbContext.SaveChangesAsync();
 
 			await AuthHelper.SendConfirmationEmail(_mailSettings, user.Email, user.ConfirmationCode);
@@ -193,14 +193,16 @@ namespace SmartHiring.APIs.Controllers
 					companyLogo = user.ManagedCompany.LogoUrl;
 				}
 
-				return Ok(new
-				{
-					DisplayName = $"{user.FirstName} {user.LastName}",
-					Email = user.Email,
-					Token = await _tokenService.CreateTokenAsync(user, _userManager),
-					CompanyLogoUrl = companyLogo
-				});
-			}
+                return Ok(new
+                {
+                    DisplayName = !string.IsNullOrEmpty(user.FirstName) && !string.IsNullOrEmpty(user.LastName)
+                        ? $"{user.FirstName} {user.LastName}"
+                        : user.AgencyName ?? "N/A",
+                    user.Email,
+                    Token = await _tokenService.CreateTokenAsync(user, _userManager),
+                    CompanyLogoUrl = companyLogo
+                });
+            }
 
 			var company = await _dbContext.Companies.FirstOrDefaultAsync(c => c.BusinessEmail == model.Email);
 
@@ -274,14 +276,16 @@ namespace SmartHiring.APIs.Controllers
 				companyLogo = user.ManagedCompany.LogoUrl;
 			}
 
-			return Ok(new
-			{
-				DisplayName = $"{user.FirstName} {user.LastName}",
-				Email = user.Email,
-				Token = await _tokenService.CreateTokenAsync(user, _userManager),
-				CompanyLogoUrl = companyLogo
-			});
-		}
+            return Ok(new
+            {
+                DisplayName = !string.IsNullOrEmpty(user.FirstName) && !string.IsNullOrEmpty(user.LastName)
+                    ? $"{user.FirstName} {user.LastName}"
+                    : user.AgencyName ?? "N/A",
+                user.Email,
+                Token = await _tokenService.CreateTokenAsync(user, _userManager),
+                CompanyLogoUrl = companyLogo
+            });
+        }
 
 		#endregion
 

@@ -1,5 +1,4 @@
-﻿using SmartHiring.Core.Entities;
-namespace SmartHiring.APIs.DTOs
+﻿namespace SmartHiring.APIs.DTOs
 {
     public class CompanyCreateDto
     {
