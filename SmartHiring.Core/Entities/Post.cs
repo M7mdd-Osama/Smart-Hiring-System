@@ -36,6 +36,7 @@ namespace SmartHiring.Core.Entities
 		public ICollection<CandidateList> CandidateLists { get; set; } = new HashSet<CandidateList>();
 		public ICollection<Interview> Interviews { get; set; } = new HashSet<Interview>();
 		public ICollection<SavedPost> SavedPosts { get; set; } = new HashSet<SavedPost>();
+		public ICollection<Note> Notes { get; set; } = new HashSet<Note>();
 
 		public string? PaymentIntentId { get; set; }
 		public string? ClientSecret { get; set; }

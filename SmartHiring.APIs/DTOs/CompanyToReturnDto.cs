@@ -1,6 +1,4 @@
-﻿using SmartHiring.Core.Entities;
-using SmartHiring.Core.Entities.Identity;
-namespace SmartHiring.APIs.DTOs
+﻿namespace SmartHiring.APIs.DTOs
 {
     public class CompanyToReturnDto
     {

@@ -35,54 +35,64 @@ namespace SmartHiring.APIs.Controllers
 			_postRepository = postRepository;
 		}
 
-		#region Get All Posts & Get Post By Id
+        #region Get All Posts & Get Post By Id
 
-		[Authorize(Roles = "HR,Manager,Agency")]
-		[HttpGet]
-		public async Task<ActionResult<IReadOnlyList<PostToReturnDto>>> GetPosts([FromQuery] PostSpecParams Params)
-		{
-			var userEmail = User.FindFirstValue(ClaimTypes.Email);
-			if (string.IsNullOrEmpty(userEmail))
-				return Unauthorized(new ApiResponse(401, "User email not found in token"));
+        [Authorize(Roles = "HR,Manager,Agency")]
+        [HttpGet]
+        public async Task<ActionResult<IReadOnlyList<PostToReturnDto>>> GetPosts([FromQuery] PostSpecParams Params)
+        {
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new ApiResponse(401, "User email not found in token"));
 
-			var user = await _userManager.Users
-				.Include(u => u.HRCompany)
-				.Include(u => u.ManagedCompany)
-				.FirstOrDefaultAsync(u => u.Email == userEmail);
+            var user = await _userManager.Users
+                .Include(u => u.HRCompany)
+                .Include(u => u.ManagedCompany)
+                .FirstOrDefaultAsync(u => u.Email == userEmail);
 
-			if (user == null)
-				return Unauthorized(new ApiResponse(401, "User not found"));
+            if (user == null)
+                return Unauthorized(new ApiResponse(401, "User not found"));
 
-			var userRole = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
+            var userRole = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
+            int? companyId = userRole == "HR" ? user.HRCompany?.Id
+                                        : userRole == "Manager" ? user.ManagedCompany?.Id
+                                        : null;
 
-			int? companyId = userRole == "HR" ? user.HRCompany?.Id
-							 : userRole == "Manager" ? user.ManagedCompany?.Id
-							 : null;
+            bool onlyPaid = userRole == "Manager";
 
-			bool onlyPaid = userRole == "Manager";
+            var spec = new PostWithCompanySpecifications(Params, companyId, userRole, user.Id);
+            var jobs = await _postRepo.GetAllWithSpecAsync(spec);
 
-			var spec = new PostWithCompanySpecifications(Params, companyId, userRole, user.Id);
-			var jobs = await _postRepo.GetAllWithSpecAsync(spec);
+            if (!jobs.Any())
+                return NotFound(new ApiResponse(404, "No posts found"));
 
-			if (!jobs.Any())
-				return NotFound(new ApiResponse(404, "No posts found"));
+            var mappedPosts = _mapper.Map<IReadOnlyList<PostToReturnDto>>(jobs);
 
-			var mappedPosts = _mapper.Map<IReadOnlyList<PostToReturnDto>>(jobs);
+            foreach (var post in jobs)
+            {
+                var unreadNotes = post.Notes?.Any(note => !note.IsSeen && note.UserId != user.Id) ?? false;
 
-			var savedPostIds = (await _savedPostRepo.GetAllWithSpecAsync(new SavedPostSpecification(user.Id)))
-								.Select(s => s.PostId)
-								.ToHashSet();
+                var postDto = mappedPosts.FirstOrDefault(dto => dto.Id == post.Id);
+                if (postDto != null)
+                {
+                    postDto.HasUnreadNotes = unreadNotes;
+                }
+            }
 
-			foreach (var post in mappedPosts)
-				post.IsSaved = savedPostIds.Contains(post.Id);
+            var savedPostIds = (await _savedPostRepo.GetAllWithSpecAsync(new SavedPostSpecification(user.Id)))
+                                .Select(s => s.PostId)
+                                .ToHashSet();
 
-			var countSpec = new PostWithFiltrationForCountAsync(Params, companyId, userRole, onlyPaid);
-			var count = await _postRepo.GetCountWithSpecAsync(countSpec);
+            foreach (var post in mappedPosts)
+                post.IsSaved = savedPostIds.Contains(post.Id);
 
-			return Ok(new Pagination<PostToReturnDto>(Params.PageIndex, Params.PageSize, mappedPosts, count));
-		}
+            var countSpec = new PostWithFiltrationForCountAsync(Params, companyId, userRole, onlyPaid);
+            var count = await _postRepo.GetCountWithSpecAsync(countSpec);
 
-		[Authorize(Roles = "HR,Manager,Agency")]
+            return Ok(new Pagination<PostToReturnDto>(Params.PageIndex, Params.PageSize, mappedPosts, count));
+        }
+
+        [Authorize(Roles = "HR,Manager,Agency")]
 		[HttpGet("{postId}")]
 		public async Task<ActionResult<PostToReturnDto>> GetPostById(int postId)
 		{
