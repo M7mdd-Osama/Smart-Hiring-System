@@ -1,74 +1,104 @@
-﻿using AutoMapper;
+﻿using System.Security.Claims;
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SmartHiring.APIs.DTOs;
+using SmartHiring.APIs.Errors;
 using SmartHiring.Core.Entities;
+using SmartHiring.Core.Entities.Identity;
 using SmartHiring.Core.Repositories;
 using SmartHiring.Core.Specifications;
+using SmartHiring.Repository.Data;
 
 namespace SmartHiring.APIs.Controllers
 {
     public class UserController : APIBaseController
     {
         private readonly IGenericRepository<Company> _userRepo;
+        private readonly SmartHiringDbContext _dbContext;
         private readonly IMapper _mapper;
+        private readonly UserManager<AppUser> _userManager;
+        private readonly PasswordHasher<AppUser> _passwordHasher;
 
-        public UserController(IGenericRepository<Company> UserRepo , IMapper mapper)
+        public UserController(IGenericRepository<Company> UserRepo,
+            SmartHiringDbContext dbContext,
+            IMapper mapper,
+            UserManager<AppUser> userManager,
+            PasswordHasher<AppUser> passwordHasher)
         {
             _userRepo = UserRepo;
+            _dbContext = dbContext;
             _mapper = mapper;
+            _userManager = userManager;
+            _passwordHasher = passwordHasher;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserToReturnDto>>> GetUsers() 
-        {
-            var spec = new CompanyWithHrAndManagerSpacifications();
-            var Users = await _userRepo.GetAllWithSpecAsync(spec);
-            var MappedPosts = _mapper.Map<IEnumerable<Company>, IEnumerable<UserToReturnDto>>(Users);
-            return Ok(MappedPosts);
-        }
+        #region Edit Profile for Agency
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<UserToReturnDto>> GetUser(int id)
+        [Authorize(Roles = "Agency")]
+        [HttpPut("Agency_edit")]
+        public async Task<IActionResult> EditAgencyAccount([FromBody] EditAgencyDto request)
         {
-            var spec = new CompanyWithHrAndManagerSpacifications(id);
-            var user = await _userRepo.GetByEntityWithSpecAsync(spec);
-            var MappedPosts = _mapper.Map<Company, UserToReturnDto>(user);
-            if (user == null)
-            {
-                return NotFound();
-            }
-            return Ok(MappedPosts);
-        }
-        [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateUser(int id, [FromBody] UserUpdateDto userUpdateDto)
-        {
-            var spec = new CompanyWithHrAndManagerSpacifications(id);
-            var user = await _userRepo.GetByEntityWithSpecAsync(spec);
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new ApiResponse(401, "User email not found in token"));
+
+            var user = await _userManager.Users
+                .Include(u => u.Address)
+                .FirstOrDefaultAsync(u => u.Email == userEmail);
 
             if (user == null)
+                return Unauthorized(new ApiResponse(401, "User not found"));
+
+            var roles = await _userManager.GetRolesAsync(user);
+            if (!roles.Contains("Agency"))
+                return Unauthorized(new ApiResponse(401, "This user is not an agency"));
+
+            if (!string.IsNullOrEmpty(request.CurrentPassword))
             {
-                return NotFound();
+                var passwordVerificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword);
+                if (passwordVerificationResult == PasswordVerificationResult.Failed)
+                {
+                    return Unauthorized(new ApiResponse(401, "Invalid current password"));
+                }
             }
 
-            user.Name = userUpdateDto.Name ?? user.Name;
-            user.BusinessEmail = userUpdateDto.BusinessEmail ?? user.BusinessEmail;
+            _mapper.Map(request, user);
 
-            await _userRepo.UpdateAsync(user);
-            return NoContent();
-        }
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteUser(int id)
-        {
-            var user = await _userRepo.GetByIdAsync(id);
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+                return BadRequest(new ApiResponse(400, "Failed to update user"));
 
-            if (user == null)
+            if (request.Address != null)
             {
-                return NotFound();
+                if (user.Address != null)
+                {
+                    user.Address.City = request.Address.City;
+                    user.Address.Country = request.Address.Country;
+                    _dbContext.Update(user.Address);
+                }
+                else
+                {
+                    var newAddress = new Address
+                    {
+                        AppUserId = user.Id,
+                        City = request.Address.City,
+                        Country = request.Address.Country
+                    };
+                    user.Address = newAddress;
+                    _dbContext.Add(newAddress);
+                }
+
+                await _dbContext.SaveChangesAsync();
             }
 
-            await _userRepo.DeleteAsync(user);
-            return NoContent();
+            return Ok(new { message = "Agency account and address updated successfully" });
         }
+
+        #endregion
+
 
     }
 }

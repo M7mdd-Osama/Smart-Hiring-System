@@ -146,49 +146,88 @@ namespace SmartHiring.APIs.Controllers
 
         #endregion
 
-        #region Save & Unsave Post
+        #region Save & Unsave Post (HR, Manager, Agency)
 
         [Authorize(Roles = "HR,Manager,Agency")]
-		[HttpPatch("post_save_status")]
-		public async Task<IActionResult> UpdateSaveStatus([FromQuery] int post_id, [FromBody] SaveStatusDto request)
-		{
-			var userEmail = User.FindFirstValue(ClaimTypes.Email);
+        [HttpPatch("post_save_status")]
+        public async Task<IActionResult> UpdateSaveStatus([FromQuery] int post_id, [FromBody] SaveStatusDto request)
+        {
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
 
-			if (string.IsNullOrEmpty(userEmail))
-				return Unauthorized(new ApiResponse(401, "User email not found in token"));
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new ApiResponse(401, "User email not found in token"));
 
-			var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
-			if (user == null)
-				return Unauthorized(new ApiResponse(401, "User not found"));
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+            if (user == null)
+                return Unauthorized(new ApiResponse(401, "User not found"));
 
-			var post = await _postRepo.GetByIdAsync(post_id);
-			if (post == null)
-				return NotFound(new ApiResponse(404, "Job not found"));
+            var post = await _postRepo.GetByIdAsync(post_id);
+            if (post == null)
+                return NotFound(new ApiResponse(404, "Job not found"));
 
-			var savedPost = await _savedPostRepo.GetFirstOrDefaultAsync(s => s.UserId == user.Id && s.PostId == post_id);
+            var savedPost = await _savedPostRepo.GetFirstOrDefaultAsync(s => s.UserId == user.Id && s.PostId == post_id);
 
-			if (request.Status)
-			{
-				if (savedPost == null)
-				{
-					var newSavedPost = new SavedPost { UserId = user.Id, PostId = post_id };
-					await _savedPostRepo.AddAsync(newSavedPost);
-				}
-			}
-			else
-			{
-				if (savedPost != null)
-				{
-					await _savedPostRepo.DeleteAsync(savedPost);
-				}
-			}
+            if (request.Status)
+            {
+                if (savedPost == null)
+                {
+                    var newSavedPost = new SavedPost { UserId = user.Id, PostId = post_id };
+                    await _savedPostRepo.AddAsync(newSavedPost);
+                }
+            }
+            else
+            {
+                if (savedPost != null)
+                {
+                    await _savedPostRepo.DeleteAsync(savedPost);
+                }
+            }
 
-			return Ok(new { message = "Save status updated successfully", save_status = request.Status });
-		}
+            return Ok(new { message = "Save status updated successfully", save_status = request.Status });
+        }
 
-		[Authorize(Roles = "HR,Manager,Agency")]
-		[HttpGet("saved")]
-		public async Task<ActionResult<IReadOnlyList<PostToReturnDto>>> GetSavedPosts()
+        #endregion
+
+        #region Get Saved Posts for HR & Manager
+
+        [Authorize(Roles = "HR,Manager")]
+        [HttpGet("hr-manager-saved")]
+        public async Task<ActionResult<IReadOnlyList<PostToReturnDto>>> GetSavedPostsForHRManager()
+        {
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new ApiResponse(401, "User email not found in token"));
+
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+            if (user == null)
+                return Unauthorized(new ApiResponse(401, "User not found"));
+
+            var savedPostSpec = new SavedPostSpecification(user.Id);
+            var savedPosts = await _savedPostRepo.GetAllWithSpecAsync(savedPostSpec);
+
+            if (!savedPosts.Any())
+                return NotFound(new ApiResponse(404, "No saved posts found"));
+
+            var postIds = savedPosts.Select(s => s.PostId).ToList();
+
+            var spec = new PostWithCompanySpecifications(postIds);
+            var posts = await _postRepo.GetAllWithSpecAsync(spec);
+
+            var mappedPosts = _mapper.Map<IReadOnlyList<PostToReturnDto>>(posts);
+
+            foreach (var post in mappedPosts)
+                post.IsSaved = true;
+
+            return Ok(mappedPosts);
+        }
+
+        #endregion
+
+        #region Get Saved Posts for Agency
+
+        [Authorize(Roles = "Agency")]
+		[HttpGet("agency-saved")]
+		public async Task<ActionResult<IReadOnlyList<PostToReturnForAgencyDto>>> GetSavedPostsForAgency()
 		{
 			var userEmail = User.FindFirstValue(ClaimTypes.Email);
 			if (string.IsNullOrEmpty(userEmail))
@@ -209,12 +248,12 @@ namespace SmartHiring.APIs.Controllers
 			var spec = new PostWithCompanySpecifications(postIds);
 			var posts = await _postRepo.GetAllWithSpecAsync(spec);
 
-			var mappedPosts = _mapper.Map<IReadOnlyList<PostToReturnDto>>(posts);
+			var mappedAgencyPosts = _mapper.Map<IReadOnlyList<PostToReturnForAgencyDto>>(posts);
 
-			foreach (var post in mappedPosts)
+			foreach (var post in mappedAgencyPosts)
 				post.IsSaved = true;
 
-			return Ok(mappedPosts);
+			return Ok(mappedAgencyPosts);
 		}
 
 		#endregion

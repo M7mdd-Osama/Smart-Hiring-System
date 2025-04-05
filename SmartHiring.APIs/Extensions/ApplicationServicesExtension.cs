@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SmartHiring.APIs.Errors;
 using SmartHiring.APIs.Helpers;
 using SmartHiring.Core.Entities;
+using SmartHiring.Core.Entities.Identity;
 using SmartHiring.Core.Repositories;
 using SmartHiring.Core.Services;
 using SmartHiring.Repository;
@@ -16,8 +17,9 @@ namespace SmartHiring.APIs.Extensions
 		{
 			Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 			Services.AddScoped<IPostRepository, PostRepository>();
-
-			Services.AddAutoMapper(typeof(MappingProfiles));
+            Services.AddScoped<PasswordHasher<AppUser>>();
+        
+        Services.AddAutoMapper(typeof(MappingProfiles));
 
 			#region Error Handling
 
