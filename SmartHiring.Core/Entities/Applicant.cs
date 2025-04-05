@@ -13,5 +13,5 @@
 		public ICollection<ApplicantAddress> ApplicantAddresses { get; set; } = new HashSet<ApplicantAddress>();
 		public ICollection<Application> Applications { get; set; } = new HashSet<Application>();
 		public ICollection<CandidateListApplicant> CandidateListApplicants { get; set; } = new HashSet<CandidateListApplicant>();
-	}
+    }
 }

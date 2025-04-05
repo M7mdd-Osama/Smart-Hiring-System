@@ -7,7 +7,7 @@ namespace SmartHiring.Core.Entities.Identity
 		public int Id { get; set; }
 		public string City { get; set; }
 		public string Country { get; set; }
-		public string AppUserId { get; set; } // FK
+		public string AppUserId { get; set; } 
 		[ForeignKey("AppUserId")]
 		public AppUser User { get; set; }
 	}

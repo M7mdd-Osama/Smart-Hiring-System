@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using SmartHiring.APIs.DTOs;
 using SmartHiring.APIs.Helpers;
 using SmartHiring.Core.Entities;
@@ -151,11 +152,33 @@ public class MappingProfiles : Profile
 
         CreateMap<CreateNoteDto, Note>();
 
-        #endregion
+		#endregion
 
-        #region For Agency API
+		#region For Agency API
 
-        CreateMap<Post, PostToReturnForAgencyDto>();
+		CreateMap<Post, PostToReturnForAgencyDto>()
+			.ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company.Name))
+			.ForMember(dest => dest.LogoUrl, opt => opt.MapFrom<PictureUrlResolver<Post, PostToReturnForAgencyDto>>())
+			.ForMember(dest => dest.JobCategories, opt => opt.MapFrom(src => src.PostJobCategories.Select(c => c.JobCategory.Name)))
+			.ForMember(dest => dest.JobTypes, opt => opt.MapFrom(src => src.PostJobTypes.Select(t => t.JobType.TypeName)))
+			.ForMember(dest => dest.Workplaces, opt => opt.MapFrom(src => src.PostWorkplaces.Select(w => w.Workplace.WorkplaceType)))
+			.ForMember(dest => dest.Skills, opt => opt.MapFrom(src => src.PostSkills.Select(s => s.Skill.SkillName)))
+			.ForMember(dest => dest.CareerLevels, opt => opt.MapFrom(src => src.PostCareerLevels.Select(cl => cl.CareerLevel.LevelName)));
+
+		CreateMap<EditAgencyDto, AppUser>()
+			.ForMember(dest => dest.AgencyName, opt => opt.MapFrom(src => src.AgencyName))
+			.ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+			.ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber));
+
+        CreateMap<AddressDto, Address>()
+            .ForMember(dest => dest.City, opt => opt.MapFrom(src => src.City))
+            .ForMember(dest => dest.Country, opt => opt.MapFrom(src => src.Country));
+
+        CreateMap<Interview, HiredApplicantDto>()
+            .ForMember(d => d.FullName, o => o.MapFrom(s => s.Applicant.FName + " " + s.Applicant.LName))
+            .ForMember(d => d.Email, o => o.MapFrom(s => s.Applicant.Email))
+            .ForMember(d => d.Phone, o => o.MapFrom(s => s.Applicant.Phone))
+            .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.HR.HRCompany.Name));
 
         #endregion
 
