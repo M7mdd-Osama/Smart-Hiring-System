@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartHiring.Repository.Data;
 
@@ -11,9 +12,10 @@ using SmartHiring.Repository.Data;
 namespace SmartHiring.Repository.Data.Migrations
 {
     [DbContext(typeof(SmartHiringDbContext))]
-    partial class SmartHiringContextModelSnapshot : ModelSnapshot
+    [Migration("20250406152433_Edit Phone Number For Company")]
+    partial class EditPhoneNumberForCompany
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -178,7 +180,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<DateTime?>("DateOfBirth")
+                    b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("date");
 
                     b.Property<string>("Email")

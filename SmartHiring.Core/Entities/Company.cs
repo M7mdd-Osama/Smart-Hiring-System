@@ -14,15 +14,14 @@ namespace SmartHiring.Core.Entities
 		public string? ConfirmationCode { get; set; }
 		public DateTime? ConfirmationCodeExpires { get; set; }
 		public bool EmailConfirmed { get; set; } = false;
-
-		public string? ManagerId { get; set; }
+        public string Phone { get; set; }
+        public string? ManagerId { get; set; }
 		public AppUser? Manager { get; set; }
 
 		public string? HRId { get; set; }
 		public AppUser? HR { get; set; }
 
 		public ICollection<Post> Posts { get; set; } = new HashSet<Post>();
-		public ICollection<CompanyPhone> CompanyPhones { get; set; } = new HashSet<CompanyPhone>();
 
 	}
 }

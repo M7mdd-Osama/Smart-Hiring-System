@@ -33,11 +33,6 @@ namespace SmartHiring.Repository.Data.Configurations
 				.WithOne(h => h.HRCompany)
 				.HasForeignKey<Company>(h => h.HRId)
 				.OnDelete(DeleteBehavior.NoAction);
-
-			builder.HasMany(c => c.CompanyPhones)
-				.WithOne()
-				.HasForeignKey(p => p.CompanyId)
-				.OnDelete(DeleteBehavior.Cascade);
 		}
 	}
 }

@@ -25,7 +25,7 @@ namespace SmartHiring.Repository.Data.Configurations
 				.HasMaxLength(150);
 
 			builder.Property(a => a.DateOfBirth)
-				.IsRequired()
+				.IsRequired(false)
 				.HasColumnType("date");
 
 			builder.HasMany(a => a.ApplicantAddresses)
