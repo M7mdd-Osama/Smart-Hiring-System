@@ -50,7 +50,7 @@ namespace SmartHiring.APIs.Controllers
 			if (await _dbContext.Companies.AnyAsync(c => c.BusinessEmail == model.Email))
 				return BadRequest(new ApiResponse(400, "Company email already exists"));
 
-			if (await _dbContext.CompanyPhones.AnyAsync(p => p.Phone == model.PhoneNumber))
+			if (await _dbContext.Companies.AnyAsync(p => p.Phone == model.PhoneNumber))
 				return BadRequest(new ApiResponse(400, "Phone number already exists"));
 
 			string logoPath = null;
@@ -64,7 +64,8 @@ namespace SmartHiring.APIs.Controllers
 			{
 				Name = model.CompanyName,
 				BusinessEmail = model.Email,
-				Password = _passwordHasher.HashPassword(null, model.Password),
+                Phone = model.PhoneNumber,
+                Password = _passwordHasher.HashPassword(null, model.Password),
 				LogoUrl = logoPath,
 				EmailConfirmed = false,
 				ConfirmationCode = AuthHelper.GenerateOTP(),
@@ -74,13 +75,6 @@ namespace SmartHiring.APIs.Controllers
 			_dbContext.Companies.Add(company);
 			await _dbContext.SaveChangesAsync();
 
-			var companyPhone = new CompanyPhone
-			{
-				CompanyId = company.Id,
-				Phone = model.PhoneNumber
-			};
-
-			_dbContext.CompanyPhones.Add(companyPhone);
 			await _dbContext.SaveChangesAsync();
 
 			await AuthHelper.SendConfirmationEmail(_mailSettings, company.BusinessEmail, company.ConfirmationCode);

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartHiring.APIs.DTOs;
 using SmartHiring.APIs.Errors;
+using SmartHiring.APIs.Helpers;
 using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
 using SmartHiring.Core.Repositories;
@@ -16,6 +17,7 @@ namespace SmartHiring.APIs.Controllers
     public class ApplicationController : APIBaseController
     {
         private readonly IGenericRepository<Application> _applicationRepo;
+        private readonly IGenericRepository<Applicant> _applicantRepo;
         private readonly IGenericRepository<CandidateListApplicant> _candidateListApplicantRepo;
         private readonly IGenericRepository<CandidateList> _candidateListRepo;
         private readonly IGenericRepository<AgencyApplicant> _agencyApplicantRepo;
@@ -26,6 +28,7 @@ namespace SmartHiring.APIs.Controllers
 
         public ApplicationController(
             IGenericRepository<Application> applicationRepo,
+            IGenericRepository<Applicant> applicantRepo,
             IGenericRepository<CandidateListApplicant> candidateListApplicantRepo,
             IGenericRepository<CandidateList> candidateListRepo,
             IGenericRepository<AgencyApplicant> agencyApplicantRepo,
@@ -35,6 +38,7 @@ namespace SmartHiring.APIs.Controllers
             UserManager<AppUser> userManager)
         {
             _applicationRepo = applicationRepo;
+            _applicantRepo = applicantRepo;
             _candidateListApplicantRepo = candidateListApplicantRepo;
             _candidateListRepo = candidateListRepo;
             _agencyApplicantRepo = agencyApplicantRepo;
@@ -245,7 +249,7 @@ namespace SmartHiring.APIs.Controllers
 
         #endregion
 
-        #region Hired Applicants
+        #region Display Hired Applicants
 
         [Authorize(Roles = "Agency")]
         [HttpGet("hired-applicants")]
@@ -277,6 +281,56 @@ namespace SmartHiring.APIs.Controllers
             return Ok(new { HiredApplicants = hiredApplicants });
         }
 
-        #endregion  
+        #endregion
+
+        #region Apply Application
+
+        [Authorize(Roles = "Agency")]
+        [HttpPost("Posts/{postId}/SubmitApplication")]
+        public async Task<IActionResult> SubmitApplication(int postId, [FromForm] SubmitApplicationDto dto)
+        {
+            var agencyEmail = User.FindFirstValue(ClaimTypes.Email);
+            var agency = await _userManager.FindByEmailAsync(agencyEmail);
+            if (agency == null)
+                return Unauthorized(new ApiResponse(401, "Agency not found"));
+
+            var spec = new PostByIdSpec(postId);
+            var post = await _postRepo.GetByEntityWithSpecAsync(spec);
+            if (post == null)
+                return NotFound(new ApiResponse(404, "Post not found or not paid"));
+
+            var applicant = _mapper.Map<Applicant>(dto);
+            await _applicantRepo.AddAsync(applicant);
+            await _applicantRepo.SaveChangesAsync();
+
+            var agencyApplicant = new AgencyApplicant
+            {
+                AgencyId = agency.Id,
+                ApplicantId = applicant.Id
+            };
+            await _agencyApplicantRepo.AddAsync(agencyApplicant);
+            await _agencyApplicantRepo.SaveChangesAsync();
+
+            var fileName = DocumentSettings.UploadFile(dto.CVFile, "CVs");
+            var cvLink = $"/Files/CVs/{fileName}";
+
+            var application = new Application
+            {
+                ApplicantId = applicant.Id,
+                PostId = postId,
+                AgencyId = agency.Id,
+                ApplicationDate = DateTime.UtcNow,
+                CV_Link = cvLink,
+                RankScore = 0,
+                IsShortlisted = false
+            };
+            await _applicationRepo.AddAsync(application);
+            await _applicationRepo.SaveChangesAsync();
+
+            return Ok(new ApiResponse(200, "Application submitted successfully"));
+        }
+
+        #endregion
+
     }
 }

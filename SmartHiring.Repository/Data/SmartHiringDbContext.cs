@@ -26,7 +26,6 @@ namespace SmartHiring.Repository.Data
 		public DbSet<CandidateList> CandidateLists { get; set; }
 		public DbSet<CandidateListApplicant> CandidateListApplicants { get; set; }
 		public DbSet<ApplicantAddress> ApplicantAddresses { get; set; }
-		public DbSet<CompanyPhone> CompanyPhones { get; set; }
 		public DbSet<AgencyApplicant> AgencyApplicants { get; set; }
 
 		public DbSet<JobType> JobTypes { get; set; }

@@ -6,29 +6,23 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartHiring.APIs.DTOs;
 using SmartHiring.APIs.Errors;
-using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
-using SmartHiring.Core.Repositories;
-using SmartHiring.Core.Specifications;
 using SmartHiring.Repository.Data;
 
 namespace SmartHiring.APIs.Controllers
 {
     public class UserController : APIBaseController
     {
-        private readonly IGenericRepository<Company> _userRepo;
         private readonly SmartHiringDbContext _dbContext;
         private readonly IMapper _mapper;
         private readonly UserManager<AppUser> _userManager;
         private readonly PasswordHasher<AppUser> _passwordHasher;
 
-        public UserController(IGenericRepository<Company> UserRepo,
-            SmartHiringDbContext dbContext,
+        public UserController(SmartHiringDbContext dbContext,
             IMapper mapper,
             UserManager<AppUser> userManager,
             PasswordHasher<AppUser> passwordHasher)
         {
-            _userRepo = UserRepo;
             _dbContext = dbContext;
             _mapper = mapper;
             _userManager = userManager;

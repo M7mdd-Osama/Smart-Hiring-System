@@ -70,8 +70,6 @@ namespace SmartHiring.APIs.Controllers
 
 				_dbContext.Posts.RemoveRange(_dbContext.Posts.Where(p => postIds.Contains(p.Id)));
 
-				_dbContext.CompanyPhones.RemoveRange(_dbContext.CompanyPhones.Where(cp => cp.CompanyId == companyId));
-
 				_dbContext.Companies.Remove(company);
 
 				var usersToDelete = new List<AppUser>();

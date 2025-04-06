@@ -17,6 +17,8 @@ public class MappingProfiles : Profile
 			.ForMember(dest => dest.HREmail, opt => opt.MapFrom(src => src.HR != null ? src.HR.Email : null))
 			.ForMember(dest => dest.ManagerName, opt => opt.MapFrom(src => src.Manager != null ? src.Manager.DisplayName : null))
 			.ForMember(dest => dest.ManagerEmail, opt => opt.MapFrom(src => src.Manager != null ? src.Manager.Email : null))
+			.ForMember(dest => dest.PhoneNumberHR, opt => opt.MapFrom(src => src.Manager != null ? src.Manager.PhoneNumber : null))
+			.ForMember(dest => dest.PhoneNumberManager, opt => opt.MapFrom(src => src.HR != null ? src.HR.PhoneNumber : null))
 			.ForMember(d => d.LogoUrl, O => O.MapFrom<PictureUrlResolver<Company, CompanyDto>>());
 
 		CreateMap<AppUser, AgencyDto>()
@@ -180,6 +182,8 @@ public class MappingProfiles : Profile
             .ForMember(d => d.Phone, o => o.MapFrom(s => s.Applicant.Phone))
             .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.HR.HRCompany.Name));
 
+        CreateMap<SubmitApplicationDto, Applicant>();
+
         #endregion
 
 
@@ -201,8 +205,7 @@ public class MappingProfiles : Profile
 		CreateMap<Company, CompanyToReturnDto>()
 			.ForMember(d => d.Manager, O => O.MapFrom(src => src.Manager.DisplayName))
 			.ForMember(d => d.HR, O => O.MapFrom(src => src.HR.DisplayName))
-			.ForMember(d => d.LogoUrl, O => O.MapFrom<PictureUrlResolver<Company, CompanyToReturnDto>>())
-			.ForMember(d => d.Phone, O => O.MapFrom(src => src.CompanyPhones));
+			.ForMember(d => d.LogoUrl, O => O.MapFrom<PictureUrlResolver<Company, CompanyToReturnDto>>());
 
 
 		CreateMap<CompanyCreateDto, Company>();

@@ -5,7 +5,7 @@
 		public string FName { get; set; }
 		public string LName { get; set; }
 		public string Email { get; set; }
-		public DateTime DateOfBirth { get; set; }
+		public DateTime? DateOfBirth { get; set; }
 		public string Phone { get; set; }
 
 		public ICollection<ApplicantSkill> ApplicantSkills { get; set; } = new HashSet<ApplicantSkill>();
