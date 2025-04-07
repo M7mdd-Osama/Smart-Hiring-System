@@ -36,7 +36,7 @@
 		public ICollection<string> CareerLevels { get; set; }
 
 		public bool IsSaved { get; set; }
-
+        public bool HasPendingCandidateList { get; set; }
         public bool HasUnreadNotes { get; set; }
     }
 }

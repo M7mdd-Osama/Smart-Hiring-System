@@ -240,7 +240,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("SkillId");
 
-                    b.ToTable("ApplicantSkills");
+                    b.ToTable("ApplicantSkills", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Application", b =>
@@ -347,7 +347,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CareerLevels");
+                    b.ToTable("CareerLevels", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Company", b =>
@@ -434,7 +434,7 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.HasIndex("AppUserId")
                         .IsUnique();
 
-                    b.ToTable("Address");
+                    b.ToTable("Address", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Identity.AppUser", b =>
@@ -576,7 +576,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("JobCategories");
+                    b.ToTable("JobCategories", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.JobType", b =>
@@ -593,7 +593,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("JobTypes");
+                    b.ToTable("JobTypes", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Note", b =>
@@ -730,7 +730,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("CareerLevelId");
 
-                    b.ToTable("PostCareerLevels");
+                    b.ToTable("PostCareerLevels", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.PostJobCategory", b =>
@@ -745,7 +745,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("JobCategoryId");
 
-                    b.ToTable("PostJobCategories");
+                    b.ToTable("PostJobCategories", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.PostJobType", b =>
@@ -760,7 +760,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("JobTypeId");
 
-                    b.ToTable("PostJobTypes");
+                    b.ToTable("PostJobTypes", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.PostSkill", b =>
@@ -775,7 +775,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("SkillId");
 
-                    b.ToTable("PostSkills");
+                    b.ToTable("PostSkills", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.PostWorkplace", b =>
@@ -790,7 +790,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("WorkplaceId");
 
-                    b.ToTable("PostWorkplaces");
+                    b.ToTable("PostWorkplaces", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.SavedPost", b =>
@@ -805,7 +805,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("PostId");
 
-                    b.ToTable("SavedPosts");
+                    b.ToTable("SavedPosts", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Skill", b =>
@@ -822,7 +822,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Skills");
+                    b.ToTable("Skills", (string)null);
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Workplace", b =>
@@ -839,7 +839,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Workplaces");
+                    b.ToTable("Workplaces", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

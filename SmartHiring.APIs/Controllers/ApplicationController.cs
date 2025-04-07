@@ -214,6 +214,55 @@ namespace SmartHiring.APIs.Controllers
 
         #endregion
 
+        #region Get Pending CandidateLists
+
+        [Authorize(Roles = "Manager")]
+        [HttpGet("{postId}/PendingCandidateList")]
+        public async Task<IActionResult> GetPendingCandidateList(int postId)
+        {
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            var manager = await _userManager.Users
+                .Include(u => u.ManagedCompany)
+                .FirstOrDefaultAsync(u => u.Email == userEmail);
+
+            if (manager == null)
+                return Unauthorized(new ApiResponse(401, "Manager not found"));
+
+            var candidateLists = await _candidateListRepo
+                .GetAllWithSpecAsync(new CandidateListWithApplicantsSpec(postId));
+
+            if (candidateLists == null || !candidateLists.Any())
+                return NotFound(new ApiResponse(404, "No pending candidate list found for this post."));
+
+            var result = candidateLists.Select(cl =>
+            {
+                var applications = cl.CandidateListApplicants
+                    .Select(cla => cla.Applicant)
+                    .SelectMany(applicant => applicant.Applications
+                        .Where(app => app.PostId == postId))
+                    .OrderByDescending(app => app.RankScore)
+                    .ToList();
+
+                var applicantDtos = applications
+                    .Select((app, index) => new PendingCandidateListApplicantDto
+                    {
+                        FullName = $"{app.Applicant.FName} {app.Applicant.LName}",
+                        CV_Link = app.CV_Link,
+                        Rank = index + 1
+                    }).ToList();
+
+                return new PendingCandidateListDto
+                {
+                    CandidateListId = cl.Id,
+                    Applicants = applicantDtos
+                };
+            }).ToList();
+
+            return Ok(result);
+        }
+
+        #endregion
+
         #region Candidate List Approval by manager
 
         [Authorize(Roles = "Manager")]

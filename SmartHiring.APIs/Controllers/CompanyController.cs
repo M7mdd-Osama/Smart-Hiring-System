@@ -36,7 +36,7 @@ namespace SmartHiring.APIs.Controllers
 
         #region Get Company Members
 
-        [Authorize(Roles = "HR")]
+        [Authorize(Roles = "HR,Manager")]
         [HttpGet("members")]
         public async Task<IActionResult> GetCompanyMembers()
         {
@@ -46,22 +46,22 @@ namespace SmartHiring.APIs.Controllers
 
             var user = await _userManager.Users
                 .Include(u => u.HRCompany)
+                .Include(u => u.ManagedCompany)
                 .FirstOrDefaultAsync(u => u.Email == userEmail);
 
             if (user == null)
                 return Unauthorized(new ApiResponse(401, "User not found"));
 
-            if (user.HRCompany == null)
-                return BadRequest(new ApiResponse(400, "User is not assigned to any company"));
+            var company = user.HRCompany ?? user.ManagedCompany;
 
-            var company = await _companyRepo.GetByEntityWithSpecAsync(
-                new CompanyWithMembersSpecifications(user.HRCompany.Id)
+            var companyWithMembers = await _companyRepo.GetByEntityWithSpecAsync(
+                new CompanyWithMembersSpecifications(company.Id)
             );
 
-            if (company == null)
+            if (companyWithMembers == null)
                 return NotFound(new ApiResponse(404, "Company not found"));
 
-            var result = _mapper.Map<CompanyMembersDto>(company);
+            var result = _mapper.Map<CompanyMembersDto>(companyWithMembers);
             return Ok(result);
         }
 

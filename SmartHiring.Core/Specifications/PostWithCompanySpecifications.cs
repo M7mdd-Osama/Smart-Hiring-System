@@ -6,12 +6,19 @@ namespace SmartHiring.Core.Specifications
     {
         public PostWithCompanySpecifications(PostSpecParams Params, int? companyId, string userRole, string userId, bool onlyPaid = false)
             : base(P =>
-                (!companyId.HasValue || P.CompanyId == companyId) &&
-                (!Params.typeId.HasValue || P.PostJobTypes.Any(jt => jt.JobTypeId == Params.typeId)) &&
-                (!Params.careerLevelId.HasValue || P.PostCareerLevels.Any(cl => cl.CareerLevelId == Params.careerLevelId)) &&
-                (!Params.workplaceId.HasValue || P.PostWorkplaces.Any(wp => wp.WorkplaceId == Params.workplaceId)) &&
-                (userRole == "HR" || P.PaymentStatus == "Paid" || P.SavedPosts.Any(sp => sp.UserId == userId)) &&
-                (userRole == "HR" || P.PaymentStatus == "Paid" || !onlyPaid || P.PaymentStatus == "Paid") // للموافقة على كل البوستات للـ HR وحساب المدفوع فقط للبقية
+            (string.IsNullOrEmpty(Params.Search) || P.JobTitle.ToLower().Contains(Params.Search))
+            &&
+            (!companyId.HasValue || P.CompanyId == companyId)
+            &&
+            (!Params.typeId.HasValue || P.PostJobTypes.Any(jt => jt.JobTypeId == Params.typeId))
+            &&
+            (!Params.careerLevelId.HasValue || P.PostCareerLevels.Any(cl => cl.CareerLevelId == Params.careerLevelId))
+            &&
+            (!Params.workplaceId.HasValue || P.PostWorkplaces.Any(wp => wp.WorkplaceId == Params.workplaceId))
+            &&
+            (userRole == "HR" || P.PaymentStatus == "Paid" || P.SavedPosts.Any(sp => sp.UserId == userId))
+            &&
+            (userRole == "HR" || P.PaymentStatus == "Paid" || !onlyPaid || P.PaymentStatus == "Paid")
             )
         {
             AddIncludes();

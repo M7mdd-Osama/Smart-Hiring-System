@@ -39,62 +39,49 @@ namespace SmartHiring.APIs.Controllers
             _mailSettings = mailSettings;
         }
 
-        #region Get Accepted CandidateLists
+        #region Get Accepted CandidateLists With Applicants
 
-        [Authorize(Roles = "HR")]
-        [HttpGet("accepted-candidate-lists")]
-        public async Task<IActionResult> GetAcceptedCandidateLists()
+        [Authorize(Roles = "HR,Manager")]
+        [HttpGet("accepted-candidate-lists-with-applicants")]
+        public async Task<IActionResult> GetAcceptedCandidateListsWithApplicants()
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(userEmail))
                 return Unauthorized(new ApiResponse(401, "User email not found in token"));
 
             var user = await _userManager.Users
-                .Include(u => u.HRCompany)
+                .Include(u => u.HRCompany)  
+                .Include(u => u.ManagedCompany) 
                 .FirstOrDefaultAsync(u => u.Email == userEmail);
 
             if (user == null)
                 return Unauthorized(new ApiResponse(401, "User not found"));
 
-            var spec = new AcceptedCandidateListsSpecification(user.HRCompany.Id);
+            var companyId = user.HRCompany?.Id ?? user.ManagedCompany?.Id;
+
+            if (companyId == null)
+                return Unauthorized(new ApiResponse(401, "User is not associated with any company"));
+
+            var spec = new AcceptedCandidateListsSpecification(companyId.Value);
             var candidateLists = await _candidateListRepo.GetAllWithSpecAsync(spec);
 
             if (candidateLists == null || !candidateLists.Any())
                 return NotFound(new ApiResponse(404, "No accepted candidate lists found."));
 
-            var result = _mapper.Map<List<CandidateListDto>>(candidateLists);
+            var result = new List<CandidateListWithApplicantsDto>();
+
+            foreach (var candidateList in candidateLists)
+            {
+                var applicantsSpec = new CandidateListApplicantsSpecification(candidateList.Id, user.Id);
+                var applicants = await _candidateListApplicantRepo.GetAllWithSpecAsync(applicantsSpec);
+
+                var candidateListDto = _mapper.Map<CandidateListWithApplicantsDto>(candidateList);
+                candidateListDto.Candidates = _mapper.Map<List<CandidateListApplicantDto>>(applicants);
+
+                result.Add(candidateListDto);
+            }
 
             return Ok(result);
-        }
-
-        #endregion
-
-        #region Get Applicants In CandidateList
-
-        [Authorize(Roles = "HR")]
-        [HttpGet("{candidateListId}/applicants")]
-        public async Task<IActionResult> GetApplicantsInCandidateList(int candidateListId)
-        {
-            var userEmail = User.FindFirstValue(ClaimTypes.Email);
-            if (string.IsNullOrEmpty(userEmail))
-                return Unauthorized(new ApiResponse(401, "User email not found in token"));
-
-            var hrUser = await _userManager.Users
-                .Include(u => u.HRCompany)
-                .FirstOrDefaultAsync(u => u.Email == userEmail);
-
-            if (hrUser == null || hrUser.HRCompany == null)
-                return Unauthorized(new ApiResponse(401, "HR user not found or does not belong to a company."));
-
-            var spec = new CandidateListApplicantsSpecification(candidateListId, hrUser.Id);
-            var candidateListApplicants = await _candidateListApplicantRepo.GetAllWithSpecAsync(spec);
-
-            if (candidateListApplicants == null || !candidateListApplicants.Any())
-                return NotFound(new ApiResponse(404, "No applicants found for this Candidate List."));
-
-            var applicantsDto = _mapper.Map<IEnumerable<CandidateListApplicantDto>>(candidateListApplicants);
-
-            return Ok(applicantsDto);
         }
 
         #endregion
