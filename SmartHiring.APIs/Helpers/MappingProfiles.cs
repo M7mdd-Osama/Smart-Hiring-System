@@ -99,7 +99,7 @@ public class MappingProfiles : Profile
 			))
 			.ForMember(dest => dest.Progress, opt => opt.MapFrom(src =>
 				src.CandidateListApplicants.Count == 0 ? 0 :
-				(int)((src.CandidateListApplicants.Count(a =>
+				(int)((src.CandidateListApplicants.Count(a =>//fdgdfgd
 					src.Post.Interviews.Any(i =>
 						i.ApplicantId == a.ApplicantId &&
 						(i.InterviewStatus == InterviewStatus.Under_Interview ||
