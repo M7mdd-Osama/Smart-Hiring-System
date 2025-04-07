@@ -102,7 +102,7 @@ public class MappingProfiles : Profile
 				(int)((src.CandidateListApplicants.Count(a =>//fdgdfgd
 					src.Post.Interviews.Any(i =>
 						i.ApplicantId == a.ApplicantId &&
-						(i.InterviewStatus == InterviewStatus.Under_Interview ||
+						(
 						 i.InterviewStatus == InterviewStatus.Hired ||
 						 i.InterviewStatus == InterviewStatus.Rejected)
 					)
