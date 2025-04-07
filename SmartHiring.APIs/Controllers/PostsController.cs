@@ -54,8 +54,7 @@ namespace SmartHiring.APIs.Controllers
                 return Unauthorized(new ApiResponse(401, "User not found"));
 
             var userRole = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
-            int? companyId = userRole == "HR" ? user.HRCompany?.Id
-                                                : user.ManagedCompany?.Id;
+            int? companyId = userRole == "HR" ? user.HRCompany?.Id : user.ManagedCompany?.Id;
 
             var spec = new PostWithCompanySpecifications(Params, companyId, userRole, user.Id, false);
             var jobs = await _postRepo.GetAllWithSpecAsync(spec);
@@ -67,7 +66,7 @@ namespace SmartHiring.APIs.Controllers
                                     .Select(s => s.PostId)
                                     .ToHashSet();
 
-            var countSpec = new PostWithFiltrationForCountAsync(Params, companyId, userRole, userRole == "Manager"); 
+            var countSpec = new PostWithFiltrationForCountAsync(Params, companyId, userRole, userRole == "Manager");
             var count = await _postRepo.GetCountWithSpecAsync(countSpec);
 
             var mappedPosts = _mapper.Map<IReadOnlyList<PostToReturnDto>>(jobs);
@@ -76,8 +75,21 @@ namespace SmartHiring.APIs.Controllers
             {
                 var unreadNotes = post.Notes?.Any(note => !note.IsSeen && note.UserId != user.Id) ?? false;
                 var postDto = mappedPosts.FirstOrDefault(dto => dto.Id == post.Id);
+
                 if (postDto != null)
+                {
                     postDto.HasUnreadNotes = unreadNotes;
+
+                    if (userRole == "Manager")
+                    {
+                        var hasPendingCandidateList = post.CandidateLists?.Any(cl => cl.Status == "Pending") ?? false;
+                        postDto.HasPendingCandidateList = hasPendingCandidateList;
+                    }
+                    else
+                    {
+                        postDto.HasPendingCandidateList = false;
+                    }
+                }
             }
 
             foreach (var post in mappedPosts)

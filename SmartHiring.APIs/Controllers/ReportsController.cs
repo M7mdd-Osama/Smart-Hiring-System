@@ -29,68 +29,68 @@ namespace SmartHiring.APIs.Controllers
 			_mapper = mapper;
 		}
 
-		[Authorize(Roles = "HR,Manager")]
-		[HttpGet()]
-		[ProducesResponseType(typeof(InterviewReportToReturnDto), StatusCodes.Status200OK)]
-		public async Task<ActionResult<InterviewReportToReturnDto>> GetInterviewStageReport(DateTime fromDate, DateTime toDate)
-		{
-			var userEmail = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+		//[Authorize(Roles = "HR,Manager")]
+		//[HttpGet()]
+		//[ProducesResponseType(typeof(InterviewReportToReturnDto), StatusCodes.Status200OK)]
+		//public async Task<ActionResult<InterviewReportToReturnDto>> GetInterviewStageReport(DateTime fromDate, DateTime toDate)
+		//{
+		//	var userEmail = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
 
-			if (string.IsNullOrEmpty(userEmail))
-				return Unauthorized(new ApiResponse(401, "User email not found"));
+		//	if (string.IsNullOrEmpty(userEmail))
+		//		return Unauthorized(new ApiResponse(401, "User email not found"));
 
-			var user = await _agencyRepo.Users
-				.Include(u => u.HRCompany)
-				.Include(u => u.ManagedCompany)
-				.FirstOrDefaultAsync(u => u.Email == userEmail);
+		//	var user = await _agencyRepo.Users
+		//		.Include(u => u.HRCompany)
+		//		.Include(u => u.ManagedCompany)
+		//		.FirstOrDefaultAsync(u => u.Email == userEmail);
 
-			if (user == null)
-				return Unauthorized(new ApiResponse(401, "User not found"));
+		//	if (user == null)
+		//		return Unauthorized(new ApiResponse(401, "User not found"));
 
-			Company? userCompany = null;
+		//	Company? userCompany = null;
 
-			if (User.IsInRole("HR"))
-			{
-				userCompany = user.HRCompany;
-				Console.WriteLine("Role: HR");
-			}
-			else if (User.IsInRole("Manager"))
-			{
-				userCompany = user.ManagedCompany;
-				Console.WriteLine("Role: Manager");
-			}
+		//	if (User.IsInRole("HR"))
+		//	{
+		//		userCompany = user.HRCompany;
+		//		Console.WriteLine("Role: HR");
+		//	}
+		//	else if (User.IsInRole("Manager"))
+		//	{
+		//		userCompany = user.ManagedCompany;
+		//		Console.WriteLine("Role: Manager");
+		//	}
 
-			if (userCompany == null)
-			{
-				Console.WriteLine("User company not found!");
-				return BadRequest(new ApiResponse(400, "User is not associated with any company"));
-			}
+		//	if (userCompany == null)
+		//	{
+		//		Console.WriteLine("User company not found!");
+		//		return BadRequest(new ApiResponse(400, "User is not associated with any company"));
+		//	}
 
-			var spec = new InterviewWithCandidateSpecifications();
-			var interviews = await _interviewRepo.GetAllWithSpecAsync(spec);
+		//	var spec = new InterviewWithCandidateSpecifications();
+		//	var interviews = await _interviewRepo.GetAllWithSpecAsync(spec);
 
-			var filteredInterviews = interviews
-				.Where(i => i.Date >= fromDate && i.Date <= toDate)
-				.Where(i => i.HR != null && i.HR.HRCompany != null && i.HR.HRCompany.Id == userCompany.Id)
-				.ToList();
+		//	var filteredInterviews = interviews
+		//		.Where(i => i.Date >= fromDate && i.Date <= toDate)
+		//		.Where(i => i.HR != null && i.HR.HRCompany != null && i.HR.HRCompany.Id == userCompany.Id)
+		//		.ToList();
 
-			var acceptedCandidates = filteredInterviews.Count(i => i.InterviewStatus == InterviewStatus.Hired);
-			var rejectedCandidates = filteredInterviews.Count(i => i.InterviewStatus == InterviewStatus.Rejected);
-			var totalCandidates = acceptedCandidates + rejectedCandidates;
+		//	var acceptedCandidates = filteredInterviews.Count(i => i.InterviewStatus == InterviewStatus.Hired);
+		//	var rejectedCandidates = filteredInterviews.Count(i => i.InterviewStatus == InterviewStatus.Rejected);
+		//	var totalCandidates = acceptedCandidates + rejectedCandidates;
 
-			var mappedCandidates = _mapper.Map<List<CandidateReportToReturnDto>>(
-				filteredInterviews.Where(i => i.InterviewStatus != InterviewStatus.Pending)
-			);
+		//	var mappedCandidates = _mapper.Map<List<CandidateReportToReturnDto>>(
+		//		filteredInterviews.Where(i => i.InterviewStatus != InterviewStatus.Pending)
+		//	);
 
-			var report = new InterviewReportToReturnDto
-			{
-				TotalCandidates = totalCandidates,
-				AcceptedCandidates = acceptedCandidates,
-				RejectedCandidates = rejectedCandidates,
-				Candidates = mappedCandidates
-			};
+		//	var report = new InterviewReportToReturnDto
+		//	{
+		//		TotalCandidates = totalCandidates,
+		//		AcceptedCandidates = acceptedCandidates,
+		//		RejectedCandidates = rejectedCandidates,
+		//		Candidates = mappedCandidates
+		//	};
 
-			return Ok(report);
-		}
+		//	return Ok(report);
+		//}
 	}
 }
