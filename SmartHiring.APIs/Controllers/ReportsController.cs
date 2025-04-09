@@ -13,84 +13,69 @@ using System.Security.Claims;
 
 namespace SmartHiring.APIs.Controllers
 {
-	public class ReportsController : APIBaseController
-	{
-		private readonly IGenericRepository<Interview> _interviewRepo;
-		private readonly UserManager<AppUser> _agencyRepo;
-		private readonly IMapper _mapper;
+    public class ReportsController : APIBaseController
+    {
+        private readonly IGenericRepository<Interview> _interviewRepo;
+        private readonly UserManager<AppUser> _agencyRepo;
+        private readonly IMapper _mapper;
 
-		public ReportsController(
-			IGenericRepository<Interview> interviewRepo,
-			UserManager<AppUser> agencyRepo,
-			IMapper mapper)
-		{
-			_interviewRepo = interviewRepo;
-			_agencyRepo = agencyRepo;
-			_mapper = mapper;
-		}
+        public ReportsController(
+            IGenericRepository<Interview> interviewRepo,
+            UserManager<AppUser> agencyRepo,
+            IMapper mapper)
+        {
+            _interviewRepo = interviewRepo;
+            _agencyRepo = agencyRepo;
+            _mapper = mapper;
+        }
 
-		//[Authorize(Roles = "HR,Manager")]
-		//[HttpGet()]
-		//[ProducesResponseType(typeof(InterviewReportToReturnDto), StatusCodes.Status200OK)]
-		//public async Task<ActionResult<InterviewReportToReturnDto>> GetInterviewStageReport(DateTime fromDate, DateTime toDate)
-		//{
-		//	var userEmail = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+        #region Get Interview Stage Report
 
-		//	if (string.IsNullOrEmpty(userEmail))
-		//		return Unauthorized(new ApiResponse(401, "User email not found"));
+        [Authorize(Roles = "HR,Manager")]
+        [HttpGet("interview-stage-report")]
+        public async Task<ActionResult<InterviewReportToReturnDto>> GetInterviewStageReport(DateTime fromDate, DateTime toDate)
+        {
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new ApiResponse(401, "User email not found in token"));
 
-		//	var user = await _agencyRepo.Users
-		//		.Include(u => u.HRCompany)
-		//		.Include(u => u.ManagedCompany)
-		//		.FirstOrDefaultAsync(u => u.Email == userEmail);
+            var user = await _agencyRepo.Users
+                .Include(u => u.HRCompany)
+                .Include(u => u.ManagedCompany)
+                .FirstOrDefaultAsync(u => u.Email == userEmail);
 
-		//	if (user == null)
-		//		return Unauthorized(new ApiResponse(401, "User not found"));
+            if (user == null)
+                return Unauthorized(new ApiResponse(401, "User not found"));
 
-		//	Company? userCompany = null;
+            var userCompany = user.HRCompany ?? user.ManagedCompany;
+            if (userCompany == null)
+                return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
 
-		//	if (User.IsInRole("HR"))
-		//	{
-		//		userCompany = user.HRCompany;
-		//		Console.WriteLine("Role: HR");
-		//	}
-		//	else if (User.IsInRole("Manager"))
-		//	{
-		//		userCompany = user.ManagedCompany;
-		//		Console.WriteLine("Role: Manager");
-		//	}
+            var spec = new InterviewWithCandidateSpecifications(fromDate, toDate, userCompany.Id);
+            var filteredInterviews = await _interviewRepo.GetAllWithSpecAsync(spec);
 
-		//	if (userCompany == null)
-		//	{
-		//		Console.WriteLine("User company not found!");
-		//		return BadRequest(new ApiResponse(400, "User is not associated with any company"));
-		//	}
+            var accepted = filteredInterviews.Count(i => i.InterviewStatus == InterviewStatus.Hired);
+            var rejected = filteredInterviews.Count(i => i.InterviewStatus == InterviewStatus.Rejected);
 
-		//	var spec = new InterviewWithCandidateSpecifications();
-		//	var interviews = await _interviewRepo.GetAllWithSpecAsync(spec);
+            var mappedCandidates = _mapper.Map<List<CandidateReportToReturnDto>>(
+                filteredInterviews.Where(i =>
+                    i.InterviewStatus == InterviewStatus.Hired ||
+                    i.InterviewStatus == InterviewStatus.Rejected
+                )
+            );
 
-		//	var filteredInterviews = interviews
-		//		.Where(i => i.Date >= fromDate && i.Date <= toDate)
-		//		.Where(i => i.HR != null && i.HR.HRCompany != null && i.HR.HRCompany.Id == userCompany.Id)
-		//		.ToList();
+            var report = new InterviewReportToReturnDto
+            {
+                TotalCandidates = accepted + rejected,
+                AcceptedCandidates = accepted,
+                RejectedCandidates = rejected,
+                Candidates = mappedCandidates
+            };
 
-		//	var acceptedCandidates = filteredInterviews.Count(i => i.InterviewStatus == InterviewStatus.Hired);
-		//	var rejectedCandidates = filteredInterviews.Count(i => i.InterviewStatus == InterviewStatus.Rejected);
-		//	var totalCandidates = acceptedCandidates + rejectedCandidates;
+            return Ok(report);
+        }
 
-		//	var mappedCandidates = _mapper.Map<List<CandidateReportToReturnDto>>(
-		//		filteredInterviews.Where(i => i.InterviewStatus != InterviewStatus.Pending)
-		//	);
+        #endregion
 
-		//	var report = new InterviewReportToReturnDto
-		//	{
-		//		TotalCandidates = totalCandidates,
-		//		AcceptedCandidates = acceptedCandidates,
-		//		RejectedCandidates = rejectedCandidates,
-		//		Candidates = mappedCandidates
-		//	};
-
-		//	return Ok(report);
-		//}
-	}
+    }
 }
