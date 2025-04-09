@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Identity;
 using SmartHiring.APIs.DTOs;
 using SmartHiring.APIs.Helpers;
 using SmartHiring.Core.Entities;
@@ -7,7 +6,6 @@ using SmartHiring.Core.Entities.Identity;
 
 public class MappingProfiles : Profile
 {
-
 	public MappingProfiles()
 	{
 		#region For Admin API
@@ -97,17 +95,16 @@ public class MappingProfiles : Profile
 					)
 				)
 			))
-			.ForMember(dest => dest.Progress, opt => opt.MapFrom(src =>
-				src.CandidateListApplicants.Count == 0 ? 0 :
-				(int)((src.CandidateListApplicants.Count(a =>
-					src.Post.Interviews.Any(i =>
-						i.ApplicantId == a.ApplicantId &&
-						(i.InterviewStatus == InterviewStatus.Under_Interview ||
-						 i.InterviewStatus == InterviewStatus.Hired ||
-						 i.InterviewStatus == InterviewStatus.Rejected)
-					)
-				) / (double)src.CandidateListApplicants.Count) * 100)
-			));
+            .ForMember(dest => dest.Progress, opt => opt.MapFrom(src =>
+                src.CandidateListApplicants.Count == 0 ? 0 :
+                (int)((src.CandidateListApplicants.Count(a =>
+                    src.Post.Interviews.Any(i =>
+                        i.ApplicantId == a.ApplicantId &&
+                        (i.InterviewStatus == InterviewStatus.Hired ||
+                         i.InterviewStatus == InterviewStatus.Rejected)
+                    )
+                ) / (double)src.CandidateListApplicants.Count) * 100)
+            ));
 
         CreateMap<CandidateListApplicant, CandidateListApplicantDto>()
             .ForMember(dest => dest.ApplicantId, opt => opt.MapFrom(src => src.ApplicantId))
@@ -179,11 +176,18 @@ public class MappingProfiles : Profile
 
         CreateMap<CreateNoteDto, Note>();
 
-		#endregion
+        #endregion
 
-		#region For Agency API
+        #region For Manager API
 
-		CreateMap<Post, PostToReturnForAgencyDto>()
+        CreateMap<Application, PendingCandidateListApplicantDto>()
+            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Applicant.FName + " " + src.Applicant.LName));
+
+        #endregion
+
+        #region For Agency API
+
+        CreateMap<Post, PostToReturnForAgencyDto>()
 			.ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company.Name))
 			.ForMember(dest => dest.LogoUrl, opt => opt.MapFrom<PictureUrlResolver<Post, PostToReturnForAgencyDto>>())
 			.ForMember(dest => dest.JobCategories, opt => opt.MapFrom(src => src.PostJobCategories.Select(c => c.JobCategory.Name)))
@@ -205,75 +209,9 @@ public class MappingProfiles : Profile
 
         CreateMap<SubmitApplicationDto, Applicant>();
 
-		#endregion
-
-		#region For Manager API
-
-		CreateMap<Application, PendingCandidateListApplicantDto>()
-			.ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Applicant.FName + " " + src.Applicant.LName));
-
         #endregion
 
-
-        //CreateMap<Post, PostToReturnDto>()
-        //	.ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.HR.HRCompany.Name))
-        //	.ForMember(dest => dest.PostDate, opt => opt.Ignore())
-        //	.ForMember(dest => dest.JobStatus, opt => opt.MapFrom(src => "Open"));
-
-        //CreateMap<PostToReturnDto, Post>()
-        //	.ForMember(dest => dest.Id, opt => opt.Ignore())
-        //	.ForMember(dest => dest.PostDate, opt => opt.Ignore())
-        //	.ForMember(dest => dest.HR, opt => opt.Ignore());
-
         CreateMap<Interview, CandidateReportToReturnDto>()
-				.ForMember(d => d.Name, o => o.MapFrom(s => $"{s.Applicant.FName} {s.Applicant.LName}"))
-				.ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));
-
-		CreateMap<Company, CompanyToReturnDto>()
-			.ForMember(d => d.Manager, O => O.MapFrom(src => src.Manager.DisplayName))
-			.ForMember(d => d.HR, O => O.MapFrom(src => src.HR.DisplayName))
-			.ForMember(d => d.LogoUrl, O => O.MapFrom<PictureUrlResolver<Company, CompanyToReturnDto>>());
-
-
-		CreateMap<CompanyCreateDto, Company>();
-		CreateMap<CompanyUpdateDto, Company>();
-
-		CreateMap<CompanyDto, Company>()
-			.ForMember(dest => dest.HR, opt => opt.Ignore())
-			.ForMember(dest => dest.Posts, opt => opt.Ignore())
-			.ForMember(dest => dest.Manager, opt => opt.Ignore());
-
-		CreateMap<HRDto, AppUser>()
-			.ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email))
-			.ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
-			.ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
-			.ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))
-			.ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
-			.ForMember(dest => dest.PasswordHash, opt => opt.Ignore());
-
-		CreateMap<AppUser, HRDto>()
-			.ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
-			.ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
-			.ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))
-			.ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber));
-
-		CreateMap<ManagerDto, AppUser>()
-			.ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email))
-			.ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
-			.ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
-			.ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))
-			.ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
-			.ForMember(dest => dest.Address, opt => opt.Ignore())
-			.ForMember(dest => dest.PasswordHash, opt => opt.Ignore());
-
-		CreateMap<AppUser, ManagerDto>()
-			.ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
-			.ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
-			.ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))
-			.ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
-			.ForMember(dest => dest.Address, opt => opt.MapFrom(src =>
-				src.Address != null ? $"{src.Address.City}, {src.Address.Country}" : "N/A"));
-
-	}
+            .ForMember(d => d.Name, o => o.MapFrom(s => $"{s.Applicant.FName} {s.Applicant.LName}"))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));    }
 }
-
