@@ -116,8 +116,7 @@ namespace SmartHiring.APIs.Controllers
             if (user == null)
                 return Unauthorized(new ApiResponse(401, "User not found"));
 
-            // تحديد الـ specification بحيث يظهر فقط البوستات المدفوعة للـ Agency
-            var spec = new PostWithCompanySpecifications(Params, null, "Agency", user.Id, true); // true للـ Agency لعرض المدفوع فقط
+            var spec = new PostWithCompanySpecifications(Params, null, "Agency", user.Id, true);
             var jobs = await _postRepo.GetAllWithSpecAsync(spec);
 
             if (!jobs.Any())
@@ -127,8 +126,7 @@ namespace SmartHiring.APIs.Controllers
                                     .Select(s => s.PostId)
                                     .ToHashSet();
 
-            // حساب الكاونت فقط للبوستات المدفوعة للـ Agency
-            var countSpec = new PostWithFiltrationForCountAsync(Params, null, "Agency", true); // true للـ Agency لحساب المدفوع فقط
+            var countSpec = new PostWithFiltrationForCountAsync(Params, null, "Agency", true);
             var count = await _postRepo.GetCountWithSpecAsync(countSpec);
 
             var mappedAgencyPosts = _mapper.Map<IReadOnlyList<PostToReturnForAgencyDto>>(jobs);
@@ -302,121 +300,84 @@ namespace SmartHiring.APIs.Controllers
 			return Ok(new { message = "Job created successfully", postId = post.Id });
 		}
 
-		[Authorize(Roles = "HR")]
-		[HttpPut("{id}")]
-		public async Task<IActionResult> UpdatePost(int id, [FromBody] PostUpdateDto updateDto)
-		{
-			var userEmail = User.FindFirstValue(ClaimTypes.Email);
-			if (string.IsNullOrEmpty(userEmail))
-				return Unauthorized(new ApiResponse(401, "User email not found in token"));
+        [Authorize(Roles = "HR")]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdatePost(int id, [FromBody] PostUpdateDto updateDto)
+        {
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new ApiResponse(401, "User email not found in token"));
 
-			var user = await _userManager.Users
-				.Include(u => u.HRCompany)
-				.FirstOrDefaultAsync(u => u.Email == userEmail);
+            var user = await _userManager.Users
+                .Include(u => u.HRCompany)
+                .FirstOrDefaultAsync(u => u.Email == userEmail);
 
-			if (user == null || user.HRCompany == null)
-				return Unauthorized(new ApiResponse(401, "HR user not associated with any company"));
+            if (user == null || user.HRCompany == null)
+                return Unauthorized(new ApiResponse(401, "HR user not associated with any company"));
 
-			var post = await _postRepository.GetPostWithRelations(id);
-			if (post == null || post.CompanyId != user.HRCompany.Id)
-				return NotFound(new ApiResponse(404, "Post not found or not authorized"));
+            var post = await _postRepository.GetPostWithRelations(id);
+            if (post == null || post.CompanyId != user.HRCompany.Id)
+                return NotFound(new ApiResponse(404, "Post not found or not authorized"));
 
-			if (post.PaymentStatus == "Paid")
-			{
-				if (updateDto.JobTitle != null || updateDto.JobCategories != null ||
-					updateDto.JobTypes != null || updateDto.Workplaces != null ||
-					updateDto.Country != null || updateDto.City != null)
-				{
-					return BadRequest(new ApiResponse(400, "Cannot update restricted fields after payment"));
-				}
+            post.JobTitle = updateDto.JobTitle ?? post.JobTitle;
+            post.Country = updateDto.Country ?? post.Country;
+            post.City = updateDto.City ?? post.City;
+            post.Description = updateDto.Description ?? post.Description;
+            post.Requirements = updateDto.Requirements ?? post.Requirements;
+            post.Deadline = updateDto.Deadline ?? post.Deadline;
+            post.MinSalary = updateDto.MinSalary ?? post.MinSalary;
+            post.MaxSalary = updateDto.MaxSalary ?? post.MaxSalary;
+            post.Currency = updateDto.Currency ?? post.Currency;
+            post.MinExperience = updateDto.MinExperience ?? post.MinExperience;
+            post.MaxExperience = updateDto.MaxExperience ?? post.MaxExperience;
 
-				post.Description = updateDto.Description ?? post.Description;
-				post.Requirements = updateDto.Requirements ?? post.Requirements;
-				post.Deadline = updateDto.Deadline ?? post.Deadline;
-				post.MinSalary = updateDto.MinSalary ?? post.MinSalary;
-				post.MaxSalary = updateDto.MaxSalary ?? post.MaxSalary;
-				post.Currency = updateDto.Currency ?? post.Currency;
-				post.MinExperience = updateDto.MinExperience ?? post.MinExperience;
-				post.MaxExperience = updateDto.MaxExperience ?? post.MaxExperience;
+            if (updateDto.JobCategories != null)
+            {
+                post.PostJobCategories.Clear();
+                post.PostJobCategories = updateDto.JobCategories
+                    .Select(categoryName => new PostJobCategory { JobCategory = new JobCategory { Name = categoryName } })
+                    .ToList();
+            }
 
-				if (updateDto.Skills != null)
-				{
-					post.PostSkills.Clear();
-					post.PostSkills = updateDto.Skills
-						.Select(skillName => new PostSkill { Skill = new Skill { SkillName = skillName } })
-						.ToList();
-				}
+            if (updateDto.JobTypes != null)
+            {
+                post.PostJobTypes.Clear();
+                post.PostJobTypes = updateDto.JobTypes
+                    .Select(typeId => new PostJobType { JobTypeId = typeId })
+                    .ToList();
+            }
 
-				if (updateDto.CareerLevels != null)
-				{
-					post.PostCareerLevels.Clear();
-					post.PostCareerLevels = updateDto.CareerLevels
-						.Select(levelId => new PostCareerLevel { CareerLevelId = levelId })
-						.ToList();
-				}
-			}
-			else
-			{
-				post.JobTitle = updateDto.JobTitle ?? post.JobTitle;
-				post.Country = updateDto.Country ?? post.Country;
-				post.City = updateDto.City ?? post.City;
-				post.Description = updateDto.Description ?? post.Description;
-				post.Requirements = updateDto.Requirements ?? post.Requirements;
-				post.Deadline = updateDto.Deadline ?? post.Deadline;
-				post.MinSalary = updateDto.MinSalary ?? post.MinSalary;
-				post.MaxSalary = updateDto.MaxSalary ?? post.MaxSalary;
-				post.Currency = updateDto.Currency ?? post.Currency;
-				post.MinExperience = updateDto.MinExperience ?? post.MinExperience;
-				post.MaxExperience = updateDto.MaxExperience ?? post.MaxExperience;
+            if (updateDto.Workplaces != null)
+            {
+                post.PostWorkplaces.Clear();
+                post.PostWorkplaces = updateDto.Workplaces
+                    .Select(workplaceId => new PostWorkplace { WorkplaceId = workplaceId })
+                    .ToList();
+            }
 
-				if (updateDto.JobCategories != null)
-				{
-					post.PostJobCategories.Clear();
-					post.PostJobCategories = updateDto.JobCategories
-						.Select(categoryName => new PostJobCategory { JobCategory = new JobCategory { Name = categoryName } })
-						.ToList();
-				}
+            if (updateDto.Skills != null)
+            {
+                post.PostSkills.Clear();
+                post.PostSkills = updateDto.Skills
+                    .Select(skillName => new PostSkill { Skill = new Skill { SkillName = skillName } })
+                    .ToList();
+            }
 
-				if (updateDto.JobTypes != null)
-				{
-					post.PostJobTypes.Clear();
-					post.PostJobTypes = updateDto.JobTypes
-						.Select(typeId => new PostJobType { JobTypeId = typeId })
-						.ToList();
-				}
+            if (updateDto.CareerLevels != null)
+            {
+                post.PostCareerLevels.Clear();
+                post.PostCareerLevels = updateDto.CareerLevels
+                    .Select(levelId => new PostCareerLevel { CareerLevelId = levelId })
+                    .ToList();
+            }
 
-				if (updateDto.Workplaces != null)
-				{
-					post.PostWorkplaces.Clear();
-					post.PostWorkplaces = updateDto.Workplaces
-						.Select(workplaceId => new PostWorkplace { WorkplaceId = workplaceId })
-						.ToList();
-				}
+            await _postRepository.UpdateAsync(post);
+            await _postRepository.SaveChangesAsync();
 
-				if (updateDto.Skills != null)
-				{
-					post.PostSkills.Clear();
-					post.PostSkills = updateDto.Skills
-						.Select(skillName => new PostSkill { Skill = new Skill { SkillName = skillName } })
-						.ToList();
-				}
+            return Ok(new ApiResponse(200, "Post updated successfully"));
+        }
 
-				if (updateDto.CareerLevels != null)
-				{
-					post.PostCareerLevels.Clear();
-					post.PostCareerLevels = updateDto.CareerLevels
-						.Select(levelId => new PostCareerLevel { CareerLevelId = levelId })
-						.ToList();
-				}
-			}
-
-			await _postRepository.UpdateAsync(post);
-			await _postRepository.SaveChangesAsync();
-
-			return Ok(new ApiResponse(200, "Post updated successfully"));
-		}
-
-		[Authorize(Roles = "HR")]
+        [Authorize(Roles = "HR")]
 		[HttpDelete("{id}")]
 		public async Task<IActionResult> DeletePost(int id)
 		{
