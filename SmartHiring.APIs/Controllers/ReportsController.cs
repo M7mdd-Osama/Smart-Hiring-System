@@ -9,6 +9,7 @@ using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
 using SmartHiring.Core.Repositories;
 using SmartHiring.Core.Specifications;
+using System.Linq;
 using System.Security.Claims;
 
 namespace SmartHiring.APIs.Controllers
@@ -17,30 +18,30 @@ namespace SmartHiring.APIs.Controllers
     {
         private readonly IGenericRepository<Interview> _interviewRepo;
         private readonly IGenericRepository<Company> _companyRepo;
-        private readonly IGenericRepository<Application> _applicationRepo;
-        private readonly IGenericRepository<Post> _postRepo;
         private readonly UserManager<AppUser> _userManager;
-        private readonly IMapper _mapper;
+        private readonly IGenericRepository<Post> _postRepo;
+        private readonly IGenericRepository<Application> _applicationRepo;
+        private readonly IMapper _mapper;                     
 
         public ReportsController(
             IGenericRepository<Interview> interviewRepo,
             IGenericRepository<Company> companyRepo,
-            IGenericRepository<Application> applicationRepo,
-            IGenericRepository<Post> postRepo,
             UserManager<AppUser> userManager,
+            IGenericRepository<Post> postRepo,
+            IGenericRepository<Application> applicationRepo,
             IMapper mapper)
         {
             _interviewRepo = interviewRepo;
             _companyRepo = companyRepo;
-            _applicationRepo = applicationRepo;
-            _postRepo = postRepo;
             _userManager = userManager;
+            _postRepo = postRepo;
+            _applicationRepo = applicationRepo;
             _mapper = mapper;
         }
 
         #region Get Interview Stage Report
 
-        [Authorize(Roles = "HR,Manager")]
+        //[Authorize(Roles = "HR,Manager")]
         [HttpGet("interview-stage-report")]
         public async Task<ActionResult<InterviewReportToReturnDto>> GetInterviewStageReport(DateTime fromDate, DateTime toDate)
         {
@@ -86,139 +87,241 @@ namespace SmartHiring.APIs.Controllers
 
         #endregion
 
-        #region R1 - عدد الـ Companies
-        [Authorize(Roles = "Admin")]
+        //R1 - عدد الـ Companies اللي موجودين في السيستم
+        //[Authorize(Roles = "Admin")]
         [HttpGet("system/companies-count")]
-        public async Task<ActionResult<int>> GetCompaniesCount()
+        public async Task<ActionResult<CompanyCountReportDto>> GetCompaniesCountReport()
         {
-            var spec = new BaseSpecification<Company>();
+            var spec = new AllCompaniesSpecification();
             var companies = await _companyRepo.GetAllWithSpecAsync(spec);
 
-            return Ok(companies.Count);
-        }
-        #endregion
+            var report = new CompanyCountReportDto
+            {
+                TotalCompanies = companies.Count()
+            };
 
-        #region R2 - عدد الـ Agencies
-        [Authorize(Roles = "Admin")]
+            return Ok(report);
+        }
+
+
+        //R2 - عدد الـ Agencies اللي في السيستم
+
+        //[Authorize(Roles = "Admin")]
         [HttpGet("system/agencies-count")]
-        public async Task<ActionResult<int>> GetAgenciesCount()
+        public async Task<ActionResult<AgencyCountReportDto>> GetAgenciesCountReport()
         {
-            var spec = new UsersByRoleSpecification("Agency");
-            var agencies = await _userRepo.GetAllWithSpecAsync(spec);
+            var spec = new AllAgenciesSpecification();
+            var agencies = await _userManager.Users
+                .Where(spec.Criteria)
+                .ToListAsync();
 
-            return Ok(agencies.Count);
+            var report = new AgencyCountReportDto
+            {
+                TotalAgencies = agencies.Count
+            };
+
+            return Ok(report);
         }
-        #endregion
 
-        #region R3 - عدد الـ Agencies اللي قدمت Applications لشركة معينة
-        [Authorize(Roles = "Admin,Manager,HR")]
+
+        //R3 - عدد الـ Agencies اللي قدمت Applications لشركة معينة
+
+       //[Authorize(Roles = "Admin,Manager,HR")]
         [HttpGet("companies/{companyId}/agencies-count")]
-        public async Task<ActionResult<int>> GetAgenciesCountForCompany(int companyId)
+        public async Task<ActionResult<AgencyCountReportDto>> GetAgencyCountByCompany(int companyId)
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
-            if (string.IsNullOrEmpty(userEmail)) return Unauthorized(new ApiResponse(401, "User email not found"));
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new ApiResponse(401, "User email not found in token"));
 
-            var user = await _agencyRepo.Users
+            var user = await _userManager.Users
                 .Include(u => u.HRCompany)
                 .Include(u => u.ManagedCompany)
                 .FirstOrDefaultAsync(u => u.Email == userEmail);
-            if (user == null) return Unauthorized(new ApiResponse(401, "User not found"));
+
+            if (user == null)
+                return Unauthorized(new ApiResponse(401, "User not found"));
 
             var userCompany = user.HRCompany ?? user.ManagedCompany;
 
-            if (!User.IsInRole("Admin") && (userCompany == null || userCompany.Id != companyId))
-                return Unauthorized(new ApiResponse(401, "Not authorized for this company"));
+            var userRoles = await _userManager.GetRolesAsync(user);
 
-            var spec = new AgenciesByCompanySpecification(companyId);
-            var agencies = await _applicationRepo.GetAllWithSpecAsync(spec);
+            if (!userRoles.Contains("Admin") && (userCompany == null || userCompany.Id != companyId))
+                return Forbid();
 
-            var distinctAgencies = agencies
+            // هات كل الـ Posts بتاعة الشركة
+            var postSpec = new PostsByCompanyIdSpecification(companyId);
+            var posts = await _postRepo.GetAllWithSpecAsync(postSpec);
+            var postIds = posts.Select(p => p.Id).ToList();
+
+            if (!postIds.Any())
+                return Ok(new AgencyCountReportDto { TotalAgencies = 0 });
+
+            // هات كل الـ Applications اللي مقدمة على الـ Posts دي
+            var applications = await _applicationRepo.GetAllAsync(a => postIds.Contains(a.PostId));
+
+            // استخرج عدد الوكالات الفريدة اللي قدمت
+            var totalAgencies = applications
+                .Where(a => a.AgencyId != null)
                 .Select(a => a.AgencyId)
                 .Distinct()
                 .Count();
 
-            return Ok(distinctAgencies);
-        }
-        #endregion
+            var report = new AgencyCountReportDto
+            {
+                TotalAgencies = totalAgencies
+            };
 
-        #region R5 - متوسط عدد الـ Applications اللي قدمتها كل Agency
-        [Authorize(Roles = "Admin,Manager,HR")]
+            return Ok(report);
+        }
+
+
+        //R5 - متوسط عدد الـ Applications اللي قدمتها كل Agency
+
+        //[Authorize(Roles = "Admin,Manager,HR")]
         [HttpGet("agencies/average-applications")]
-        public async Task<ActionResult<double>> GetAverageApplicationsPerAgency()
+        public async Task<ActionResult<AgencyApplicationsAvgReportDto>> GetAverageApplicationsPerAgency()
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
-            if (string.IsNullOrEmpty(userEmail)) return Unauthorized(new ApiResponse(401, "User email not found"));
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new ApiResponse(401, "User email not found in token"));
 
-            var user = await _agencyRepo.Users
+            var user = await _userManager.Users
                 .Include(u => u.HRCompany)
                 .Include(u => u.ManagedCompany)
                 .FirstOrDefaultAsync(u => u.Email == userEmail);
-            if (user == null) return Unauthorized(new ApiResponse(401, "User not found"));
 
-            var userCompany = user.HRCompany ?? user.ManagedCompany;
+            if (user == null)
+                return Unauthorized(new ApiResponse(401, "User not found"));
 
-            BaseSpecification<Application> spec = User.IsInRole("Admin")
-                ? new BaseSpecification<Application>()
-                : new ApplicationsForCompanySpecification(userCompany.Id);
-
-            var applications = await _applicationRepo.GetAllWithSpecAsync(spec);
-
-            var agencyGroups = applications
-                .Where(a => a.AgencyId.HasValue)
-                .GroupBy(a => a.AgencyId)
-                .ToList();
-
-            var average = agencyGroups.Any() ? agencyGroups.Average(g => g.Count()) : 0;
-
-            return Ok(average);
-        }
-        #endregion
-
-        #region R6 - عدد الوظائف المدفوعة
-        [Authorize(Roles = "Admin,Manager,HR")]
-        [HttpGet("jobs/created")]
-        public async Task<ActionResult<int>> GetPaidCreatedJobs()
-        {
-            var userEmail = User.FindFirstValue(ClaimTypes.Email);
-            if (string.IsNullOrEmpty(userEmail)) return Unauthorized(new ApiResponse(401, "User email not found"));
-
-            var user = await _agencyRepo.Users
-                .Include(u => u.HRCompany)
-                .Include(u => u.ManagedCompany)
-                .FirstOrDefaultAsync(u => u.Email == userEmail);
-            if (user == null) return Unauthorized(new ApiResponse(401, "User not found"));
-
-            var userCompany = user.HRCompany ?? user.ManagedCompany;
-
-            var spec = User.IsInRole("Admin")
-                ? new PaidPostsSpecification()
-                : new PaidPostsSpecification(userCompany.Id);
-
-            var posts = await _postRepo.GetAllWithSpecAsync(spec);
-
-            return Ok(posts.Count);
-        }
-        #endregion
-
-        #region R8 - عدد الـ Applications على كل الوظايف اللي في الشركة
-        [Authorize(Roles = "Manager,HR,Agency")]
-        [HttpGet("jobs/applications-count")]
-        public async Task<ActionResult<List<JobApplicationsCountDto>>> GetApplicationsCountPerJob()
-        {
-            var userEmail = User.FindFirstValue(ClaimTypes.Email);
-            if (string.IsNullOrEmpty(userEmail)) return Unauthorized(new ApiResponse(401, "User email not found"));
-
-            var user = await _agencyRepo.Users
-                .Include(u => u.HRCompany)
-                .Include(u => u.ManagedCompany)
-                .FirstOrDefaultAsync(u => u.Email == userEmail);
-            if (user == null) return Unauthorized(new ApiResponse(401, "User not found"));
+            var userRoles = await _userManager.GetRolesAsync(user);
+            var isAdmin = userRoles.Contains("Admin");
 
             List<Application> applications;
-            if (User.IsInRole("Agency"))
+            if (isAdmin)
             {
-                var spec = new ApplicationsByAgencySpecification(user.Id);
-                applications = await _applicationRepo.GetAllWithSpecAsync(spec);
+                var spec = new ApplicationsWithAgencySpecification(); // هات كل التطبيقات اللي جاية من Agencies
+                applications = (await _applicationRepo.GetAllWithSpecAsync(spec)).ToList();
+            }
+            else
+            {
+                var company = user.HRCompany ?? user.ManagedCompany;
+                if (company == null)
+                    return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
+
+                var spec = new ApplicationsWithAgencySpecification(company.Id); // التطبيقات اللي جاية على الشركة دي
+                applications = (await _applicationRepo.GetAllWithSpecAsync(spec)).ToList();
+            }
+
+            var totalApplications = applications.Count;
+            var distinctAgencyCount = applications
+                .Where(a => a.AgencyId != null)
+                .Select(a => a.AgencyId)
+                .Distinct()
+                .Count();
+
+            double average = distinctAgencyCount == 0 ? 0 : (double)totalApplications / distinctAgencyCount;
+
+            var report = new AgencyApplicationsAvgReportDto
+            {
+                AverageApplicationsPerAgency = Math.Round(average, 2)
+            };
+
+            return Ok(report);
+        }
+
+
+
+
+
+
+
+
+
+        // R6 - عدد الوظائف اللي انشأتها الشركات وبقى الـ PaymentStatus بتاعها "Paid"
+
+        //[Authorize(Roles = "Admin,Manager,HR")]
+        [HttpGet("jobs/created")]
+        public async Task<ActionResult<PaidJobsCountReportDto>> GetPaidJobsCreatedReport()
+        {
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new ApiResponse(401, "User email not found in token"));
+
+            var user = await _userManager.Users
+                .Include(u => u.HRCompany)
+                .Include(u => u.ManagedCompany)
+                .FirstOrDefaultAsync(u => u.Email == userEmail);
+
+            if (user == null)
+                return Unauthorized(new ApiResponse(401, "User not found"));
+
+            var userRoles = await _userManager.GetRolesAsync(user);
+
+            List<Post> paidPosts;
+
+            if (userRoles.Contains("Admin"))
+            {
+                var spec = new PaidJobsByCompanySpecification(); // الكل
+                paidPosts = (await _postRepo.GetAllWithSpecAsync(spec)).ToList(); // تأكدنا من التحويل إلى List
+            }
+            else
+            {
+                var company = user.HRCompany ?? user.ManagedCompany;
+                if (company == null)
+                    return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
+
+                var spec = new PaidJobsByCompanySpecification(company.Id);
+                paidPosts = (await _postRepo.GetAllWithSpecAsync(spec)).ToList(); // تأكدنا من التحويل إلى List
+            }
+
+            var report = new PaidJobsCountReportDto
+            {
+                TotalPaidJobs = paidPosts.Count
+            };
+
+            return Ok(report);
+        }
+
+
+
+
+
+
+
+        //R8 - عدد الApplications على كل الوظايف اللي في الشركة.
+
+        //[Authorize(Roles = "HR,Manager,Agency")]
+        [HttpGet("jobs/applications-count")]
+        public async Task<ActionResult<IEnumerable<JobApplicationsCountDto>>> GetApplicationsCountPerJob()
+        {
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new ApiResponse(401, "User email not found in token"));
+
+            var user = await _userManager.Users
+                .Include(u => u.HRCompany)
+                .Include(u => u.ManagedCompany)
+                .FirstOrDefaultAsync(u => u.Email == userEmail);
+
+            if (user == null)
+                return Unauthorized(new ApiResponse(401, "User not found"));
+
+            var userRoles = await _userManager.GetRolesAsync(user);
+
+            IEnumerable<Post> posts;
+
+            if (userRoles.Contains("Agency"))
+            {
+                // For Agency: jobs that agency has applied to
+                var applications = await _applicationRepo.GetAllAsync(a => a.AgencyId == user.Id);
+                var postIds = applications.Select(a => a.PostId).Distinct().ToList();
+
+                if (!postIds.Any())
+                    return Ok(new List<JobApplicationsCountDto>());
+
+                var spec = new PostsWithApplicationsSpecification(postIds);
+                posts = await _postRepo.GetAllWithSpecAsync(spec);
             }
             else
             {
@@ -226,70 +329,89 @@ namespace SmartHiring.APIs.Controllers
                 if (userCompany == null)
                     return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
 
-                var spec = new ApplicationsByCompanyJobsSpecification(userCompany.Id);
-                applications = await _applicationRepo.GetAllWithSpecAsync(spec);
+                var spec = new PostsWithApplicationsSpecification(userCompany.Id);
+                posts = await _postRepo.GetAllWithSpecAsync(spec);
             }
 
-            var result = applications
-                .GroupBy(a => a.PostId)
-                .Select(g => new JobApplicationsCountDto
-                {
-                    PostId = g.Key,
-                    ApplicationsCount = g.Count()
-                })
-                .ToList();
-
-            return Ok(result);
+            var mapped = _mapper.Map<IEnumerable<JobApplicationsCountDto>>(posts);
+            return Ok(mapped);
         }
-        #endregion
 
-        #region R11 - عدد الـ Interviews اللي حالتها Pending
-        [Authorize(Roles = "Manager,HR")]
+
+        //R11 - عدد الـ Interviews اللي لسه متعملتش في جدول Interviews لما الInterviewStatus تبقا Pending
+
+        [Authorize(Roles = "HR,Manager")]
         [HttpGet("interviews/pending")]
-        public async Task<ActionResult<int>> GetPendingInterviews()
+        public async Task<ActionResult<PendingInterviewsReportDto>> GetPendingInterviewsReport(DateTime fromDate, DateTime toDate)
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
-            if (string.IsNullOrEmpty(userEmail)) return Unauthorized(new ApiResponse(401, "User email not found"));
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new ApiResponse(401, "User email not found in token"));
 
-            var user = await _agencyRepo.Users
+            var user = await _userManager.Users
                 .Include(u => u.HRCompany)
                 .Include(u => u.ManagedCompany)
                 .FirstOrDefaultAsync(u => u.Email == userEmail);
-            if (user == null) return Unauthorized(new ApiResponse(401, "User not found"));
+
+            if (user == null)
+                return Unauthorized(new ApiResponse(401, "User not found"));
 
             var userCompany = user.HRCompany ?? user.ManagedCompany;
-            if (userCompany == null) return Unauthorized(new ApiResponse(401, "User not associated with a company"));
+            if (userCompany == null)
+                return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
 
-            var spec = new InterviewByStatusSpecification(userCompany.Id, InterviewStatus.Pending);
+            var spec = new PendingInterviewsSpecification(fromDate, toDate, userCompany.Id);
             var pendingInterviews = await _interviewRepo.GetAllWithSpecAsync(spec);
 
-            return Ok(pendingInterviews.Count);
-        }
-        #endregion
+            var mapped = _mapper.Map<List<PendingInterviewCandidateDto>>(pendingInterviews);
 
-        #region R15 - عدد الوظائف اللي Closed
-        [Authorize(Roles = "Manager,HR")]
+            var report = new PendingInterviewsReportDto
+            {
+                TotalPendingInterviews = pendingInterviews.Count(),
+                Candidates = mapped
+            };
+
+            return Ok(report);
+        }
+
+
+
+
+        //R15 -  عدد الوظائف اللي خلاص اتقفلت.وبقا الJobStatus بتاعها بقا Closed فالداتا بيز في جدول Posts
+
+        //[Authorize(Roles = "HR,Manager")]
         [HttpGet("jobs/closed-count")]
-        public async Task<ActionResult<int>> GetClosedJobsCount()
+        public async Task<ActionResult<JobClosedCountReportDto>> GetClosedJobsCount()
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
-            if (string.IsNullOrEmpty(userEmail)) return Unauthorized(new ApiResponse(401, "User email not found"));
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new ApiResponse(401, "User email not found in token"));
 
-            var user = await _agencyRepo.Users
+            var user = await _userManager.Users
                 .Include(u => u.HRCompany)
                 .Include(u => u.ManagedCompany)
                 .FirstOrDefaultAsync(u => u.Email == userEmail);
-            if (user == null) return Unauthorized(new ApiResponse(401, "User not found"));
+
+            if (user == null)
+                return Unauthorized(new ApiResponse(401, "User not found"));
 
             var userCompany = user.HRCompany ?? user.ManagedCompany;
-            if (userCompany == null) return Unauthorized(new ApiResponse(401, "User not associated with a company"));
+            if (userCompany == null)
+                return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
 
-            var spec = new ClosedJobsSpecification(userCompany.Id);
+            var spec = new JobClosedSpecification(userCompany.Id);
             var closedJobs = await _postRepo.GetAllWithSpecAsync(spec);
 
-            return Ok(closedJobs.Count);
+            var report = new JobClosedCountReportDto
+            {
+                TotalClosedJobs = closedJobs.Count()
+            };
+
+            return Ok(report);
         }
-        #endregion
+
+
+
 
     }
 }

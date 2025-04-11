@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace SmartHiring.Core.Specifications
 {
-    public class ClosedJobsSpecification : BaseSpecifications<Post>
+    public class PostsByCompanyIdSpecification :BaseSpecifications<Post>
     {
-        public ClosedJobsSpecification(int companyId)
-        : base(p => p.CompanyId == companyId && p.JobStatus == JobStatus.Closed)
+        public PostsByCompanyIdSpecification(int companyId)
+        : base(p => p.CompanyId == companyId)
         {
         }
     }

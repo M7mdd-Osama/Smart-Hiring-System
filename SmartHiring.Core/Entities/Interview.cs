@@ -28,5 +28,6 @@ namespace SmartHiring.Core.Entities
 
 		public int ApplicantId { get; set; }
 		public Applicant Applicant { get; set; }
-	}
+
+    }
 }

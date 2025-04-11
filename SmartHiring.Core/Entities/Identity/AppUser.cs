@@ -17,9 +17,12 @@ namespace SmartHiring.Core.Entities.Identity
 
 		public Company? HRCompany { get; set; } 
 
-		public Company? ManagedCompany { get; set; }  
+		public Company? ManagedCompany { get; set; }
 
-		public ICollection<Application>? Applications { get; set; } = new HashSet<Application>(); 
+  //      public object UserRoles { get; set; }
+
+		//public ICollection<Note> Notes { get; set; } = new HashSet<Note>();
+        public ICollection<Application>? Applications { get; set; } = new HashSet<Application>(); 
 		public ICollection<AgencyApplicant>? AgencyApplicants { get; set; } = new HashSet<AgencyApplicant>(); 
 		public ICollection<Interview>? Interviews { get; set; } = new HashSet<Interview>();
 		public ICollection<Post>? Posts { get; set; } = new HashSet<Post>();
