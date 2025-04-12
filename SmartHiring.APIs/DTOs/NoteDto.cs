@@ -7,6 +7,7 @@
         public string Content { get; set; }
         public string CreatedAt { get; set; }
         public string CreatedBy { get; set; }
+        public string UserId { get; set; }
         public bool IsSeen { get; set; }
         public int PostId { get; set; }
     }
