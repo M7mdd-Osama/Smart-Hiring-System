@@ -211,6 +211,29 @@ public class MappingProfiles : Profile
 
         #endregion
 
+        // لو حبيت تعمل map بين الكيان و DTO:
+        CreateMap<Company, CompanyCountReportDto>()
+            .ForMember(dest => dest.TotalCompanies, opt => opt.Ignore()); // هنحسب العدد بنفسنا
+
+        CreateMap<AppUser, AgencyCountReportDto>()
+            .ForMember(dest => dest.TotalAgencies, opt => opt.Ignore()); // هنحسب العدد في الكود
+
+        CreateMap<Post, JobClosedCountReportDto>()
+            .ForMember(dest => dest.TotalClosedJobs, opt => opt.MapFrom(src => 1));  // Placeholder for actual job count
+
+        CreateMap<Post, JobApplicationsCountDto>()
+            .ForMember(dest => dest.JobId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.JobTitle)) // ✅ تصحيح هنا
+            .ForMember(dest => dest.ApplicationsCount, opt => opt.MapFrom(src => src.Applications.Count));
+
+
+            CreateMap<Interview, PendingInterviewCandidateDto>()
+        .ForMember(dest => dest.CandidateName, opt => opt.MapFrom(src => src.Applicant.FName))
+        .ForMember(dest => dest.CandidateEmail, opt => opt.MapFrom(src => src.Applicant.Email))
+        .ForMember(dest => dest.InterviewDate, opt => opt.MapFrom(src => src.Date))
+        .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.Post.JobTitle));
+
+
         CreateMap<Interview, CandidateReportToReturnDto>()
             .ForMember(d => d.Name, o => o.MapFrom(s => $"{s.Applicant.FName} {s.Applicant.LName}"))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));    }
