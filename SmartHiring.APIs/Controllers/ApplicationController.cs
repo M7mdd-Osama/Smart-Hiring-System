@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using SmartHiring.APIs.DTOs;
 using SmartHiring.APIs.Errors;
 using SmartHiring.APIs.Helpers;
+using SmartHiring.Core;
 using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
-using SmartHiring.Core.Repositories;
 using SmartHiring.Core.Specifications;
 using System.Security.Claims;
 
@@ -16,34 +16,16 @@ namespace SmartHiring.APIs.Controllers
 {
     public class ApplicationController : APIBaseController
     {
-        private readonly IGenericRepository<Application> _applicationRepo;
-        private readonly IGenericRepository<Applicant> _applicantRepo;
-        private readonly IGenericRepository<CandidateListApplicant> _candidateListApplicantRepo;
-        private readonly IGenericRepository<CandidateList> _candidateListRepo;
-        private readonly IGenericRepository<AgencyApplicant> _agencyApplicantRepo;
-        private readonly IGenericRepository<Interview> _interviewRepo;
-        private readonly IGenericRepository<Post> _postRepo;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly UserManager<AppUser> _userManager;
 
         public ApplicationController(
-            IGenericRepository<Application> applicationRepo,
-            IGenericRepository<Applicant> applicantRepo,
-            IGenericRepository<CandidateListApplicant> candidateListApplicantRepo,
-            IGenericRepository<CandidateList> candidateListRepo,
-            IGenericRepository<AgencyApplicant> agencyApplicantRepo,
-            IGenericRepository<Interview> interviewRepo,
-            IGenericRepository<Post> postRepo,
+            IUnitOfWork unitOfWork,
             IMapper mapper,
             UserManager<AppUser> userManager)
         {
-            _applicationRepo = applicationRepo;
-            _applicantRepo = applicantRepo;
-            _candidateListApplicantRepo = candidateListApplicantRepo;
-            _candidateListRepo = candidateListRepo;
-            _agencyApplicantRepo = agencyApplicantRepo;
-            _interviewRepo = interviewRepo;
-            _postRepo = postRepo;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
             _userManager = userManager;
         }
@@ -65,13 +47,13 @@ namespace SmartHiring.APIs.Controllers
             if (user == null)
                 return Unauthorized(new ApiResponse(401, "User not found"));
 
-            var post = await _postRepo.GetByIdAsync(postId);
+            var post = await _unitOfWork.Repository<Post>().GetByIdAsync(postId);
 
             if (post == null || post.CompanyId != user.HRCompany.Id)
                 return Forbid();
 
             var spec = new ApplicationsByPostIdSpecification(postId);
-            var allApplications = await _applicationRepo.GetAllWithSpecAsync(spec);
+            var allApplications = await _unitOfWork.Repository<Application>().GetAllWithSpecAsync(spec);
 
             if (allApplications == null || !allApplications.Any())
                 return NotFound(new ApiResponse(404, "No applications found for this post."));
@@ -115,13 +97,13 @@ namespace SmartHiring.APIs.Controllers
             if (user == null)
                 return Unauthorized(new ApiResponse(401, "User not found"));
 
-            var post = await _postRepo.GetByIdAsync(postId);
+            var post = await _unitOfWork.Repository<Post>().GetByIdAsync(postId);
 
             if (post == null || post.CompanyId != user.HRCompany.Id)
                 return Forbid();
 
             var spec = new AcceptedApplicationsByPostIdSpecification(postId);
-            var filteredCandidates = await _applicationRepo.GetAllWithSpecAsync(spec);
+            var filteredCandidates = await _unitOfWork.Repository<Application>().GetAllWithSpecAsync(spec);
 
             if (filteredCandidates == null || !filteredCandidates.Any())
                 return NotFound(new ApiResponse(404, "No filtered candidates found for this post."));
@@ -137,7 +119,7 @@ namespace SmartHiring.APIs.Controllers
                 mappedCandidates[i].Rank = i + 1;
             }
 
-            var candidateLists = await _candidateListRepo.GetAllAsync();
+            var candidateLists = await _unitOfWork.Repository<CandidateList>().GetAllAsync();
             var isSent = candidateLists.Any(cl => cl.PostId == postId && (cl.Status == "Pending" || cl.Status == "Accepted"));
 
             var result = new
@@ -170,11 +152,11 @@ namespace SmartHiring.APIs.Controllers
             if (user == null)
                 return Unauthorized(new ApiResponse(401, "User not found"));
 
-            var post = await _postRepo.GetByIdAsync(postId);
+            var post = await _unitOfWork.Repository<Post>().GetByIdAsync(postId);
             if (post == null || post.CompanyId != user.HRCompany.Id)
                 return Forbid();
 
-            var candidateLists = await _candidateListRepo.GetAllAsync();
+            var candidateLists = await _unitOfWork.Repository<CandidateList>().GetAllAsync();
             var existingList = candidateLists.Any(cl => cl.PostId == postId && (cl.Status == "Pending" || cl.Status == "Accepted"));
 
             if (existingList)
@@ -187,7 +169,7 @@ namespace SmartHiring.APIs.Controllers
                 return NotFound(new ApiResponse(404, "No manager found for this company."));
 
             var spec = new AcceptedApplicationsByPostIdSpecification(postId);
-            var filteredCandidates = await _applicationRepo.GetAllWithSpecAsync(spec);
+            var filteredCandidates = await _unitOfWork.Repository<Application>().GetAllWithSpecAsync(spec);
 
             if (filteredCandidates == null || !filteredCandidates.Any())
                 return NotFound(new ApiResponse(404, "No filtered candidates found for this post."));
@@ -208,8 +190,8 @@ namespace SmartHiring.APIs.Controllers
                 GeneratedDate = DateTime.UtcNow
             };
 
-            await _candidateListRepo.AddAsync(candidateList);
-            await _candidateListRepo.SaveChangesAsync();
+            await _unitOfWork.Repository<CandidateList>().AddAsync(candidateList);
+            await _unitOfWork.CompleteAsync();
 
             var candidateListApplicants = topCandidates.Select(c => new CandidateListApplicant
             {
@@ -217,8 +199,8 @@ namespace SmartHiring.APIs.Controllers
                 ApplicantId = c.ApplicantId
             }).ToList();
 
-            await _candidateListApplicantRepo.AddRangeAsync(candidateListApplicants);
-            await _candidateListApplicantRepo.SaveChangesAsync();
+            await _unitOfWork.Repository<CandidateListApplicant>().AddRangeAsync(candidateListApplicants);
+            await _unitOfWork.CompleteAsync();
 
             return Ok(new { CandidateListId = candidateList.Id, SelectedCandidates = topCandidates.Count });
         }
@@ -239,7 +221,7 @@ namespace SmartHiring.APIs.Controllers
             if (manager == null)
                 return Unauthorized(new ApiResponse(401, "Manager not found"));
 
-            var candidateLists = await _candidateListRepo
+            var candidateLists = await _unitOfWork.Repository<CandidateList>()
                 .GetAllWithSpecAsync(new CandidateListWithApplicantsSpec(postId));
 
             if (candidateLists == null || !candidateLists.Any())
@@ -288,7 +270,7 @@ namespace SmartHiring.APIs.Controllers
             if (manager == null)
                 return Unauthorized(new ApiResponse(401, "Manager not found"));
 
-            var candidateList = await _candidateListRepo.GetByIdAsync(candidateListId);
+            var candidateList = await _unitOfWork.Repository<CandidateList>().GetByIdAsync(candidateListId);
             if (candidateList == null || candidateList.ManagerId != manager.Id)
                 return Forbid();
 
@@ -297,8 +279,8 @@ namespace SmartHiring.APIs.Controllers
 
             candidateList.Status = request.IsApproved ? "Accepted" : "Rejected";
 
-            await _candidateListRepo.UpdateAsync(candidateList);
-            await _candidateListRepo.SaveChangesAsync();
+            await _unitOfWork.Repository<CandidateList>().UpdateAsync(candidateList);
+            await _unitOfWork.CompleteAsync();
 
             if (request.IsApproved)
             {
@@ -324,14 +306,14 @@ namespace SmartHiring.APIs.Controllers
                 return Unauthorized(new ApiResponse(401, "Agency not found"));
 
             var agencyApplicantsSpec = new AgencyApplicantsSpec(agency.Id);
-            var agencyApplicants = await _agencyApplicantRepo.GetAllWithSpecAsync(agencyApplicantsSpec);
+            var agencyApplicants = await _unitOfWork.Repository<AgencyApplicant>().GetAllWithSpecAsync(agencyApplicantsSpec);
 
             var applicantIds = agencyApplicants.Select(aa => aa.ApplicantId).ToList();
             if (!applicantIds.Any())
                 return Ok(new { HiredApplicants = new List<HiredApplicantDto>() });
 
             var hiredInterviewsSpec = new AgencyHiredApplicantsSpec(applicantIds);
-            var hiredInterviews = await _interviewRepo.GetAllWithSpecAsync(hiredInterviewsSpec);
+            var hiredInterviews = await _unitOfWork.Repository<Interview>().GetAllWithSpecAsync(hiredInterviewsSpec);
 
             if (!hiredInterviews.Any())
                 return Ok(new { HiredApplicants = new List<HiredApplicantDto>() });
@@ -355,21 +337,21 @@ namespace SmartHiring.APIs.Controllers
                 return Unauthorized(new ApiResponse(401, "Agency not found"));
 
             var spec = new PostByIdSpec(postId);
-            var post = await _postRepo.GetByEntityWithSpecAsync(spec);
+            var post = await _unitOfWork.Repository<Post>().GetByEntityWithSpecAsync(spec);
             if (post == null)
                 return NotFound(new ApiResponse(404, "Post not found or not paid"));
 
             var applicant = _mapper.Map<Applicant>(dto);
-            await _applicantRepo.AddAsync(applicant);
-            await _applicantRepo.SaveChangesAsync();
+            await _unitOfWork.Repository<Applicant>().AddAsync(applicant);
+            await _unitOfWork.CompleteAsync();
 
             var agencyApplicant = new AgencyApplicant
             {
                 AgencyId = agency.Id,
                 ApplicantId = applicant.Id
             };
-            await _agencyApplicantRepo.AddAsync(agencyApplicant);
-            await _agencyApplicantRepo.SaveChangesAsync();
+            await _unitOfWork.Repository<AgencyApplicant>().AddAsync(agencyApplicant);
+            await _unitOfWork.CompleteAsync();
 
             var fileName = DocumentSettings.UploadFile(dto.CVFile, "CVs");
             var cvLink = $"/Files/CVs/{fileName}";
@@ -384,13 +366,12 @@ namespace SmartHiring.APIs.Controllers
                 RankScore = 0,
                 IsShortlisted = false
             };
-            await _applicationRepo.AddAsync(application);
-            await _applicationRepo.SaveChangesAsync();
+            await _unitOfWork.Repository<Application>().AddAsync(application);
+            await _unitOfWork.CompleteAsync();
 
             return Ok(new ApiResponse(200, "Application submitted successfully"));
         }
 
         #endregion
-
     }
 }

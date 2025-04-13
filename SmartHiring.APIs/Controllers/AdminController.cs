@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using SmartHiring.APIs.DTOs;
 using SmartHiring.APIs.Errors;
 using SmartHiring.APIs.Helpers;
+using SmartHiring.Core;
 using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
-using SmartHiring.Core.Repositories;
 using SmartHiring.Core.Specifications;
 using SmartHiring.Repository.Data;
 
@@ -17,18 +17,18 @@ namespace SmartHiring.APIs.Controllers
     [Authorize(Roles = "Admin")]
     public class AdminController : APIBaseController
     {
-        private readonly IGenericRepository<Company> _companyRepo;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<AppUser> _userManager;
         private readonly IMapper _mapper;
-        private readonly SmartHiringDbContext _dbContext;
+        private readonly SmartHiringDbContext _dbContext; // Keep DbContext for now for complex queries
 
         public AdminController(
-            IGenericRepository<Company> companyRepo,
+            IUnitOfWork unitOfWork,
             UserManager<AppUser> userManager,
             IMapper mapper,
             SmartHiringDbContext dbContext)
         {
-            _companyRepo = companyRepo;
+            _unitOfWork = unitOfWork;
             _userManager = userManager;
             _mapper = mapper;
             _dbContext = dbContext;
@@ -40,13 +40,14 @@ namespace SmartHiring.APIs.Controllers
         public async Task<ActionResult<IEnumerable<CompanyDto>>> GetCompanies([FromQuery] string? search)
         {
             var spec = new CompaniesWithDetailsSpecification(search);
-            var companies = await _companyRepo.GetAllWithSpecAsync(spec);
+            var companies = await _unitOfWork.Repository<Company>().GetAllWithSpecAsync(spec);
             return Ok(_mapper.Map<IEnumerable<CompanyDto>>(companies));
         }
 
         [HttpPost("companies")]
         public async Task<IActionResult> CreateCompany([FromForm] CreateCompanyByAdminDto dto)
         {
+            // Use DbContext for the query but UnitOfWork for adding
             var existingCompany = await _dbContext.Companies
                 .FirstOrDefaultAsync(c => c.Name == dto.Name || c.BusinessEmail == dto.BusinessEmail || c.Phone == dto.Phone);
 
@@ -65,8 +66,8 @@ namespace SmartHiring.APIs.Controllers
                 company.LogoUrl = $"/Files/Images/{logoUrl}";
             }
 
-            await _dbContext.Companies.AddAsync(company);
-            await _dbContext.SaveChangesAsync();
+            await _unitOfWork.Repository<Company>().AddAsync(company);
+            await _unitOfWork.CompleteAsync();
 
             return Ok(new ApiResponse(200, "Company created successfully"));
         }
@@ -74,7 +75,11 @@ namespace SmartHiring.APIs.Controllers
         [HttpPut("companies/{companyId}")]
         public async Task<IActionResult> UpdateCompany(int companyId, [FromForm] UpdateCompanyByAdminDto dto)
         {
-            var company = await _dbContext.Companies.Include(c => c.Manager).FirstOrDefaultAsync(c => c.Id == companyId);
+            // Use DbContext for complex query with Include
+            var company = await _dbContext.Companies
+                .Include(c => c.Manager)
+                .FirstOrDefaultAsync(c => c.Id == companyId);
+
             if (company == null) return NotFound(new ApiResponse(404, "Company not found"));
 
             company = _mapper.Map(dto, company);
@@ -91,7 +96,8 @@ namespace SmartHiring.APIs.Controllers
                 company.LogoUrl = $"/Files/Images/{logoUrl}";
             }
 
-            await _dbContext.SaveChangesAsync();
+            await _unitOfWork.Repository<Company>().UpdateAsync(company);
+            await _unitOfWork.CompleteAsync();
             return Ok(new ApiResponse(200, "Company updated successfully"));
         }
 
@@ -100,7 +106,8 @@ namespace SmartHiring.APIs.Controllers
         {
             try
             {
-                var company = await _dbContext.Companies.FindAsync(companyId);
+                // Use combination of UnitOfWork for basic operations and DbContext for complex queries
+                var company = await _unitOfWork.Repository<Company>().GetByIdAsync(companyId);
                 if (company == null)
                     return NotFound(new ApiResponse(404, "Company not found"));
 
@@ -114,15 +121,21 @@ namespace SmartHiring.APIs.Controllers
                     .Select(a => a.Id)
                     .ToListAsync();
 
-                _dbContext.CandidateLists.RemoveRange(_dbContext.CandidateLists.Where(c => applicationIds.Contains(c.PostId)));
+                // Delete related entities using DbContext for bulk operations
+                _dbContext.CandidateLists.RemoveRange(
+                    _dbContext.CandidateLists.Where(c => applicationIds.Contains(c.PostId)));
 
-                _dbContext.Interviews.RemoveRange(_dbContext.Interviews.Where(i => postIds.Contains(i.PostId)));
+                _dbContext.Interviews.RemoveRange(
+                    _dbContext.Interviews.Where(i => postIds.Contains(i.PostId)));
 
-                _dbContext.Applications.RemoveRange(_dbContext.Applications.Where(a => postIds.Contains(a.PostId)));
+                _dbContext.Applications.RemoveRange(
+                    _dbContext.Applications.Where(a => postIds.Contains(a.PostId)));
 
-                _dbContext.Posts.RemoveRange(_dbContext.Posts.Where(p => postIds.Contains(p.Id)));
+                _dbContext.Posts.RemoveRange(
+                    _dbContext.Posts.Where(p => postIds.Contains(p.Id)));
 
-                _dbContext.Companies.Remove(company);
+                // Delete company using UnitOfWork
+                await _unitOfWork.Repository<Company>().DeleteAsync(company);
 
                 var usersToDelete = new List<AppUser>();
 
@@ -150,12 +163,12 @@ namespace SmartHiring.APIs.Controllers
                     }
                 }
 
+                await _unitOfWork.CompleteAsync();
+
                 foreach (var user in usersToDelete)
                 {
                     await _userManager.DeleteAsync(user);
                 }
-
-                await _dbContext.SaveChangesAsync();
 
                 return Ok(new ApiResponse(200, "Company and related data deleted successfully"));
             }
@@ -255,6 +268,5 @@ namespace SmartHiring.APIs.Controllers
         }
 
         #endregion
-
     }
 }
