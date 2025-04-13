@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SmartHiring.Core.Entities;
 using SmartHiring.Core.Repositories;
 using SmartHiring.Core.Specifications;
 using SmartHiring.Repository.Data;
@@ -58,16 +57,7 @@ namespace SmartHiring.Repository
 			await _dbContext.SaveChangesAsync();
 		}
 
-		public async Task<IEnumerable<Application>> GetApplicationsByJobIdAsync(int jobId)
-		{
-			return await _dbContext.Applications.Where(a => a.PostId == jobId).ToListAsync();
-		}
 
-		public async Task<string> GetApplicationStatusAsync(int applicationId)
-		{
-			var application = await _dbContext.Applications.FindAsync(applicationId);
-			return application != null ? (application.IsShortlisted ? "Approved" : "Rejected") : null;
-		}
 
 		public async Task AddAsync(T entity)
 		{
@@ -97,11 +87,11 @@ namespace SmartHiring.Repository
 		}
 
 		public async Task SaveChangesAsync()
-		{
+        {
 			await _dbContext.SaveChangesAsync();
-		}
+        }
 
-		public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> predicate)
+        public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> predicate)
 		{
 			return await _dbContext.Set<T>().Where(predicate).ToListAsync();
 		}

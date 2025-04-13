@@ -7,20 +7,21 @@ using Microsoft.EntityFrameworkCore;
 using SmartHiring.APIs.DTOs;
 using SmartHiring.APIs.Errors;
 using SmartHiring.APIs.Helpers;
+using SmartHiring.Core;
+using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
-using SmartHiring.Repository.Data;
 
 namespace SmartHiring.APIs.Controllers
 {
     public class UserController : APIBaseController
     {
-        private readonly SmartHiringDbContext _dbContext;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<AppUser> _userManager;
 
-        public UserController(SmartHiringDbContext dbContext,
+        public UserController(IUnitOfWork unitOfWork,
             UserManager<AppUser> userManager)
         {
-            _dbContext = dbContext;
+            _unitOfWork = unitOfWork;
             _userManager = userManager;
         }
 
@@ -86,7 +87,7 @@ namespace SmartHiring.APIs.Controllers
                             logoPath = $"/Files/Images/{uploadedFileName}";
                         }
                         company.LogoUrl = logoPath;
-                        _dbContext.Update(company);
+                        await _unitOfWork.Repository<Company>().UpdateAsync(company);
                     }
                     else
                     {
@@ -108,7 +109,7 @@ namespace SmartHiring.APIs.Controllers
                 {
                     user.Address.City = request.Address.City ?? user.Address.City;
                     user.Address.Country = request.Address.Country ?? user.Address.Country;
-                    _dbContext.Update(user.Address);
+                    await _unitOfWork.Repository<Address>().UpdateAsync(user.Address);
                 }
                 else
                 {
@@ -119,11 +120,11 @@ namespace SmartHiring.APIs.Controllers
                         Country = request.Address.Country
                     };
                     user.Address = newAddress;
-                    _dbContext.Add(newAddress);
+                    await _unitOfWork.Repository<Address>().AddAsync(newAddress);
                 }
-
-                await _dbContext.SaveChangesAsync();
             }
+
+            await _unitOfWork.CompleteAsync();
 
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
@@ -133,6 +134,5 @@ namespace SmartHiring.APIs.Controllers
         }
 
         #endregion
-
     }
 }

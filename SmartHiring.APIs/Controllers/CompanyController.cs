@@ -6,32 +6,27 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartHiring.APIs.DTOs;
 using SmartHiring.APIs.Errors;
+using SmartHiring.Core;
 using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
-using SmartHiring.Core.Repositories;
 using SmartHiring.Core.Specifications;
 
 namespace SmartHiring.APIs.Controllers
 {
     public class CompanyController : APIBaseController
     {
-        private readonly IGenericRepository<Company> _companyRepo;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly UserManager<AppUser> _userManager;
-        private readonly IGenericRepository<Note> _noteRepo;
-        private readonly IGenericRepository<Post> _postRepo;
 
-        public CompanyController(IGenericRepository<Company> companyRepo,
+        public CompanyController(
+            IUnitOfWork unitOfWork,
             IMapper mapper,
-            UserManager<AppUser> userManager,
-            IGenericRepository<Note> noteRepo,
-            IGenericRepository<Post> postRepo)
+            UserManager<AppUser> userManager)
         {
-            _companyRepo = companyRepo;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
             _userManager = userManager;
-            _noteRepo = noteRepo;
-            _postRepo = postRepo;
         }
 
         #region Get Company Members
@@ -54,7 +49,7 @@ namespace SmartHiring.APIs.Controllers
 
             var company = user.HRCompany ?? user.ManagedCompany;
 
-            var companyWithMembers = await _companyRepo.GetByEntityWithSpecAsync(
+            var companyWithMembers = await _unitOfWork.Repository<Company>().GetByEntityWithSpecAsync(
                 new CompanyWithMembersSpecifications(company.Id)
             );
 
@@ -99,7 +94,7 @@ namespace SmartHiring.APIs.Controllers
             if (companyId == null)
                 return Unauthorized(new ApiResponse(401, "User is not associated with any company"));
 
-            var post = await _postRepo.GetByIdAsync(noteDto.PostId);
+            var post = await _unitOfWork.Repository<Post>().GetByIdAsync(noteDto.PostId);
             if (post == null)
                 return BadRequest(new ApiResponse(400, "Post not found"));
 
@@ -107,10 +102,11 @@ namespace SmartHiring.APIs.Controllers
             note.UserId = user.Id;
             note.CreatedAt = DateTime.Now;
 
-            await _noteRepo.AddAsync(note);
+            await _unitOfWork.Repository<Note>().AddAsync(note);
+            await _unitOfWork.CompleteAsync();
             return Ok(new ApiResponse(200, "Note created successfully"));
         }
-        
+
         #endregion
 
         #region Get All Notes
@@ -137,7 +133,7 @@ namespace SmartHiring.APIs.Controllers
                 return Unauthorized(new ApiResponse(401, "User is not associated with any company"));
 
             var spec = new NotesByCompanySpec(companyId.Value, postId);
-            var notes = await _noteRepo.GetAllWithSpecAsync(spec);
+            var notes = await _unitOfWork.Repository<Note>().GetAllWithSpecAsync(spec);
 
             if (notes == null || !notes.Any())
                 return NotFound(new ApiResponse(404, "No notes found for this company"));
@@ -178,7 +174,7 @@ namespace SmartHiring.APIs.Controllers
                 return Unauthorized(new ApiResponse(401, "User is not associated with any company"));
 
             var spec = new NoteByIdAndCompanySpec(noteId, companyId.Value);
-            var note = await _noteRepo.GetByEntityWithSpecAsync(spec);
+            var note = await _unitOfWork.Repository<Note>().GetByEntityWithSpecAsync(spec);
 
             if (note == null)
                 return NotFound(new ApiResponse(404, "Note not found or does not belong to your company"));
@@ -186,7 +182,8 @@ namespace SmartHiring.APIs.Controllers
             if (note.UserId != user.Id && !note.IsSeen)
             {
                 note.IsSeen = true;
-                await _noteRepo.SaveChangesAsync();
+                await _unitOfWork.Repository<Note>().UpdateAsync(note);
+                await _unitOfWork.CompleteAsync();
             }
 
             var roles = await _userManager.GetRolesAsync(user);
@@ -223,7 +220,7 @@ namespace SmartHiring.APIs.Controllers
             var companyId = user.HRCompany?.Id ?? user.ManagedCompany?.Id;
 
             var spec = new NoteByIdSpecification(noteId, user.Id);
-            var notes = await _noteRepo.GetAllWithSpecAsync(spec);
+            var notes = await _unitOfWork.Repository<Note>().GetAllWithSpecAsync(spec);
 
             var note = notes.FirstOrDefault();
             if (note == null)
@@ -234,11 +231,11 @@ namespace SmartHiring.APIs.Controllers
                 return Unauthorized(new ApiResponse(403, "You can only delete your own notes"));
             }
 
-            await _noteRepo.DeleteAsync(note);
+            await _unitOfWork.Repository<Note>().DeleteAsync(note);
+            await _unitOfWork.CompleteAsync();
             return Ok(new ApiResponse(200, "Note deleted successfully"));
         }
 
         #endregion
-
     }
 }
