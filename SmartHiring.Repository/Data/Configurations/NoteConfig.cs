@@ -12,6 +12,7 @@ namespace SmartHiring.Repository.Data.Configurations
 
             builder.HasKey(n => n.Id);
             builder.Property(n => n.Header)
+            .HasMaxLength(20)
                 .IsRequired();
 
             builder.Property(n => n.Content)

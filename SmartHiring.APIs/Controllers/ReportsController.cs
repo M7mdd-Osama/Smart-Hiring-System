@@ -9,7 +9,6 @@ using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
 using SmartHiring.Core.Repositories;
 using SmartHiring.Core.Specifications;
-using System.Linq;
 using System.Security.Claims;
 
 namespace SmartHiring.APIs.Controllers
@@ -41,7 +40,7 @@ namespace SmartHiring.APIs.Controllers
 
         #region Get Interview Stage Report
 
-        //[Authorize(Roles = "HR,Manager")]
+        [Authorize(Roles = "HR,Manager")]
         [HttpGet("interview-stage-report")]
         public async Task<ActionResult<InterviewReportToReturnDto>> GetInterviewStageReport(DateTime fromDate, DateTime toDate)
         {
@@ -87,8 +86,10 @@ namespace SmartHiring.APIs.Controllers
 
         #endregion
 
+        #region Ali
+
         //R1 - عدد الـ Companies اللي موجودين في السيستم
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         [HttpGet("system/companies-count")]
         public async Task<ActionResult<CompanyCountReportDto>> GetCompaniesCountReport()
         {
@@ -103,30 +104,28 @@ namespace SmartHiring.APIs.Controllers
             return Ok(report);
         }
 
-
         //R2 - عدد الـ Agencies اللي في السيستم
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         [HttpGet("system/agencies-count")]
         public async Task<ActionResult<AgencyCountReportDto>> GetAgenciesCountReport()
         {
             var spec = new AllAgenciesSpecification();
             var agencies = await _userManager.Users
                 .Where(spec.Criteria)
-                .ToListAsync();
+                .CountAsync();
 
             var report = new AgencyCountReportDto
             {
-                TotalAgencies = agencies.Count
+                TotalAgencies = agencies
             };
 
             return Ok(report);
         }
 
-
         //R3 - عدد الـ Agencies اللي قدمت Applications لشركة معينة
 
-       //[Authorize(Roles = "Admin,Manager,HR")]
+        [Authorize(Roles = "Admin,Manager,HR")]
         [HttpGet("companies/{companyId}/agencies-count")]
         public async Task<ActionResult<AgencyCountReportDto>> GetAgencyCountByCompany(int companyId)
         {
@@ -174,7 +173,6 @@ namespace SmartHiring.APIs.Controllers
 
             return Ok(report);
         }
-
 
         //R5 - متوسط عدد الـ Applications اللي قدمتها كل Agency
 
@@ -230,14 +228,6 @@ namespace SmartHiring.APIs.Controllers
             return Ok(report);
         }
 
-
-
-
-
-
-
-
-
         // R6 - عدد الوظائف اللي انشأتها الشركات وبقى الـ PaymentStatus بتاعها "Paid"
 
         //[Authorize(Roles = "Admin,Manager,HR")]
@@ -282,12 +272,6 @@ namespace SmartHiring.APIs.Controllers
 
             return Ok(report);
         }
-
-
-
-
-
-
 
         //R8 - عدد الApplications على كل الوظايف اللي في الشركة.
 
@@ -337,7 +321,6 @@ namespace SmartHiring.APIs.Controllers
             return Ok(mapped);
         }
 
-
         //R11 - عدد الـ Interviews اللي لسه متعملتش في جدول Interviews لما الInterviewStatus تبقا Pending
 
         [Authorize(Roles = "HR,Manager")]
@@ -374,12 +357,9 @@ namespace SmartHiring.APIs.Controllers
             return Ok(report);
         }
 
-
-
-
         //R15 -  عدد الوظائف اللي خلاص اتقفلت.وبقا الJobStatus بتاعها بقا Closed فالداتا بيز في جدول Posts
 
-        //[Authorize(Roles = "HR,Manager")]
+        [Authorize(Roles = "HR,Manager")]
         [HttpGet("jobs/closed-count")]
         public async Task<ActionResult<JobClosedCountReportDto>> GetClosedJobsCount()
         {
@@ -410,8 +390,7 @@ namespace SmartHiring.APIs.Controllers
             return Ok(report);
         }
 
-
-
+        #endregion
 
     }
 }

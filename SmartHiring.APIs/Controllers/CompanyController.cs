@@ -73,6 +73,15 @@ namespace SmartHiring.APIs.Controllers
         [HttpPost("notes")]
         public async Task<IActionResult> CreateNote([FromBody] CreateNoteDto noteDto)
         {
+            var contentWordCount = noteDto.Content?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length ?? 0;
+            var headerWordCount = noteDto.Header?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length ?? 0;
+
+            if (contentWordCount > 1000)
+                return BadRequest(new ApiResponse(400, "Note content must not exceed 1000 words."));
+
+            if (headerWordCount > 20)
+                return BadRequest(new ApiResponse(400, "Note header must not exceed 20 words."));
+
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(userEmail))
                 return Unauthorized(new ApiResponse(401, "User email not found in token"));
@@ -101,7 +110,7 @@ namespace SmartHiring.APIs.Controllers
             await _noteRepo.AddAsync(note);
             return Ok(new ApiResponse(200, "Note created successfully"));
         }
-
+        
         #endregion
 
         #region Get All Notes

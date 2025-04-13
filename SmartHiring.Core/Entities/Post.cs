@@ -3,12 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmartHiring.Core.Entities
 {
-    //// تعريف الـ enum JobStatus
-    //public enum JobStatus
-    //{
-    //    Open,
-    //    Closed
-    //}
     public class Post : BaseEntity
 	{
 		public string JobTitle { get; set; }
@@ -17,7 +11,6 @@ namespace SmartHiring.Core.Entities
 		public DateTime PostDate { get; set; }
 		public DateTime Deadline { get; set; }
         public string JobStatus { get; set; } = "Open";
-		//public JobStatus JobStatus { get; set; } = JobStatus.Open;
 		public decimal MinSalary { get; set; }
 		public decimal MaxSalary { get; set; }
 		public string Currency { get; set; } // EGP, USD, etc.  

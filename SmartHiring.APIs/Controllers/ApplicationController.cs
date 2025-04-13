@@ -137,9 +137,14 @@ namespace SmartHiring.APIs.Controllers
                 mappedCandidates[i].Rank = i + 1;
             }
 
+            var candidateLists = await _candidateListRepo.GetAllAsync();
+            var isSent = candidateLists.Any(cl => cl.PostId == postId && (cl.Status == "Pending" || cl.Status == "Accepted"));
+
             var result = new
             {
+                Deadline = post.Deadline,
                 TotalCount = mappedCandidates.Count,
+                IsSent = isSent,
                 Candidates = mappedCandidates
             };
 
@@ -168,6 +173,12 @@ namespace SmartHiring.APIs.Controllers
             var post = await _postRepo.GetByIdAsync(postId);
             if (post == null || post.CompanyId != user.HRCompany.Id)
                 return Forbid();
+
+            var candidateLists = await _candidateListRepo.GetAllAsync();
+            var existingList = candidateLists.Any(cl => cl.PostId == postId && (cl.Status == "Pending" || cl.Status == "Accepted"));
+
+            if (existingList)
+                return BadRequest(new ApiResponse(400, "Cannot create a new candidate list. There's already one Pending or Accepted."));
 
             var manager = await _userManager.Users
                 .FirstOrDefaultAsync(u => u.ManagedCompany != null && u.ManagedCompany.Id == user.HRCompany.Id);

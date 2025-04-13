@@ -226,15 +226,14 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.JobTitle)) // ✅ تصحيح هنا
             .ForMember(dest => dest.ApplicationsCount, opt => opt.MapFrom(src => src.Applications.Count));
 
-
             CreateMap<Interview, PendingInterviewCandidateDto>()
         .ForMember(dest => dest.CandidateName, opt => opt.MapFrom(src => src.Applicant.FName))
         .ForMember(dest => dest.CandidateEmail, opt => opt.MapFrom(src => src.Applicant.Email))
         .ForMember(dest => dest.InterviewDate, opt => opt.MapFrom(src => src.Date))
         .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.Post.JobTitle));
 
-
         CreateMap<Interview, CandidateReportToReturnDto>()
             .ForMember(d => d.Name, o => o.MapFrom(s => $"{s.Applicant.FName} {s.Applicant.LName}"))
-            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));    }
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));   
+    }
 }
