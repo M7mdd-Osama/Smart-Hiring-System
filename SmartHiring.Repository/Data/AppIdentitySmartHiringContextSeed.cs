@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using SmartHiring.Core.Entities.Identity;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace SmartHiring.Repository.Data
 {

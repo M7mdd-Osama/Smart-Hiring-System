@@ -20,7 +20,7 @@ namespace SmartHiring.APIs.Controllers
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<AppUser> _userManager;
         private readonly IMapper _mapper;
-        private readonly SmartHiringDbContext _dbContext; // Keep DbContext for now for complex queries
+        private readonly SmartHiringDbContext _dbContext;
 
         public AdminController(
             IUnitOfWork unitOfWork,
@@ -35,7 +35,6 @@ namespace SmartHiring.APIs.Controllers
         }
 
         #region Companies
-
         [HttpGet("companies")]
         public async Task<ActionResult<IEnumerable<CompanyDto>>> GetCompanies([FromQuery] string? search)
         {
@@ -47,7 +46,6 @@ namespace SmartHiring.APIs.Controllers
         [HttpPost("companies")]
         public async Task<IActionResult> CreateCompany([FromForm] CreateCompanyByAdminDto dto)
         {
-            // Use DbContext for the query but UnitOfWork for adding
             var existingCompany = await _dbContext.Companies
                 .FirstOrDefaultAsync(c => c.Name == dto.Name || c.BusinessEmail == dto.BusinessEmail || c.Phone == dto.Phone);
 

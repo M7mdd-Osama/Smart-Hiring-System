@@ -152,7 +152,6 @@ namespace SmartHiring.APIs.Controllers
             var response = new
             {
                 message = "Interview scheduled successfully and email sent.",
-                interviewId = interview.Id
             };
 
             return Ok(response);

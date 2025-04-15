@@ -12,10 +12,5 @@ namespace SmartHiring.Core.Specifications
             AddOrderBy(c => c.Name);
 
         }
-        public CompaniesWithDetailsSpecification(int companyId) : base(c => c.Id == companyId)
-        {
-            AddInclude(c => c.HR);
-            AddInclude(c => c.Manager);
-        }
     }
 }
