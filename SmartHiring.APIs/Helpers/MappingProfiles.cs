@@ -222,9 +222,9 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.TotalClosedJobs, opt => opt.MapFrom(src => 1));  // Placeholder for actual job count
 
         CreateMap<Post, JobApplicationsCountDto>()
-            .ForMember(dest => dest.JobId, opt => opt.MapFrom(src => src.Id))
-            .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.JobTitle)) // ✅ تصحيح هنا
-            .ForMember(dest => dest.ApplicationsCount, opt => opt.MapFrom(src => src.Applications.Count));
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.JobTitle)) // ✅ تصحيح هنا
+            .ForMember(dest => dest.JobAppliedNumber, opt => opt.MapFrom(src => src.Applications.Count));
 
 
             CreateMap<Interview, PendingInterviewCandidateDto>()
@@ -236,5 +236,16 @@ public class MappingProfiles : Profile
 
         CreateMap<Interview, CandidateReportToReturnDto>()
             .ForMember(d => d.Name, o => o.MapFrom(s => $"{s.Applicant.FName} {s.Applicant.LName}"))
-            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));    }
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));
+
+        CreateMap<Post, JobApplicationsCountDto>()
+    .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+    .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.JobTitle))
+    .ForMember(dest => dest.JobAppliedNumber, opt => opt.MapFrom(src => src.Applications.Count));
+
+
+
+    }
+
+
 }

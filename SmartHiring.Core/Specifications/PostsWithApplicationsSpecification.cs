@@ -9,17 +9,16 @@ namespace SmartHiring.Core.Specifications
 {
     public class PostsWithApplicationsSpecification : BaseSpecifications<Post>
     {
+        public PostsWithApplicationsSpecification(List<int> postIds)
+        : base(p => postIds.Contains(p.Id))
+        {
+            AddInclude(p => p.Applications); // ← مهم جدًا
+        }
+
         public PostsWithApplicationsSpecification(int companyId)
             : base(p => p.CompanyId == companyId)
         {
-            AddInclude(p => p.Applications);
-        }
-
-
-        public PostsWithApplicationsSpecification(List<int> postIds)
-            : base(p => postIds.Contains(p.Id))
-        {
-            AddInclude(p => p.Applications);
+            AddInclude(p => p.Applications); // ← مهم جدًا
         }
 
     }

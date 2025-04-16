@@ -43,5 +43,6 @@ namespace SmartHiring.Core.Specifications
 			Skip = skip;
 			Take = take;
 		}
+
 	}
 }

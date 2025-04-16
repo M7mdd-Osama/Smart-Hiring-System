@@ -11,15 +11,15 @@ namespace SmartHiring.Core.Specifications
     {
         // للـ Admin - كل الـ Applications اللي فيها AgencyId مش null
         public ApplicationsWithAgencySpecification()
-            : base(a => a.AgencyId != null)
         {
+            AddInclude(a => a.Agency);
         }
 
-        // للـ HR/Manager - Applications على الشركة بتاعتهم، برضو لازم تكون من Agencies
         public ApplicationsWithAgencySpecification(int companyId)
-            : base(a => a.AgencyId != null && a.Post.CompanyId == companyId)
+            : base(a => a.Post.CompanyId == companyId)
         {
-            AddInclude(a => a.Post); // ضروري عشان نقدر نوصل لـ Post.CompanyId
+            AddInclude(a => a.Agency);
+            AddInclude(a => a.Post);
         }
     }
 }

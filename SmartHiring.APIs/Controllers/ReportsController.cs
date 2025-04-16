@@ -97,7 +97,12 @@ namespace SmartHiring.APIs.Controllers
 
             var report = new CompanyCountReportDto
             {
-                TotalCompanies = companies.Count()
+                TotalCompanies = companies.Count(),
+                Companies = companies.Select(c => new CompanyDto
+                {
+                    Id = c.Id,
+                    Name = c.Name
+                }).ToList()
             };
 
             return Ok(report);
@@ -117,18 +122,24 @@ namespace SmartHiring.APIs.Controllers
 
             var report = new AgencyCountReportDto
             {
-                TotalAgencies = agencies.Count
+                TotalAgencies = agencies.Count,
+                AgenciesData = agencies.Select(a => new AgencyInfoDto
+                {
+                    Id = a.Id,
+                    AgencyName = a.AgencyName
+                }).ToList()
             };
 
             return Ok(report);
         }
 
 
+
         //R3 - عدد الـ Agencies اللي قدمت Applications لشركة معينة
 
-       //[Authorize(Roles = "Admin,Manager,HR")]
+        //[Authorize(Roles = "Admin,Manager,HR")]
         [HttpGet("companies/{companyId}/agencies-count")]
-        public async Task<ActionResult<AgencyCountReportDto>> GetAgencyCountByCompany(int companyId)
+        public async Task<ActionResult<AgencyyCountReportDto>> GetAgencyCountByCompany(int companyId)
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(userEmail))
@@ -143,7 +154,6 @@ namespace SmartHiring.APIs.Controllers
                 return Unauthorized(new ApiResponse(401, "User not found"));
 
             var userCompany = user.HRCompany ?? user.ManagedCompany;
-
             var userRoles = await _userManager.GetRolesAsync(user);
 
             if (!userRoles.Contains("Admin") && (userCompany == null || userCompany.Id != companyId))
@@ -155,32 +165,56 @@ namespace SmartHiring.APIs.Controllers
             var postIds = posts.Select(p => p.Id).ToList();
 
             if (!postIds.Any())
-                return Ok(new AgencyCountReportDto { TotalAgencies = 0 });
-
-            // هات كل الـ Applications اللي مقدمة على الـ Posts دي
-            var applications = await _applicationRepo.GetAllAsync(a => postIds.Contains(a.PostId));
-
-            // استخرج عدد الوكالات الفريدة اللي قدمت
-            var totalAgencies = applications
-                .Where(a => a.AgencyId != null)
-                .Select(a => a.AgencyId)
-                .Distinct()
-                .Count();
-
-            var report = new AgencyCountReportDto
             {
-                TotalAgencies = totalAgencies
+                return Ok(new AgencyyCountReportDto
+                {
+                    CompanyId = companyId,
+                    TotalAgencies = 0,
+                    Agencies = new List<AgencyyApplicationStatsDto>()
+                });
+            }
+
+            // هات الـ Applications المرتبطة بالـ Posts
+            var applications = await _applicationRepo.GetAllAsync(a => postIds.Contains(a.PostId) && a.AgencyId != null);
+
+            // هات الـ Agency Users المرتبطين بالتطبيقات
+            var agencyIds = applications.Select(a => a.AgencyId).Distinct().ToList();
+
+            var agencies = await _userManager.Users
+                .Where(u => agencyIds.Contains(u.Id))
+                .ToListAsync();
+
+            var agencyStats = applications
+                .GroupBy(a => a.AgencyId)
+                .Select(g =>
+                {
+                    var agency = agencies.FirstOrDefault(a => a.Id == g.Key);
+                    return new AgencyyApplicationStatsDto
+                    {
+                        AgencyId = g.Key,
+                        AgencyName = agency?.AgencyName ?? agency?.DisplayName ?? "Unknown",
+                        TotalApplications = g.Count()
+                    };
+                })
+                .ToList();
+
+            var report = new AgencyyCountReportDto
+            {
+                CompanyId = companyId,
+                TotalAgencies = agencyStats.Count(),
+                Agencies = agencyStats
             };
 
             return Ok(report);
         }
 
 
+
         //R5 - متوسط عدد الـ Applications اللي قدمتها كل Agency
 
         //[Authorize(Roles = "Admin,Manager,HR")]
-        [HttpGet("agencies/average-applications")]
-        public async Task<ActionResult<AgencyApplicationsAvgReportDto>> GetAverageApplicationsPerAgency()
+        [HttpGet("agencies/applications-breakdown")]
+        public async Task<ActionResult<AgencyApplicationsBreakdownReportDto>> GetApplicationsBreakdownPerAgency()
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(userEmail))
@@ -200,7 +234,7 @@ namespace SmartHiring.APIs.Controllers
             List<Application> applications;
             if (isAdmin)
             {
-                var spec = new ApplicationsWithAgencySpecification(); // هات كل التطبيقات اللي جاية من Agencies
+                var spec = new ApplicationsWithAgencySpecification();
                 applications = (await _applicationRepo.GetAllWithSpecAsync(spec)).ToList();
             }
             else
@@ -209,28 +243,32 @@ namespace SmartHiring.APIs.Controllers
                 if (company == null)
                     return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
 
-                var spec = new ApplicationsWithAgencySpecification(company.Id); // التطبيقات اللي جاية على الشركة دي
+                var spec = new ApplicationsWithAgencySpecification(company.Id);
                 applications = (await _applicationRepo.GetAllWithSpecAsync(spec)).ToList();
             }
 
-            var totalApplications = applications.Count;
-            var distinctAgencyCount = applications
+            var grouped = applications
                 .Where(a => a.AgencyId != null)
-                .Select(a => a.AgencyId)
-                .Distinct()
-                .Count();
+                .GroupBy(a => new { a.AgencyId, AgencyName = a.Agency != null ? a.Agency.AgencyName : "Unknown" })
+                .Select(g => new AgencyApplicationsBreakdownDto
+                {
+                    AgencyIdString = g.Key.AgencyId,
+                    AgencyName = g.Key.AgencyName,
+                    ApplicationsCount = g.Count()
+                })
+                .OrderByDescending(x => x.ApplicationsCount)
+                .ToList();
 
-            double average = distinctAgencyCount == 0 ? 0 : (double)totalApplications / distinctAgencyCount;
+            var totalApplications = grouped.Sum(x => x.ApplicationsCount);
 
-            var report = new AgencyApplicationsAvgReportDto
+            var result = new AgencyApplicationsBreakdownReportDto
             {
-                AverageApplicationsPerAgency = Math.Round(average, 2)
+                TotalApplications = totalApplications,
+                Breakdown = grouped
             };
 
-            return Ok(report);
+            return Ok(result);
         }
-
-
 
 
 
@@ -262,8 +300,8 @@ namespace SmartHiring.APIs.Controllers
 
             if (userRoles.Contains("Admin"))
             {
-                var spec = new PaidJobsByCompanySpecification(); // الكل
-                paidPosts = (await _postRepo.GetAllWithSpecAsync(spec)).ToList(); // تأكدنا من التحويل إلى List
+                var spec = new PaidJobsByCompanySpecification(); // كل الوظائف المدفوعة
+                paidPosts = (await _postRepo.GetAllWithSpecAsync(spec)).ToList();
             }
             else
             {
@@ -271,13 +309,18 @@ namespace SmartHiring.APIs.Controllers
                 if (company == null)
                     return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
 
-                var spec = new PaidJobsByCompanySpecification(company.Id);
-                paidPosts = (await _postRepo.GetAllWithSpecAsync(spec)).ToList(); // تأكدنا من التحويل إلى List
+                var spec = new PaidJobsByCompanySpecification(company.Id); // وظائف الشركة بس
+                paidPosts = (await _postRepo.GetAllWithSpecAsync(spec)).ToList();
             }
 
             var report = new PaidJobsCountReportDto
             {
-                TotalPaidJobs = paidPosts.Count
+                TotalPaidJobs = paidPosts.Count,
+                Jobs = paidPosts.Select(p => new PaidJobInfoDto
+                {
+                    JobId = p.Id,
+                    JobName = p.JobTitle // أو .Name حسب التسمية عندك
+                }).ToList()
             };
 
             return Ok(report);
@@ -289,11 +332,12 @@ namespace SmartHiring.APIs.Controllers
 
 
 
+
         //R8 - عدد الApplications على كل الوظايف اللي في الشركة.
 
         //[Authorize(Roles = "HR,Manager,Agency")]
         [HttpGet("jobs/applications-count")]
-        public async Task<ActionResult<IEnumerable<JobApplicationsCountDto>>> GetApplicationsCountPerJob()
+        public async Task<ActionResult<object>> GetApplicationsCountPerJob()
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(userEmail))
@@ -313,12 +357,16 @@ namespace SmartHiring.APIs.Controllers
 
             if (userRoles.Contains("Agency"))
             {
-                // For Agency: jobs that agency has applied to
                 var applications = await _applicationRepo.GetAllAsync(a => a.AgencyId == user.Id);
                 var postIds = applications.Select(a => a.PostId).Distinct().ToList();
 
                 if (!postIds.Any())
-                    return Ok(new List<JobApplicationsCountDto>());
+                    return Ok(new
+                    {
+                        Title = "Jobs, Total Application",
+                        Total = 0,
+                        Jobs = new List<JobApplicationsCountDto>()
+                    });
 
                 var spec = new PostsWithApplicationsSpecification(postIds);
                 posts = await _postRepo.GetAllWithSpecAsync(spec);
@@ -333,16 +381,26 @@ namespace SmartHiring.APIs.Controllers
                 posts = await _postRepo.GetAllWithSpecAsync(spec);
             }
 
-            var mapped = _mapper.Map<IEnumerable<JobApplicationsCountDto>>(posts);
-            return Ok(mapped);
+            var jobStats = _mapper.Map<List<JobApplicationsCountDto>>(posts);
+
+            var response = new
+            {
+                Title = "Jobs, Total Application",
+                Total = jobStats.Sum(j => j.JobAppliedNumber),
+                Jobs = jobStats
+            };
+
+            return Ok(response);
         }
+
+
 
 
         //R11 - عدد الـ Interviews اللي لسه متعملتش في جدول Interviews لما الInterviewStatus تبقا Pending
 
-        [Authorize(Roles = "HR,Manager")]
-        [HttpGet("interviews/pending")]
-        public async Task<ActionResult<PendingInterviewsReportDto>> GetPendingInterviewsReport(DateTime fromDate, DateTime toDate)
+        //[Authorize(Roles = "HR,Manager")]
+        [HttpGet("interviews/pending-summary")]
+        public async Task<ActionResult<PendingInterviewSummaryDto>> GetPendingInterviewSummary(DateTime fromDate, DateTime toDate)
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(userEmail))
@@ -360,25 +418,40 @@ namespace SmartHiring.APIs.Controllers
             if (userCompany == null)
                 return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
 
-            var spec = new PendingInterviewsSpecification(fromDate, toDate, userCompany.Id);
-            var pendingInterviews = await _interviewRepo.GetAllWithSpecAsync(spec);
+            var spec = new InterviewsWithApplicantsSpecification(fromDate, toDate, userCompany.Id);
+            var interviews = await _interviewRepo.GetAllWithSpecAsync(spec);
 
-            var mapped = _mapper.Map<List<PendingInterviewCandidateDto>>(pendingInterviews);
+            var totalInterviews = interviews.Count();
 
-            var report = new PendingInterviewsReportDto
+            var pendingInterviewsList = interviews
+            .Where(i => i.InterviewStatus == InterviewStatus.Pending)
+            .Select(i => new PendingInterviewDto
             {
-                TotalPendingInterviews = pendingInterviews.Count(),
-                Candidates = mapped
+                JobInterviewName = i.Post.JobTitle, // ← أو Name، حسب ما موجود فعليًا
+                Date = i.Date
+            }).ToList();
+
+
+
+
+            var result = new PendingInterviewSummaryDto
+            {
+                TotalInterviews = totalInterviews,
+                TotalPendingInterviews = pendingInterviewsList.Count,
+                PendingInterviews = pendingInterviewsList
+
             };
 
-            return Ok(report);
+            return Ok(result);
         }
 
 
 
 
-        //R15 -  عدد الوظائف اللي خلاص اتقفلت.وبقا الJobStatus بتاعها بقا Closed فالداتا بيز في جدول Posts
 
+
+
+        //R15 -  عدد الوظائف اللي خلاص اتقفلت.وبقا الJobStatus بتاعها بقا Closed فالداتا بيز في جدول Posts
         //[Authorize(Roles = "HR,Manager")]
         [HttpGet("jobs/closed-count")]
         public async Task<ActionResult<JobClosedCountReportDto>> GetClosedJobsCount()
@@ -399,16 +472,33 @@ namespace SmartHiring.APIs.Controllers
             if (userCompany == null)
                 return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
 
-            var spec = new JobClosedSpecification(userCompany.Id);
-            var closedJobs = await _postRepo.GetAllWithSpecAsync(spec);
+            // Specification to get all jobs for company
+            var spec = new PostsByCompanySpecification(userCompany.Id);
+            var allCompanyJobs = await _postRepo.GetAllWithSpecAsync(spec);
+
+            // Filter closed jobs
+            var closedJobs = allCompanyJobs
+                .Where(j => j.JobStatus == "Closed")
+                .Select(j => new ClosedJobDto
+                {
+                    Id = j.Id,
+                    JobName = j.JobTitle,
+                    Status = j.JobStatus
+                })
+                .ToList();
 
             var report = new JobClosedCountReportDto
             {
-                TotalClosedJobs = closedJobs.Count()
+                TotalJobs = allCompanyJobs.Count(),  // Invoke Count as a method
+                JobsClosed = closedJobs,
+                TotalClosedJobs = closedJobs.Count  // Use Count here to get the count of closed jobs
             };
 
             return Ok(report);
         }
+
+
+
 
 
 

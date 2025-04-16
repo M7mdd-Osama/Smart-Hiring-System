@@ -46,5 +46,6 @@ namespace SmartHiring.Core.Entities
 
 		public string? PaymentIntentId { get; set; }
 		public string? ClientSecret { get; set; }
+
 	}
 }
