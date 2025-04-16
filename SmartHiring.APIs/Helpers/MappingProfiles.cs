@@ -213,5 +213,21 @@ public class MappingProfiles : Profile
 
         CreateMap<Interview, CandidateReportToReturnDto>()
             .ForMember(d => d.Name, o => o.MapFrom(s => $"{s.Applicant.FName} {s.Applicant.LName}"))
-            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));    }
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));
+
+        CreateMap<AppUser, TopAgencyItemDto>()
+    .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.DisplayName));
+
+        CreateMap<Application, ApplicationRankedDto>()
+
+            .ForMember(dest => dest.CV_Link, opt => opt.MapFrom(src => src.CV_Link))
+            .ForMember(dest => dest.Rank, opt => opt.MapFrom(src => src.RankScore));
+
+
+        CreateMap<Applicant, ApplicantDto>()
+    .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => $"{src.FName} {src.LName}"))
+    .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
+
+
+    }
 }
