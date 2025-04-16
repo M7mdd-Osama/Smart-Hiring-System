@@ -6,20 +6,20 @@ using SmartHiring.Core.Entities.Identity;
 
 public class MappingProfiles : Profile
 {
-	public MappingProfiles()
-	{
-		#region For Admin API
+    public MappingProfiles()
+    {
+        #region For Admin API
 
-		CreateMap<Company, CompanyDto>()
-			.ForMember(dest => dest.HRName, opt => opt.MapFrom(src => src.HR != null ? src.HR.DisplayName : null))
-			.ForMember(dest => dest.HREmail, opt => opt.MapFrom(src => src.HR != null ? src.HR.Email : null))
-			.ForMember(dest => dest.ManagerName, opt => opt.MapFrom(src => src.Manager != null ? src.Manager.DisplayName : null))
-			.ForMember(dest => dest.ManagerEmail, opt => opt.MapFrom(src => src.Manager != null ? src.Manager.Email : null))
-			.ForMember(dest => dest.PhoneNumberHR, opt => opt.MapFrom(src => src.Manager != null ? src.Manager.PhoneNumber : null))
-			.ForMember(dest => dest.PhoneNumberManager, opt => opt.MapFrom(src => src.HR != null ? src.HR.PhoneNumber : null))
-			.ForMember(d => d.LogoUrl, O => O.MapFrom<PictureUrlResolver<Company, CompanyDto>>());
+        CreateMap<Company, CompanyDto>()
+            .ForMember(dest => dest.HRName, opt => opt.MapFrom(src => src.HR != null ? src.HR.DisplayName : null))
+            .ForMember(dest => dest.HREmail, opt => opt.MapFrom(src => src.HR != null ? src.HR.Email : null))
+            .ForMember(dest => dest.PhoneNumberHR, opt => opt.MapFrom(src => src.HR != null ? src.HR.PhoneNumber : null))
+            .ForMember(dest => dest.ManagerName, opt => opt.MapFrom(src => src.Manager != null ? src.Manager.DisplayName : null))
+            .ForMember(dest => dest.ManagerEmail, opt => opt.MapFrom(src => src.Manager != null ? src.Manager.Email : null))
+            .ForMember(dest => dest.PhoneNumberManager, opt => opt.MapFrom(src => src.Manager != null ? src.Manager.PhoneNumber : null))
+            .ForMember(d => d.LogoUrl, O => O.MapFrom<PictureUrlResolver<Company, CompanyDto>>());
 
-		CreateMap<AppUser, AgencyDto>();
+        CreateMap<AppUser, AgencyDto>();
 
         CreateMap<CreateCompanyByAdminDto, Company>()
             .ForMember(dest => dest.LogoUrl, opt => opt.Ignore())
@@ -28,14 +28,10 @@ public class MappingProfiles : Profile
         CreateMap<UpdateCompanyByAdminDto, Company>()
             .ForMember(dest => dest.LogoUrl, opt => opt.Ignore());
 
-        CreateMap<AppUser, AgencyDto>();
-
         CreateMap<CreateAgencyByAdminDto, AppUser>()
             .ForMember(dest => dest.EmailConfirmed, opt => opt.MapFrom(src => true));
 
         CreateMap<UpdateAgencyByAdminDto, AppUser>();
-
-        CreateMap<Company, CompanyDto>();
 
         #endregion
 
@@ -55,46 +51,44 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.HasUnreadNotes, opt => opt.MapFrom(src => src.Notes.Any(note => !note.IsSeen && note.UserId != src.HRId)));
 
         CreateMap<PostCreationDto, Post>()
-			.ForMember(dest => dest.PostDate, opt => opt.MapFrom(src => DateTime.UtcNow))
-			.ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => "Pending Payment"))
-			.ForMember(dest => dest.HRId, opt => opt.Ignore())
-			.ForMember(dest => dest.CompanyId, opt => opt.Ignore())
-			.ForMember(dest => dest.PostJobCategories, opt => opt.MapFrom(src => src.JobCategories.Select(name => new PostJobCategory { JobCategory = new JobCategory { Name = name } })))
-			.ForMember(dest => dest.PostJobTypes, opt => opt.MapFrom(src => src.JobTypes.Select(id => new PostJobType { JobTypeId = id })))
-			.ForMember(dest => dest.PostWorkplaces, opt => opt.MapFrom(src => src.Workplaces.Select(id => new PostWorkplace { WorkplaceId = id })))
-			.ForMember(dest => dest.PostCareerLevels, opt => opt.MapFrom(src => src.CareerLevels.Select(id => new PostCareerLevel { CareerLevelId = id })))
-			.ForMember(dest => dest.PostSkills, opt => opt.MapFrom(src => src.Skills.Select(name => new PostSkill { Skill = new Skill { SkillName = name } })));
+            .ForMember(dest => dest.PostDate, opt => opt.MapFrom(src => DateTime.UtcNow))
+            .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => "Pending Payment"))
+            .ForMember(dest => dest.HRId, opt => opt.Ignore())
+            .ForMember(dest => dest.CompanyId, opt => opt.Ignore())
+            .ForMember(dest => dest.PostJobCategories, opt => opt.MapFrom(src => src.JobCategories.Select(name => new PostJobCategory { JobCategory = new JobCategory { Name = name } })))
+            .ForMember(dest => dest.PostJobTypes, opt => opt.MapFrom(src => src.JobTypes.Select(id => new PostJobType { JobTypeId = id })))
+            .ForMember(dest => dest.PostWorkplaces, opt => opt.MapFrom(src => src.Workplaces.Select(id => new PostWorkplace { WorkplaceId = id })))
+            .ForMember(dest => dest.PostCareerLevels, opt => opt.MapFrom(src => src.CareerLevels.Select(id => new PostCareerLevel { CareerLevelId = id })))
+            .ForMember(dest => dest.PostSkills, opt => opt.MapFrom(src => src.Skills.Select(name => new PostSkill { Skill = new Skill { SkillName = name } })));
 
-		CreateMap<Post, PostPaymentDto>()
-			.ForMember(dest => dest.PaymentIntentId, opt => opt.NullSubstitute(null))
-			.ForMember(dest => dest.ClientSecret, opt => opt.NullSubstitute(null));
+        CreateMap<Post, PostPaymentDto>()
+            .ForMember(dest => dest.PaymentIntentId, opt => opt.NullSubstitute(null))
+            .ForMember(dest => dest.ClientSecret, opt => opt.NullSubstitute(null));
 
-		CreateMap<PostUpdateDto, Post>()
-			.ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+        CreateMap<PostUpdateDto, Post>()
+            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
         CreateMap<Application, ApplicationDto>()
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-            .ForMember(dest => dest.ApplicantName, opt => opt.MapFrom(src => $"{src.Applicant.FName} {src.Applicant.LName}"))
-			.ForMember(dest => dest.AgencyName, opt => opt.MapFrom(src => src.Agency.AgencyName));
+            .ForMember(dest => dest.ApplicantName, opt => opt.MapFrom(src => src.Applicant.GetFullName()))
+            .ForMember(dest => dest.AgencyName, opt => opt.MapFrom(src => src.Agency.AgencyName));
 
         CreateMap<Application, CandidateForManagerDto>()
-				.ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ApplicantId))
-				.ForMember(dest => dest.ApplicantName, opt => opt.MapFrom(src => $"{src.Applicant.FName} {src.Applicant.LName}"))
-				.ForMember(dest => dest.Rank, opt => opt.Ignore());
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ApplicantId))
+                .ForMember(dest => dest.ApplicantName, opt => opt.MapFrom(src => src.Applicant.GetFullName()))
+                .ForMember(dest => dest.Rank, opt => opt.Ignore());
 
-		CreateMap<CandidateList, CandidateListWithApplicantsDto>()
-			.ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.Post.JobTitle))
-			.ForMember(dest => dest.TotalApplicants, opt => opt.MapFrom(src => src.CandidateListApplicants.Count))
-			.ForMember(dest => dest.Remaining, opt => opt.MapFrom(src =>
-				src.CandidateListApplicants.Count(a =>
-					!src.Post.Interviews.Any(i =>
-						i.ApplicantId == a.ApplicantId &&
-						(i.InterviewStatus == InterviewStatus.Under_Interview ||
-						 i.InterviewStatus == InterviewStatus.Hired ||
-						 i.InterviewStatus == InterviewStatus.Rejected)
-					)
-				)
-			))
+        CreateMap<CandidateList, CandidateListWithApplicantsDto>()
+            .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.Post.JobTitle))
+            .ForMember(dest => dest.TotalApplicants, opt => opt.MapFrom(src => src.CandidateListApplicants.Count))
+            .ForMember(dest => dest.Remaining, opt => opt.MapFrom(src =>
+                src.CandidateListApplicants.Count(a =>
+                    !src.Post.Interviews.Any(i =>
+                        i.ApplicantId == a.ApplicantId &&
+                        (i.InterviewStatus == InterviewStatus.Hired ||
+                         i.InterviewStatus == InterviewStatus.Rejected)
+                    )
+                )
+            ))
             .ForMember(dest => dest.Progress, opt => opt.MapFrom(src =>
                 src.CandidateListApplicants.Count == 0 ? 0 :
                 (int)((src.CandidateListApplicants.Count(a =>
@@ -107,8 +101,7 @@ public class MappingProfiles : Profile
             ));
 
         CreateMap<CandidateListApplicant, CandidateListApplicantDto>()
-            .ForMember(dest => dest.ApplicantId, opt => opt.MapFrom(src => src.ApplicantId))
-            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => $"{src.Applicant.FName} {src.Applicant.LName}"))
+            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Applicant.GetFullName()))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Applicant.Email))
             .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.Applicant.Phone))
             .ForMember(dest => dest.CV_Link, opt => opt.MapFrom(src =>
@@ -130,27 +123,26 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.Location, opt => opt.MapFrom(src =>
                 src.CandidateList.Post.Interviews.Any(i => i.ApplicantId == src.ApplicantId)
                 ? src.CandidateList.Post.Interviews.First(i => i.ApplicantId == src.ApplicantId).Location
-                : string.Empty));
-		CreateMap<InterviewSchedulingDto, Interview>()
-			.ForMember(dest => dest.InterviewStatus, opt => opt.MapFrom(src => InterviewStatus.Under_Interview));
+                : string.Empty))
+            .ForMember(dest => dest.InterviewId, opt => opt.MapFrom(src =>
+                src.CandidateList.Post.Interviews.Any(i => i.ApplicantId == src.ApplicantId)
+                ? src.CandidateList.Post.Interviews.First(i => i.ApplicantId == src.ApplicantId).Id
+                : (int?)null));
 
-		CreateMap<UpdateInterviewStatusDto, Interview>()
-			.ForMember(dest => dest.InterviewStatus,
-				opt => opt.MapFrom(src => src.Status == "Hired" ? InterviewStatus.Hired : InterviewStatus.Rejected));
+        CreateMap<InterviewSchedulingDto, Interview>()
+            .ForMember(dest => dest.InterviewStatus, opt => opt.MapFrom(src => InterviewStatus.Under_Interview));
+
+        CreateMap<UpdateInterviewStatusDto, Interview>()
+            .ForMember(dest => dest.InterviewStatus,
+                opt => opt.MapFrom(src => src.Status == "Hired" ? InterviewStatus.Hired : InterviewStatus.Rejected));
 
         CreateMap<Company, CompanyMembersDto>()
                 .ForMember(dest => dest.CompanyId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Name))
-                .ForMember(dest => dest.BusinessEmail, opt => opt.MapFrom(src => src.BusinessEmail))
-            .ForMember(dest => dest.LogoUrl, O => O.MapFrom<PictureUrlResolver<Company, CompanyMembersDto>>())
-                .ForMember(dest => dest.HR, opt => opt.MapFrom(src => src.HR))
-                .ForMember(dest => dest.Manager, opt => opt.MapFrom(src => src.Manager));
+                .ForMember(dest => dest.LogoUrl, O => O.MapFrom<PictureUrlResolver<Company, CompanyMembersDto>>());
 
         CreateMap<AppUser, MembersInfoDto>()
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"))
-            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
-            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
+            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.GetFullName()))
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.HRCompany != null ? "HR" : "Manager"));
 
         CreateMap<Note, NoteDto>()
@@ -163,10 +155,10 @@ public class MappingProfiles : Profile
                 if (userEmail == src.User.Email)
                     return "Me";
 
-                if (roles?.Contains("HR") == true) 
+                if (roles?.Contains("HR") == true)
                     return "Manager";
 
-                return "HR"; 
+                return "HR";
             }))
             .ForMember(dest => dest.IsSeen, opt => opt.MapFrom((src, dest, destMember, context) =>
             {
@@ -181,27 +173,27 @@ public class MappingProfiles : Profile
         #region For Manager API
 
         CreateMap<Application, PendingCandidateListApplicantDto>()
-            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Applicant.FName + " " + src.Applicant.LName));
+            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Applicant.GetFullName()));
 
         #endregion
 
         #region For Agency API
 
         CreateMap<Post, PostToReturnForAgencyDto>()
-			.ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company.Name))
-			.ForMember(dest => dest.LogoUrl, opt => opt.MapFrom<PictureUrlResolver<Post, PostToReturnForAgencyDto>>())
-			.ForMember(dest => dest.JobCategories, opt => opt.MapFrom(src => src.PostJobCategories.Select(c => c.JobCategory.Name)))
-			.ForMember(dest => dest.JobTypes, opt => opt.MapFrom(src => src.PostJobTypes.Select(t => t.JobType.TypeName)))
-			.ForMember(dest => dest.Workplaces, opt => opt.MapFrom(src => src.PostWorkplaces.Select(w => w.Workplace.WorkplaceType)))
-			.ForMember(dest => dest.Skills, opt => opt.MapFrom(src => src.PostSkills.Select(s => s.Skill.SkillName)))
-			.ForMember(dest => dest.CareerLevels, opt => opt.MapFrom(src => src.PostCareerLevels.Select(cl => cl.CareerLevel.LevelName)));
+            .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company.Name))
+            .ForMember(dest => dest.LogoUrl, opt => opt.MapFrom<PictureUrlResolver<Post, PostToReturnForAgencyDto>>())
+            .ForMember(dest => dest.JobCategories, opt => opt.MapFrom(src => src.PostJobCategories.Select(c => c.JobCategory.Name)))
+            .ForMember(dest => dest.JobTypes, opt => opt.MapFrom(src => src.PostJobTypes.Select(t => t.JobType.TypeName)))
+            .ForMember(dest => dest.Workplaces, opt => opt.MapFrom(src => src.PostWorkplaces.Select(w => w.Workplace.WorkplaceType)))
+            .ForMember(dest => dest.Skills, opt => opt.MapFrom(src => src.PostSkills.Select(s => s.Skill.SkillName)))
+            .ForMember(dest => dest.CareerLevels, opt => opt.MapFrom(src => src.PostCareerLevels.Select(cl => cl.CareerLevel.LevelName)));
 
-		CreateMap<EditUserDto, AppUser>();
+        CreateMap<EditUserDto, AppUser>();
 
-		CreateMap<AddressDto, Address>();
+        CreateMap<AddressDto, Address>();
 
         CreateMap<Interview, HiredApplicantDto>()
-            .ForMember(d => d.FullName, o => o.MapFrom(s => s.Applicant.FName + " " + s.Applicant.LName))
+            .ForMember(d => d.FullName, o => o.MapFrom(s => s.Applicant.GetFullName()))
             .ForMember(d => d.Email, o => o.MapFrom(s => s.Applicant.Email))
             .ForMember(d => d.ApplicantPhone, o => o.MapFrom(s => s.Applicant.Phone))
             .ForMember(d => d.CompanyPhone, o => o.MapFrom(s => s.HR.HRCompany.Phone))
@@ -212,6 +204,7 @@ public class MappingProfiles : Profile
         #endregion
 
         CreateMap<Interview, CandidateReportToReturnDto>()
+
             .ForMember(d => d.Name, o => o.MapFrom(s => $"{s.Applicant.FName} {s.Applicant.LName}"))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));
 
@@ -228,6 +221,7 @@ public class MappingProfiles : Profile
     .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => $"{src.FName} {src.LName}"))
     .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
 
-
+            .ForMember(d => d.Name, o => o.MapFrom(s => s.Applicant.GetFullName()))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));
     }
 }

@@ -1,11 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using SmartHiring.Core.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartHiring.Repository.Data.Configurations
 {
@@ -24,7 +19,6 @@ namespace SmartHiring.Repository.Data.Configurations
 				.WithMany(jt => jt.PostJobTypes)
 				.HasForeignKey(pjt => pjt.JobTypeId)
 				.OnDelete(DeleteBehavior.NoAction);
-
 		}
 	}
 }

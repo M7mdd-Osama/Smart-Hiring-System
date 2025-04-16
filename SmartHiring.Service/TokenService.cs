@@ -21,6 +21,7 @@ namespace SmartHiring.Service
 		{
 			var AuthClaims = new List<Claim>()
 			{
+				new Claim(ClaimTypes.NameIdentifier, User.Id),
 				new Claim(ClaimTypes.GivenName, User.DisplayName),
 				new Claim(ClaimTypes.Email, User.Email)
 			};

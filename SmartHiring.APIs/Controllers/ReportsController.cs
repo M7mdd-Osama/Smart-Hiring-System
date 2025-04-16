@@ -16,22 +16,26 @@ namespace SmartHiring.APIs.Controllers
     public class ReportsController : APIBaseController
     {
         private readonly IGenericRepository<Interview> _interviewRepo;
+        private readonly IGenericRepository<Company> _companyRepo;
         private readonly UserManager<AppUser> _agencyRepo;
-        private readonly IMapper _mapper;
-        private readonly IGenericRepository<Post> _jobRepo;
+        private readonly UserManager<AppUser> _userManager;
+        private readonly IGenericRepository<Post> _postRepo;
         private readonly IGenericRepository<Application> _applicationRepo;
-
-
+        private readonly IMapper _mapper;                     
 
         public ReportsController(
             IGenericRepository<Interview> interviewRepo,
-            IGenericRepository<Post> jobRepo,
-            IGenericRepository<Application> applicationRepo,
+            IGenericRepository<Company> companyRepo,
+            UserManager<AppUser> userManager,
+            IGenericRepository<Post> postRepo,
             UserManager<AppUser> agencyRepo,
+            IGenericRepository<Application> applicationRepo,
             IMapper mapper)
         {
             _interviewRepo = interviewRepo;
-            _jobRepo = jobRepo;
+            _companyRepo = companyRepo;
+            _userManager = userManager;
+            _postRepo = postRepo;
             _applicationRepo = applicationRepo;
             _agencyRepo = agencyRepo;
             _mapper = mapper;
@@ -48,7 +52,7 @@ namespace SmartHiring.APIs.Controllers
             if (string.IsNullOrEmpty(userEmail))
                 return Unauthorized(new ApiResponse(401, "User email not found in token"));
 
-            var user = await _agencyRepo.Users
+            var user = await _userManager.Users
                 .Include(u => u.HRCompany)
                 .Include(u => u.ManagedCompany)
                 .FirstOrDefaultAsync(u => u.Email == userEmail);

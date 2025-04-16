@@ -3,14 +3,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmartHiring.Core.Entities
 {
-	public class Post : BaseEntity
+    public class Post : BaseEntity
 	{
 		public string JobTitle { get; set; }
 		public string Description { get; set; }
 		public string Requirements { get; set; }
 		public DateTime PostDate { get; set; }
 		public DateTime Deadline { get; set; }
-		public string JobStatus { get; set; } = "Open";
+        public string JobStatus { get; set; } = "Open";
 		public decimal MinSalary { get; set; }
 		public decimal MaxSalary { get; set; }
 		public string Currency { get; set; } // EGP, USD, etc.  

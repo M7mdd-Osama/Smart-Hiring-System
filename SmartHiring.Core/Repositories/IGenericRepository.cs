@@ -26,10 +26,7 @@ namespace SmartHiring.Core.Repositories
 
 		Task AddAsync(T entity);
 		Task UpdateAsync(T entity);
-		Task DeleteAsync(T entity);
-
-		Task<IEnumerable<Application>> GetApplicationsByJobIdAsync(int jobId);
-		Task<string> GetApplicationStatusAsync(int applicationId);
+        Task DeleteAsync(T entity);
 		Task SaveChangesAsync();
-	}
+    }
 }
