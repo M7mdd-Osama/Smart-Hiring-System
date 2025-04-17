@@ -240,7 +240,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("SkillId");
 
-                    b.ToTable("ApplicantSkills", (string)null);
+                    b.ToTable("ApplicantSkills");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Application", b =>
@@ -347,7 +347,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CareerLevels", (string)null);
+                    b.ToTable("CareerLevels");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Company", b =>
@@ -367,6 +367,9 @@ namespace SmartHiring.Repository.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("ConfirmationCodeExpires")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("EmailConfirmed")
@@ -434,7 +437,7 @@ namespace SmartHiring.Repository.Data.Migrations
                     b.HasIndex("AppUserId")
                         .IsUnique();
 
-                    b.ToTable("Address", (string)null);
+                    b.ToTable("Address");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Identity.AppUser", b =>
@@ -456,6 +459,9 @@ namespace SmartHiring.Repository.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("ConfirmationCodeExpires")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
@@ -576,7 +582,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("JobCategories", (string)null);
+                    b.ToTable("JobCategories");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.JobType", b =>
@@ -593,7 +599,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("JobTypes", (string)null);
+                    b.ToTable("JobTypes");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Note", b =>
@@ -616,7 +622,8 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.Property<string>("Header")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<bool>("IsSeen")
                         .HasColumnType("bit");
@@ -730,7 +737,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("CareerLevelId");
 
-                    b.ToTable("PostCareerLevels", (string)null);
+                    b.ToTable("PostCareerLevels");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.PostJobCategory", b =>
@@ -745,7 +752,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("JobCategoryId");
 
-                    b.ToTable("PostJobCategories", (string)null);
+                    b.ToTable("PostJobCategories");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.PostJobType", b =>
@@ -760,7 +767,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("JobTypeId");
 
-                    b.ToTable("PostJobTypes", (string)null);
+                    b.ToTable("PostJobTypes");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.PostSkill", b =>
@@ -775,7 +782,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("SkillId");
 
-                    b.ToTable("PostSkills", (string)null);
+                    b.ToTable("PostSkills");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.PostWorkplace", b =>
@@ -790,7 +797,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("WorkplaceId");
 
-                    b.ToTable("PostWorkplaces", (string)null);
+                    b.ToTable("PostWorkplaces");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.SavedPost", b =>
@@ -805,7 +812,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasIndex("PostId");
 
-                    b.ToTable("SavedPosts", (string)null);
+                    b.ToTable("SavedPosts");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Skill", b =>
@@ -822,7 +829,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Skills", (string)null);
+                    b.ToTable("Skills");
                 });
 
             modelBuilder.Entity("SmartHiring.Core.Entities.Workplace", b =>
@@ -839,7 +846,7 @@ namespace SmartHiring.Repository.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Workplaces", (string)null);
+                    b.ToTable("Workplaces");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

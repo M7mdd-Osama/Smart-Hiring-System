@@ -69,10 +69,11 @@ namespace SmartHiring.APIs.Controllers
 				LogoUrl = logoPath,
 				EmailConfirmed = false,
 				ConfirmationCode = AuthHelper.GenerateOTP(),
-				ConfirmationCodeExpires = DateTime.UtcNow.AddMinutes(10)
-			};
+				ConfirmationCodeExpires = DateTime.UtcNow.AddMinutes(10),
+				CreatedAt = DateTime.UtcNow 
+            };
 
-			_dbContext.Companies.Add(company);
+            _dbContext.Companies.Add(company);
 			await _dbContext.SaveChangesAsync();
 
 			await _dbContext.SaveChangesAsync();
@@ -107,8 +108,9 @@ namespace SmartHiring.APIs.Controllers
 				PhoneNumber = model.PhoneNumber,
 				EmailConfirmed = false,
 				ConfirmationCode = AuthHelper.GenerateOTP(),
-				ConfirmationCodeExpires = DateTime.UtcNow.AddMinutes(10)
-			};
+				ConfirmationCodeExpires = DateTime.UtcNow.AddMinutes(10),
+                CreatedAt = DateTime.UtcNow
+            };
 
 			if (model.Role.Equals("HR", StringComparison.OrdinalIgnoreCase) || model.Role.Equals("Manager", StringComparison.OrdinalIgnoreCase))
 			{
@@ -340,7 +342,6 @@ namespace SmartHiring.APIs.Controllers
 			return Ok(new ApiResponse(200, "Logged out successfully."));
 		}
 		#endregion
-
 
 	}
 }

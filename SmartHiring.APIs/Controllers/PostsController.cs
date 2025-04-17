@@ -20,13 +20,13 @@ namespace SmartHiring.APIs.Controllers
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 		private readonly UserManager<AppUser> _userManager;
-		private readonly IPostRepository _postRepository;
+		private readonly IPostRepo _postRepository;
 
 		public PostsController(
             IUnitOfWork unitOfWork,
              IMapper mapper,
 			 UserManager<AppUser> userManager,
-			 IPostRepository postRepository)
+			 IPostRepo postRepository)
 		{
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -55,13 +55,13 @@ namespace SmartHiring.APIs.Controllers
             var userRole = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
             int? companyId = userRole == "HR" ? user.HRCompany?.Id : user.ManagedCompany?.Id;
 
-            var spec = new PostWithCompanySpecifications(Params, companyId, userRole, user.Id, false);
+            var spec = new PostWithCompanySpec(Params, companyId, userRole, user.Id, false);
             var jobs = await _unitOfWork.Repository<Post>().GetAllWithSpecAsync(spec);
 
             if (!jobs.Any())
                 return NotFound(new ApiResponse(404, "No posts found"));
 
-            var savedPostIds = (await _unitOfWork.Repository<SavedPost>().GetAllWithSpecAsync(new SavedPostSpecification(user.Id)))
+            var savedPostIds = (await _unitOfWork.Repository<SavedPost>().GetAllWithSpecAsync(new SavedPostSpec(user.Id)))
                                     .Select(s => s.PostId)
                                     .ToHashSet();
 
@@ -115,13 +115,13 @@ namespace SmartHiring.APIs.Controllers
             if (user == null)
                 return Unauthorized(new ApiResponse(401, "User not found"));
 
-            var spec = new PostWithCompanySpecifications(Params, null, "Agency", user.Id, true);
+            var spec = new PostWithCompanySpec(Params, null, "Agency", user.Id, true);
             var jobs = await _unitOfWork.Repository<Post>().GetAllWithSpecAsync(spec);
 
             if (!jobs.Any())
                 return NotFound(new ApiResponse(404, "No posts found"));
 
-            var savedPostIds = (await _unitOfWork.Repository<SavedPost>().GetAllWithSpecAsync(new SavedPostSpecification(user.Id)))
+            var savedPostIds = (await _unitOfWork.Repository<SavedPost>().GetAllWithSpecAsync(new SavedPostSpec(user.Id)))
                                     .Select(s => s.PostId)
                                     .ToHashSet();
 
@@ -144,7 +144,7 @@ namespace SmartHiring.APIs.Controllers
         [HttpGet("{postId}")]
         public async Task<ActionResult<PostToReturnDto>> GetPostById(int postId)
         {
-            var spec = new PostWithCompanySpecifications(postId);
+            var spec = new PostWithCompanySpec(postId);
             var post = await _unitOfWork.Repository<Post>().GetByEntityWithSpecAsync(spec);
 
             if (post == null || post.PaymentStatus != "Paid")
@@ -211,7 +211,7 @@ namespace SmartHiring.APIs.Controllers
             if (user == null)
                 return Unauthorized(new ApiResponse(401, "User not found"));
 
-            var savedPostSpec = new SavedPostSpecification(user.Id);
+            var savedPostSpec = new SavedPostSpec(user.Id);
             var savedPosts = await _unitOfWork.Repository<SavedPost>().GetAllWithSpecAsync(savedPostSpec);
 
             if (!savedPosts.Any())
@@ -219,7 +219,7 @@ namespace SmartHiring.APIs.Controllers
 
             var postIds = savedPosts.Select(s => s.PostId).ToList();
 
-            var spec = new PostWithCompanySpecifications(postIds);
+            var spec = new PostWithCompanySpec(postIds);
             var posts = await _unitOfWork.Repository<Post>().GetAllWithSpecAsync(spec);
 
             var mappedPosts = _mapper.Map<IReadOnlyList<PostToReturnDto>>(posts);
@@ -246,7 +246,7 @@ namespace SmartHiring.APIs.Controllers
 			if (user == null)
 				return Unauthorized(new ApiResponse(401, "User not found"));
 
-			var savedPostSpec = new SavedPostSpecification(user.Id);
+			var savedPostSpec = new SavedPostSpec(user.Id);
 			var savedPosts = await _unitOfWork.Repository<SavedPost>().GetAllWithSpecAsync(savedPostSpec);
 
 			if (!savedPosts.Any())
@@ -254,7 +254,7 @@ namespace SmartHiring.APIs.Controllers
 
 			var postIds = savedPosts.Select(s => s.PostId).ToList();
 
-			var spec = new PostWithCompanySpecifications(postIds);
+			var spec = new PostWithCompanySpec(postIds);
 			var posts = await _unitOfWork.Repository<Post>().GetAllWithSpecAsync(spec);
 
 			var mappedAgencyPosts = _mapper.Map<IReadOnlyList<PostToReturnForAgencyDto>>(posts);

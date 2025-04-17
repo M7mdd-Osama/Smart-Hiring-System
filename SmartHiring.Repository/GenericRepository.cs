@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 
 namespace SmartHiring.Repository
 {
-	public class GenericRepository<T> : IGenericRepository<T> where T : class
+	public class GenericRepository<T> : IGenericRepo<T> where T : class
 	{
 		private readonly SmartHiringDbContext _dbContext;
 
@@ -27,18 +27,18 @@ namespace SmartHiring.Repository
 
 		#region With Spec
 
-		public async Task<IEnumerable<T>> GetAllWithSpecAsync(ISpecifications<T> Spec)
+		public async Task<IEnumerable<T>> GetAllWithSpecAsync(ISpec<T> Spec)
 			=> await ApplySpecification(Spec).ToListAsync();
 
-		public async Task<T> GetByEntityWithSpecAsync(ISpecifications<T> Spec)
+		public async Task<T> GetByEntityWithSpecAsync(ISpec<T> Spec)
 			=> await ApplySpecification(Spec).FirstOrDefaultAsync();
 
-		private IQueryable<T> ApplySpecification(ISpecifications<T> Spec)
+		private IQueryable<T> ApplySpecification(ISpec<T> Spec)
 			=> SpecificationEvaluator<T>.GetQuery(_dbContext.Set<T>(), Spec);
 
 		#endregion
 
-		public async Task<int> GetCountWithSpecAsync(ISpecifications<T> Spec)
+		public async Task<int> GetCountWithSpecAsync(ISpec<T> Spec)
 		=> await ApplySpecification(Spec).CountAsync();
 		
 		public async Task<T> GetFirstOrDefaultAsync(Expression<Func<T, bool>> predicate)

@@ -2,7 +2,7 @@
 
 namespace SmartHiring.Core.Specifications
 {
-    public class AgencyApplicantsSpec : BaseSpecifications<AgencyApplicant>
+    public class AgencyApplicantsSpec : BaseSpec<AgencyApplicant>
     {
         public AgencyApplicantsSpec(string agencyId)
             : base(aa => aa.AgencyId == agencyId)

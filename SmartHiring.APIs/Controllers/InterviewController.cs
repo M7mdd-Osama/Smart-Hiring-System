@@ -56,7 +56,7 @@ namespace SmartHiring.APIs.Controllers
             if (companyId == null)
                 return Unauthorized(new ApiResponse(401, "User is not associated with any company"));
 
-            var spec = new AcceptedCandidateListsSpecification(companyId.Value);
+            var spec = new AcceptedCandidateListsSpec(companyId.Value);
             var candidateLists = await _unitOfWork.Repository<CandidateList>().GetAllWithSpecAsync(spec);
 
             if (candidateLists == null || !candidateLists.Any())
@@ -66,7 +66,7 @@ namespace SmartHiring.APIs.Controllers
 
             foreach (var candidateList in candidateLists)
             {
-                var applicantsSpec = new CandidateListApplicantsSpecification(candidateList.Id, user.Id);
+                var applicantsSpec = new CandidateListApplicantsSpec(candidateList.Id, user.Id);
                 var applicants = await _unitOfWork.Repository<CandidateListApplicant>().GetAllWithSpecAsync(applicantsSpec);
 
                 var candidateListDto = _mapper.Map<CandidateListWithApplicantsDto>(candidateList);
@@ -94,7 +94,7 @@ namespace SmartHiring.APIs.Controllers
             if (hr == null)
                 return Unauthorized(new ApiResponse(401, "HR not found"));
 
-            var spec = new ApplicantSpecification(candidateListId, applicantId);
+            var spec = new ApplicantSpec(candidateListId, applicantId);
             var candidateListApplicant = await _unitOfWork.Repository<CandidateListApplicant>().GetByEntityWithSpecAsync(spec);
 
             if (candidateListApplicant == null)
@@ -173,7 +173,7 @@ namespace SmartHiring.APIs.Controllers
             if (hr == null)
                 return Unauthorized(new ApiResponse(401, "HR not found"));
 
-            var spec = new InterviewSpecification(interviewId);
+            var spec = new InterviewSpec(interviewId);
             var interview = await _unitOfWork.Repository<Interview>().GetByEntityWithSpecAsync(spec);
             if (interview == null)
                 return NotFound(new ApiResponse(404, "Interview not found"));
@@ -258,7 +258,7 @@ namespace SmartHiring.APIs.Controllers
                 return Unauthorized(new ApiResponse(401, "User not found"));
 
             var candidateList = await _unitOfWork.Repository<CandidateList>().GetByEntityWithSpecAsync(
-                new CandidateListWithManagerSpecifications(candidateListId)
+                new CandidateListWithManagerSpec(candidateListId)
             );
 
             if (candidateList == null)

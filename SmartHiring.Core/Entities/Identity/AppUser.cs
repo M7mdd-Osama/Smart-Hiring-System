@@ -9,7 +9,9 @@ namespace SmartHiring.Core.Entities.Identity
                : AgencyName ?? "N/A";
         public string? FirstName { get; set; }
 		public string? LastName { get; set; }
-		public string? ConfirmationCode { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public string? ConfirmationCode { get; set; }
 		public DateTime? ConfirmationCodeExpires { get; set; }
 		public string? AgencyName { get; set; }
 
@@ -19,9 +21,6 @@ namespace SmartHiring.Core.Entities.Identity
 
 		public Company? ManagedCompany { get; set; }
 
-  //      public object UserRoles { get; set; }
-
-		//public ICollection<Note> Notes { get; set; } = new HashSet<Note>();
         public ICollection<Application>? Applications { get; set; } = new HashSet<Application>(); 
 		public ICollection<AgencyApplicant>? AgencyApplicants { get; set; } = new HashSet<AgencyApplicant>(); 
 		public ICollection<Interview>? Interviews { get; set; } = new HashSet<Interview>();

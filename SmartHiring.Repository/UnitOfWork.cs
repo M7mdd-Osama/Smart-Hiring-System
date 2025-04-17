@@ -21,7 +21,7 @@ namespace SmartHiring.Repository
         public ValueTask DisposeAsync()
         => _dbContext.DisposeAsync();
 
-        public IGenericRepository<TEntity> Repository<TEntity>() where TEntity : class
+        public IGenericRepo<TEntity> Repository<TEntity>() where TEntity : class
         {
             var type = typeof(TEntity).Name;
 
@@ -30,7 +30,7 @@ namespace SmartHiring.Repository
                 var Repository = new GenericRepository<TEntity>(_dbContext);
                 _repositories.Add(type, Repository);
             }
-            return _repositories[type] as IGenericRepository<TEntity>;
+            return _repositories[type] as IGenericRepo<TEntity>;
         }
     }
 }

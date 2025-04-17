@@ -11,9 +11,9 @@ namespace SmartHiring.Service
     public class PaymentService : IPaymentService
     {
         private readonly IConfiguration _configuration;
-        private readonly IGenericRepository<Post> _postRepository;
+        private readonly IGenericRepo<Post> _postRepository;
 
-        public PaymentService(IConfiguration configuration, IGenericRepository<Post> postRepository)
+        public PaymentService(IConfiguration configuration, IGenericRepo<Post> postRepository)
         {
             _configuration = configuration;
             _postRepository = postRepository;

@@ -10,11 +10,11 @@ namespace SmartHiring.Core.Entities
 		public string Password { get; set; }
 		public string? LogoUrl { get; set; }
 
-
 		public string? ConfirmationCode { get; set; }
 		public DateTime? ConfirmationCodeExpires { get; set; }
 		public bool EmailConfirmed { get; set; } = false;
         public string Phone { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string? ManagerId { get; set; }
 		public AppUser? Manager { get; set; }
 

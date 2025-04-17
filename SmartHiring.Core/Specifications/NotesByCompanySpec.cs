@@ -1,9 +1,8 @@
-﻿
-using SmartHiring.Core.Entities;
+﻿using SmartHiring.Core.Entities;
 
 namespace SmartHiring.Core.Specifications
 {
-    public class NotesByCompanySpec : BaseSpecifications<Note>
+    public class NotesByCompanySpec : BaseSpec<Note>
     {
         public NotesByCompanySpec(int companyId, int? postId = null)
             : base(n => (n.User.HRCompany.Id == companyId || n.User.ManagedCompany.Id == companyId) &&

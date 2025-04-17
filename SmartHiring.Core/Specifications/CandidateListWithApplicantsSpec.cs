@@ -2,7 +2,7 @@
 
 namespace SmartHiring.Core.Specifications
 {
-    public class CandidateListWithApplicantsSpec : BaseSpecifications<CandidateList>
+    public class CandidateListWithApplicantsSpec : BaseSpec<CandidateList>
     {
         public CandidateListWithApplicantsSpec(int postId)
             : base(cl => cl.PostId == postId && cl.Status == "Pending")

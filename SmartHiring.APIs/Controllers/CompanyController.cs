@@ -50,7 +50,7 @@ namespace SmartHiring.APIs.Controllers
             var company = user.HRCompany ?? user.ManagedCompany;
 
             var companyWithMembers = await _unitOfWork.Repository<Company>().GetByEntityWithSpecAsync(
-                new CompanyWithMembersSpecifications(company.Id)
+                new CompanyWithMembersSpec(company.Id)
             );
 
             if (companyWithMembers == null)

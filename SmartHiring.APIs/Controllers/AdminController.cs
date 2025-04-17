@@ -38,7 +38,7 @@ namespace SmartHiring.APIs.Controllers
         [HttpGet("companies")]
         public async Task<ActionResult<IEnumerable<CompanyDto>>> GetCompanies([FromQuery] string? search)
         {
-            var spec = new CompaniesWithDetailsSpecification(search);
+            var spec = new CompaniesWithDetailsSpec(search);
             var companies = await _unitOfWork.Repository<Company>().GetAllWithSpecAsync(spec);
             return Ok(_mapper.Map<IEnumerable<CompanyDto>>(companies));
         }

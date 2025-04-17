@@ -16,8 +16,8 @@ namespace SmartHiring.APIs.Extensions
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection Services)
         {
-            Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-            Services.AddScoped<IPostRepository, PostRepository>();
+            Services.AddScoped(typeof(IGenericRepo<>), typeof(GenericRepository<>));
+            Services.AddScoped<IPostRepo, PostRepository>();
             Services.AddScoped<PasswordHasher<AppUser>>();
             Services.AddAutoMapper(typeof(MappingProfiles));
             Services.AddScoped<IUnitOfWork, UnitOfWork>();

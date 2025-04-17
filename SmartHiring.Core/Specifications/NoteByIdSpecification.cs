@@ -2,7 +2,7 @@
 
 namespace SmartHiring.Core.Specifications
 {
-    public class NoteByIdSpecification : BaseSpecifications<Note>
+    public class NoteByIdSpecification : BaseSpec<Note>
     {
         public NoteByIdSpecification(int noteId, string userId)
             : base(n => n.Id == noteId && n.UserId == userId)

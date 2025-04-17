@@ -2,7 +2,7 @@
 
 namespace SmartHiring.Core.Specifications
 {
-    public class AgencyHiredApplicantsSpec : BaseSpecifications<Interview>
+    public class AgencyHiredApplicantsSpec : BaseSpec<Interview>
     {
         public AgencyHiredApplicantsSpec(List<int> applicantIds)
             : base(i => applicantIds.Contains(i.ApplicantId) && i.InterviewStatus == InterviewStatus.Hired)

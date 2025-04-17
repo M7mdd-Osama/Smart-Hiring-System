@@ -5,7 +5,7 @@ using SmartHiring.Repository.Data;
 
 namespace SmartHiring.Repository
 {
-    public class PostRepository : GenericRepository<Post>, IPostRepository
+    public class PostRepository : GenericRepository<Post>, IPostRepo
     {
         private readonly SmartHiringDbContext _dbContext;
 

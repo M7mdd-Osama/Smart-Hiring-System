@@ -2,7 +2,7 @@
 
 namespace SmartHiring.Core.Specifications
 {
-    public class PostWithFiltrationForCountAsync : BaseSpecifications<Post>
+    public class PostWithFiltrationForCountAsync : BaseSpec<Post>
     {
         public PostWithFiltrationForCountAsync(PostSpecParams Params, int? companyId, string userRole, bool onlyPaid)
             : base(P =>

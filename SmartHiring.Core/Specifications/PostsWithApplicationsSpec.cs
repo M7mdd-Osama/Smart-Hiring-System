@@ -1,19 +1,18 @@
 ﻿using SmartHiring.Core.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartHiring.Core.Specifications
 {
-    public class PostsWithApplicationsSpec : BaseSpecifications<Post>
+    public class PostsWithApplicationsSpec : BaseSpec<Post>
     {
         public PostsWithApplicationsSpec(int companyId)
             : base(p => p.CompanyId == companyId)
         {
             AddInclude(p => p.Applications);
-            
+        }
+        public PostsWithApplicationsSpec(List<int> postIds)
+            : base(p => postIds.Contains(p.Id))
+        {
+            AddInclude(p => p.Applications);
         }
     }
 }

@@ -52,7 +52,7 @@ namespace SmartHiring.APIs.Controllers
             if (post == null || post.CompanyId != user.HRCompany.Id)
                 return Forbid();
 
-            var spec = new ApplicationsByPostIdSpecification(postId);
+            var spec = new ApplicationsByPostIdSpec(postId);
             var allApplications = await _unitOfWork.Repository<Application>().GetAllWithSpecAsync(spec);
 
             if (allApplications == null || !allApplications.Any())
@@ -102,7 +102,7 @@ namespace SmartHiring.APIs.Controllers
             if (post == null || post.CompanyId != user.HRCompany.Id)
                 return Forbid();
 
-            var spec = new AcceptedApplicationsByPostIdSpecification(postId);
+            var spec = new AcceptedApplicationsByPostIdSpec(postId);
             var filteredCandidates = await _unitOfWork.Repository<Application>().GetAllWithSpecAsync(spec);
 
             if (filteredCandidates == null || !filteredCandidates.Any())
@@ -168,7 +168,7 @@ namespace SmartHiring.APIs.Controllers
             if (manager == null)
                 return NotFound(new ApiResponse(404, "No manager found for this company."));
 
-            var spec = new AcceptedApplicationsByPostIdSpecification(postId);
+            var spec = new AcceptedApplicationsByPostIdSpec(postId);
             var filteredCandidates = await _unitOfWork.Repository<Application>().GetAllWithSpecAsync(spec);
 
             if (filteredCandidates == null || !filteredCandidates.Any())
