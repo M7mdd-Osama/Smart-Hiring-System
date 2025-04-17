@@ -41,7 +41,7 @@ namespace SmartHiring.APIs.Controllers
             _mapper = mapper;
         }
 
-        #region Get Interview Stage Report //
+        #region Get Interview Stage Report
         [Authorize(Roles = "HR,Manager")]
         [HttpGet("interview-stage-report")]
         public async Task<ActionResult<InterviewReportToReturnDto>> GetInterviewStageReport(DateTime fromDate, DateTime toDate)
@@ -807,7 +807,7 @@ namespace SmartHiring.APIs.Controllers
         }
         #endregion
 
-        #region Get Pending Interview Summary //
+        #region Get Pending Interview Summary
         [Authorize(Roles = "HR,Manager")]
         [HttpGet("interviews/pending-summary")]
         public async Task<ActionResult<PendingInterviewSummaryDto>> GetPendingInterviewSummary(DateTime fromDate, DateTime toDate)
