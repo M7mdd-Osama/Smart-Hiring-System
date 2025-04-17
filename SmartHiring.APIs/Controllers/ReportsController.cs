@@ -509,10 +509,24 @@ namespace SmartHiring.APIs.Controllers
         #region Get Companies Count Report
         [Authorize(Roles = "Admin")]
         [HttpGet("system/companies-count")]
-        public async Task<ActionResult<CompanyCountReportDto>> GetCompaniesCountReport()
+        public async Task<ActionResult<CompanyCountReportDto>> GetCompaniesCountReport(DateTime fromDate, DateTime toDate)
         {
-            var spec = new AllCompaniesSpec();
+            var spec = new AllCompaniesSpec(fromDate, toDate);
             var companies = await _companyRepo.GetAllWithSpecAsync(spec);
+
+            var currentYear = DateTime.UtcNow.Year;
+            var fromYear = currentYear - 3;
+
+            var grouped = companies
+                .Where(c => c.CreatedAt.Year >= fromYear)
+                .GroupBy(c => c.CreatedAt.Year)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var companiesPerYear = new Dictionary<int, int>();
+            for (int year = fromYear; year <= currentYear; year++)
+            {
+                companiesPerYear[year] = grouped.ContainsKey(year) ? grouped[year] : 0;
+            }
 
             var report = new CompanyCountReportDto
             {
@@ -521,7 +535,8 @@ namespace SmartHiring.APIs.Controllers
                 {
                     Id = c.Id,
                     Name = c.Name
-                }).ToList()
+                }).ToList(),
+                CompaniesPerYear = companiesPerYear
             };
 
             return Ok(report);
