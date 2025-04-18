@@ -1,11 +1,11 @@
 ﻿using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace SmartHiring.APIs.DTOs
 {
     public class CandidatesDataDto
     {
-        public List<string> MostJobCandidates { get; set; }
-
-        public List<string> LeastJobCandidates { get; set; }
+        public List<string> MostJobTitle { get; set; } = new();
+        public List<string> LeastJobTitle { get; set; } = new();
     }
 }
