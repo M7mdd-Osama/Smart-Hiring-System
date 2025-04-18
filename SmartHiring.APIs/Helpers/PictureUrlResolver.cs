@@ -15,7 +15,8 @@ namespace SmartHiring.APIs.Helpers
 
 		public string Resolve(TSource source, TDestination destination, string destMember, ResolutionContext context)
 		{
-			if (source == null) return string.Empty;
+			_visitedObjects.Clear();
+            if (source == null) return string.Empty;
 
 			string logoUrl = FindLogoUrl(source);
 			return !string.IsNullOrEmpty(logoUrl) ? $"{_configuration["ApiBaseUrl"]}{logoUrl}" : string.Empty;

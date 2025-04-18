@@ -5,16 +5,17 @@ namespace SmartHiring.Repository.Data
 {
 	public static class AppIdentitySmartHiringContextSeed
 	{
-		public static async Task SeedUserAsync(UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager)
+		public static async Task SeedUserAsync(UserManager<AppUser> userManager, 
+											   RoleManager<IdentityRole> roleManager)
 		{
-			//string[] roles = new string[] { "Admin", "Manager", "HR", "Agency" };
-			//foreach (var role in roles)
-			//{
-			//	if (!await roleManager.RoleExistsAsync(role))
-			//	{
-			//		await roleManager.CreateAsync(new IdentityRole(role));
-			//	}
-			//}
+			string[] roles = new string[] { "Admin", "Manager", "HR", "Agency" };
+			foreach (var role in roles)
+			{
+				if (!await roleManager.RoleExistsAsync(role))
+				{
+					await roleManager.CreateAsync(new IdentityRole(role));
+				}
+			}
 
 			//if (!userManager.Users.Any(u => u.UserName == "mohamedosama"))
 			//{

@@ -42,7 +42,6 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.LogoUrl, O => O.MapFrom<PictureUrlResolver<Post, PostToReturnDto>>())
             .ForMember(dest => dest.HRName, opt => opt.MapFrom(src => src.HR.DisplayName))
             .ForMember(dest => dest.TotalApplications, opt => opt.MapFrom(src => src.Applications.Count))
-            .ForMember(dest => dest.SelectedCandidates, opt => opt.MapFrom(src => src.CandidateLists.Count))
             .ForMember(dest => dest.JobCategories, opt => opt.MapFrom(src => src.PostJobCategories.Select(c => c.JobCategory.Name)))
             .ForMember(dest => dest.JobTypes, opt => opt.MapFrom(src => src.PostJobTypes.Select(t => t.JobType.TypeName)))
             .ForMember(dest => dest.Workplaces, opt => opt.MapFrom(src => src.PostWorkplaces.Select(w => w.Workplace.WorkplaceType)))
@@ -197,7 +196,8 @@ public class MappingProfiles : Profile
             .ForMember(d => d.Email, o => o.MapFrom(s => s.Applicant.Email))
             .ForMember(d => d.ApplicantPhone, o => o.MapFrom(s => s.Applicant.Phone))
             .ForMember(d => d.CompanyPhone, o => o.MapFrom(s => s.HR.HRCompany.Phone))
-            .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.HR.HRCompany.Name));
+            .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.HR.HRCompany.Name))
+            .ForMember(d => d.BusinessEmail, o => o.MapFrom(s => s.HR.HRCompany.BusinessEmail));
 
         CreateMap<SubmitApplicationDto, Applicant>();
 
