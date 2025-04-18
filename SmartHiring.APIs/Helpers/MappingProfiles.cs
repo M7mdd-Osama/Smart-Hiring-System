@@ -223,19 +223,18 @@ public class MappingProfiles : Profile
 
 
 
-        // لو حبيت تعمل map بين الكيان و DTO:
         CreateMap<Company, CompanyCountReportDto>()
-            .ForMember(dest => dest.TotalCompanies, opt => opt.Ignore()); // هنحسب العدد بنفسنا
+            .ForMember(dest => dest.TotalCompanies, opt => opt.Ignore()); 
 
         CreateMap<AppUser, AgencyCountReportDto>()
-            .ForMember(dest => dest.TotalAgencies, opt => opt.Ignore()); // هنحسب العدد في الكود
+            .ForMember(dest => dest.TotalAgencies, opt => opt.Ignore());
 
         CreateMap<Post, JobClosedCountReportDto>()
-            .ForMember(dest => dest.TotalClosedJobs, opt => opt.MapFrom(src => 1));  // Placeholder for actual job count
+            .ForMember(dest => dest.TotalClosedJobs, opt => opt.MapFrom(src => 1)); 
 
         CreateMap<Post, JobApplicationsCountDto>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.JobTitle)) // ✅ تصحيح هنا
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.JobTitle))
             .ForMember(dest => dest.JobAppliedNumber, opt => opt.MapFrom(src => src.Applications.Count));
 
 
