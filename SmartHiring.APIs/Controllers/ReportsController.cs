@@ -90,7 +90,7 @@ namespace SmartHiring.APIs.Controllers
         #region Mohsen
 
         #region Get Top Agencies Report
-        //[Authorize(Roles = "Manager,HR")]
+        [Authorize(Roles = "Manager,HR")]
         [HttpGet("top-agencies")]
         [ProducesResponseType(typeof(TopAgencyDto), StatusCodes.Status200OK)]
         public async Task<ActionResult<TopAgencyDto>> GetTopAgencies(DateTime fromDate, DateTime toDate)
@@ -144,9 +144,8 @@ namespace SmartHiring.APIs.Controllers
         }
         #endregion
 
-
         #region Get Jobs Fill Status Report
-        //[Authorize(Roles = "HR,Manager")]
+        [Authorize(Roles = "HR,Manager")]
         [HttpGet("jobs/fill-status")]
         [ProducesResponseType(typeof(JobFillStatusReportDto), StatusCodes.Status200OK)]
         public async Task<ActionResult<JobFillStatusReportDto>> GetJobsFillStatusReport(DateTime fromDate, DateTime toDate)
@@ -195,8 +194,7 @@ namespace SmartHiring.APIs.Controllers
         }
         #endregion
 
-
-        //#region Get AI Screening Ratio
+        #region Get AI Screening Ratio
         //[Authorize(Roles = "Admin,HR")]
         //[HttpGet("ai/acceptance-rejection-ratio/{jobId}")]
         //[ProducesResponseType(typeof(AIScreeningReportDto), StatusCodes.Status200OK)]
@@ -237,7 +235,7 @@ namespace SmartHiring.APIs.Controllers
 
         //    return Ok(result);
         //}
-        //#endregion
+        #endregion
 
         #region Get Interview Success Rate
         [Authorize(Roles = "HR")]
@@ -299,7 +297,6 @@ namespace SmartHiring.APIs.Controllers
         }
         #endregion
 
-
         #region Get Post Applications
         [Authorize(Roles = "Manager,HR")]
         [HttpGet("applications/{companyId}")]
@@ -324,7 +321,6 @@ namespace SmartHiring.APIs.Controllers
             if (userCompanyId != companyId)
                 return Forbid();
 
-            // استخدم الـ Spec الجديد اللي فيه التاريخ
             var spec = new PostsWithApplicationsSpec(companyId, fromDate, toDate);
             var posts = await _postRepo.GetAllWithSpecAsync(spec);
 
@@ -347,8 +343,6 @@ namespace SmartHiring.APIs.Controllers
             return Ok(report);
         }
         #endregion
-
-
 
         #region Get Top Applications By Rank
         [Authorize(Roles = "HR")]
@@ -391,7 +385,6 @@ namespace SmartHiring.APIs.Controllers
             return Ok(report);
         }
         #endregion
-
 
         #region Get Most Vs Least Applied Jobs
         [Authorize(Roles = "Manager,HR")]
@@ -471,9 +464,6 @@ namespace SmartHiring.APIs.Controllers
         }
         #endregion
 
-
-
-
         #endregion
 
         //#region Get AI Screening Summary
@@ -524,7 +514,6 @@ namespace SmartHiring.APIs.Controllers
         //    return Ok(result);
         //}
         //#endregion
-
 
         #region Ali
 
@@ -609,7 +598,6 @@ namespace SmartHiring.APIs.Controllers
             return Ok(report);
         }
         #endregion
-
 
         #region Get Agency Count By Company
         [Authorize(Roles = "Admin,Manager,HR")]
@@ -768,8 +756,6 @@ namespace SmartHiring.APIs.Controllers
         }
         #endregion
 
-
-
         #region Get Paid Jobs Created Report 
         [Authorize(Roles = "Admin,Manager,HR")]
         [HttpGet("jobs/created")]
@@ -820,7 +806,6 @@ namespace SmartHiring.APIs.Controllers
             return Ok(report);
         }
         #endregion
-
 
         #region Get Applications Count Per Job 
         [Authorize(Roles = "HR,Manager,Agency")]
@@ -888,8 +873,6 @@ namespace SmartHiring.APIs.Controllers
         }
         #endregion
 
-
-
         #region Get Pending Interview Summary  
         [Authorize(Roles = "HR,Manager")]
         [HttpGet("interviews/pending-summary")]
@@ -948,7 +931,6 @@ namespace SmartHiring.APIs.Controllers
         }
         #endregion
 
-
         #region Get Closed Jobs Count
         [Authorize(Roles = "HR,Manager")]
         [HttpGet("jobs/closed-count")]
@@ -1005,7 +987,6 @@ namespace SmartHiring.APIs.Controllers
             return Ok(report);
         }
         #endregion
-
 
         #endregion
 
