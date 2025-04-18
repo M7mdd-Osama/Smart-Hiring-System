@@ -254,6 +254,10 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.JobTitle))
             .ForMember(dest => dest.JobAppliedNumber, opt => opt.MapFrom(src => src.Applications.Count));
-        
+
+        CreateMap<Company, CompanyPostCountDto>()
+    .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Name))
+    .ForMember(dest => dest.TotalPosts, opt => opt.MapFrom(src => src.Posts.Count));
+
     }
 }

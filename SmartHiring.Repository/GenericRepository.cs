@@ -38,6 +38,7 @@ namespace SmartHiring.Repository
 
 		#endregion
 
+
 		public async Task<int> GetCountWithSpecAsync(ISpec<T> Spec)
 		=> await ApplySpecification(Spec).CountAsync();
 		
