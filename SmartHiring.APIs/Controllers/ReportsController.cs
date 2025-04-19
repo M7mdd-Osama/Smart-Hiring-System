@@ -699,8 +699,6 @@ namespace SmartHiring.APIs.Controllers
             && a.ApplicationDate >= fromDate
             && a.ApplicationDate <= toDate);
 
-
-
             var agencyIds = applications.Select(a => a.AgencyId).Distinct().ToList();
 
             var agencies = await _userManager.Users
