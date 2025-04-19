@@ -90,9 +90,6 @@ namespace SmartHiring.APIs.Controllers
 
             var companyId = user.HRCompany?.Id ?? user.ManagedCompany?.Id;
 
-            if (companyId == null)
-                return Unauthorized(new ApiResponse(401, "User is not associated with any company"));
-
             var post = await _unitOfWork.Repository<Post>().GetByIdAsync(noteDto.PostId);
             if (post == null)
                 return BadRequest(new ApiResponse(400, "Post not found"));
@@ -229,7 +226,6 @@ namespace SmartHiring.APIs.Controllers
             {
                 return Unauthorized(new ApiResponse(403, "You can only delete your own notes"));
             }
-
             await _unitOfWork.Repository<Note>().DeleteAsync(note);
             await _unitOfWork.CompleteAsync();
             return Ok(new ApiResponse(200, "Note deleted successfully"));

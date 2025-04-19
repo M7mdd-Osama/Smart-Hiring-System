@@ -89,6 +89,7 @@ namespace SmartHiring.APIs.Controllers
 
         #region Mohsen
 
+        #region Get Top Agencies By Applications
         [Authorize(Roles = "Admin,Manager")]
         [HttpGet("top-agencies-by-applications")]
         public async Task<ActionResult<TopAgencyDto>> GetTopAgenciesByApplications(DateTime fromDate, DateTime toDate)
@@ -151,7 +152,7 @@ namespace SmartHiring.APIs.Controllers
             });
         }
 
-
+        #endregion
 
         #region Get Jobs Fill Status Report
         [Authorize(Roles = "HR,Manager")]
@@ -473,7 +474,6 @@ namespace SmartHiring.APIs.Controllers
         }
         #endregion
 
-
         //#region Get AI Screening Summary
         //[Authorize(Roles = "HR,Manager")]
         //[HttpGet("ai-screening/summary/{jobId}")]
@@ -523,9 +523,10 @@ namespace SmartHiring.APIs.Controllers
         //}
         //#endregion
 
+        #region Get Company Post Status
         [Authorize(Roles = "Admin,Manager,HR")]
         [HttpGet("company-post-stats")]
-        public async Task<IActionResult> GetCompanyPostStats([FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
+        public async Task<IActionResult> GetCompanyPostStatus([FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
             var currentUser = await _userManager.FindByEmailAsync(email);
@@ -546,7 +547,8 @@ namespace SmartHiring.APIs.Controllers
             var companies = await _companyRepo.GetAllWithSpecAsync(spec);
 
             var filteredCompanies = companies
-                .Select(c => new {
+                .Select(c => new
+                {
                     Company = c,
                     PostsInRange = c.Posts.Where(p => p.PostDate >= fromDate && p.PostDate <= toDate).ToList()
                 })
@@ -566,8 +568,7 @@ namespace SmartHiring.APIs.Controllers
             return Ok(dto);
         }
 
-
-
+        #endregion
 
         #endregion
 

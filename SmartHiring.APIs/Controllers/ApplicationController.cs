@@ -107,24 +107,22 @@ namespace SmartHiring.APIs.Controllers
 
             if (filteredCandidates == null || !filteredCandidates.Any())
                 return NotFound(new ApiResponse(404, "No filtered candidates found for this post."));
-
             var sortedCandidates = filteredCandidates
                 .OrderByDescending(app => app.RankScore)
                 .ToList();
-
             var mappedCandidates = _mapper.Map<List<CandidateForManagerDto>>(sortedCandidates);
 
             for (int i = 0; i < mappedCandidates.Count; i++)
             {
                 mappedCandidates[i].Rank = i + 1;
             }
-
             var candidateLists = await _unitOfWork.Repository<CandidateList>().GetAllAsync();
-            var isSent = candidateLists.Any(cl => cl.PostId == postId && (cl.Status == "Pending" || cl.Status == "Accepted"));
-
+            var isSent = candidateLists.Any(cl => cl.PostId == postId &&
+                                            (cl.Status == "Pending" ||
+                                            cl.Status == "Accepted"));
             var result = new
             {
-                Deadline = post.Deadline,
+                post.Deadline,
                 TotalCount = mappedCandidates.Count,
                 IsSent = isSent,
                 Candidates = mappedCandidates
@@ -265,14 +263,11 @@ namespace SmartHiring.APIs.Controllers
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(userEmail))
                 return Unauthorized(new ApiResponse(401, "User email not found in token"));
-
             var manager = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
-            if (manager == null)
-                return Unauthorized(new ApiResponse(401, "Manager not found"));
+            if (manager == null) return Unauthorized(new ApiResponse(401, "Manager not found"));
 
             var candidateList = await _unitOfWork.Repository<CandidateList>().GetByIdAsync(candidateListId);
-            if (candidateList == null || candidateList.ManagerId != manager.Id)
-                return Forbid();
+            if (candidateList == null || candidateList.ManagerId != manager.Id) return Forbid();
 
             if (candidateList.Status != "Pending")
                 return BadRequest(new ApiResponse(400, "This list has already been processed."));
