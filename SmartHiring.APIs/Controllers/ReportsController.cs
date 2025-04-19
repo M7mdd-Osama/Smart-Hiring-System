@@ -89,7 +89,9 @@ namespace SmartHiring.APIs.Controllers
 
         #region Mohsen
 
-        #region Get Top Agencies By Applications
+
+        #region GetTopAgenciesByApplications
+
         [Authorize(Roles = "Admin,Manager")]
         [HttpGet("top-agencies-by-applications")]
         public async Task<ActionResult<TopAgencyDto>> GetTopAgenciesByApplications(DateTime fromDate, DateTime toDate)
@@ -148,6 +150,7 @@ namespace SmartHiring.APIs.Controllers
                 TopAgencies = grouped
             });
         }
+        #endregion
 
         #endregion
 
@@ -394,6 +397,7 @@ namespace SmartHiring.APIs.Controllers
         #endregion
 
         #region Get Most Vs Least Applied Jobs
+
         [Authorize(Roles = "Manager,HR")]
         [HttpGet("jobs/most-vs-least-applied")]
         [ProducesResponseType(typeof(JobApplicationComparisonDto), StatusCodes.Status200OK)]
@@ -415,6 +419,7 @@ namespace SmartHiring.APIs.Controllers
             if (companyId == null)
                 return Forbid();
 
+            // Get all posts (حتى اللي مالهاش تطبيقات)
             var spec = new PostsWithApplicationsSpec(companyId.Value, fromDate, toDate);
             var posts = await _postRepo.GetAllWithSpecAsync(spec);
 
@@ -433,6 +438,7 @@ namespace SmartHiring.APIs.Controllers
                 });
             }
 
+            // 👇 نرجع كل الوظائف مهما كان عليها Applications
             var jobsWithCounts = posts
                 .Select(p => new
                 {
@@ -441,35 +447,37 @@ namespace SmartHiring.APIs.Controllers
                 })
                 .ToList();
 
-            var totalApplications = jobsWithCounts.Sum(j => j.Count);
             var maxCount = jobsWithCounts.Max(j => j.Count);
             var minCount = jobsWithCounts.Min(j => j.Count);
 
             var mostJobTitles = jobsWithCounts
-                .Where(j => j.Count == maxCount && maxCount > 0)
+                .Where(j => j.Count == maxCount)
                 .Select(j => j.Title)
                 .ToList();
 
             var leastJobTitles = jobsWithCounts
-                .Where(j => j.Count == minCount)
+                .Where(j => j.Count == minCount && !mostJobTitles.Contains(j.Title)) // نستبعد الـ most
                 .Select(j => j.Title)
                 .ToList();
 
             var result = new JobApplicationComparisonDto
             {
-                TotalJobsApplied = totalApplications,
+                TotalJobsApplied = jobsWithCounts.Count, // عدد الوظائف بالكامل
                 MostJobCount = mostJobTitles.Count,
                 LeastJobCount = leastJobTitles.Count,
                 CandidatesData = new CandidatesDataDto
                 {
                     MostJobTitle = mostJobTitles,
-                    LeastJobTitle = leastJobTitles
+                    LeastJobTitle = leastJobTitles.Any() ? leastJobTitles : new List<string> { "N/A" }
                 }
             };
 
             return Ok(result);
         }
+
+
         #endregion
+
 
         //#region Get AI Screening Summary
         //[Authorize(Roles = "HR,Manager")]
@@ -520,8 +528,7 @@ namespace SmartHiring.APIs.Controllers
         //}
         //#endregion
 
-        #region Get Company Post Status
-
+        #region Get Company PostStatus
         [Authorize(Roles = "Admin,Manager,HR")]
         [HttpGet("company-post-stats")]
         public async Task<IActionResult> GetCompanyPostStatus([FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
@@ -565,6 +572,53 @@ namespace SmartHiring.APIs.Controllers
 
             return Ok(dto);
         }
+        #endregion
+
+
+        #region GetApplicantStats
+        [Authorize(Roles = "HR,Manager")]
+        [HttpGet("applicant-stats")]
+        public async Task<IActionResult> GetApplicantStats([FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate)
+        {
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            var currentUser = await _userManager.FindByEmailAsync(userEmail);
+
+            string hrId = null;
+            int? companyId = null;
+
+            if (User.IsInRole("HR"))
+            {
+                hrId = currentUser.Id;
+            }
+            else if (User.IsInRole("Manager"))
+            {
+                companyId = currentUser.HRCompany?.Id;
+            }
+
+            var spec = new ApplicantsWithAgencySpec(hrId, companyId, fromDate, toDate);
+            var applications = await _applicationRepo.GetAllWithSpecAsync(spec);
+
+            var distinctApplicants = applications
+                .GroupBy(a => a.ApplicantId)
+                .Select(g => g.First())
+                .ToList();
+
+            var dto = new ApplicantStatsDto
+            {
+                TotalApplicants = distinctApplicants.Count,
+                ApplicantData = distinctApplicants.Select(a => new ApplicantInfoDto
+                {
+                    ApplicantName = $"{a.Applicant.FName} {a.Applicant.LName}",
+                    AgencyName = a.Agency?.DisplayName ?? "N/A",
+                    Phone = a.Applicant.Phone
+                }).ToList()
+            };
+
+            return Ok(dto);
+        }
+
+
+
 
         #endregion
 
