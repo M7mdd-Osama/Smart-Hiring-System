@@ -973,6 +973,162 @@ namespace SmartHiring.APIs.Controllers
         #endregion
 
 
+
+        #region GetAgencyAcceptanceRejectionReport
+        [Authorize(Roles = "Admin")]
+        [HttpGet("agency-acceptance-rejection-report")]
+        public async Task<ActionResult<object>> GetAgencyAcceptanceRejectionReport(DateTime fromDate, DateTime toDate)
+        {
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new ApiResponse(401, "User email not found in token"));
+
+            var user = await _userManager.Users
+                .Include(u => u.HRCompany)
+                .Include(u => u.ManagedCompany)
+                .FirstOrDefaultAsync(u => u.Email == userEmail);
+
+            if (user == null)
+                return Unauthorized(new ApiResponse(401, "User not found"));
+
+            var roles = await _userManager.GetRolesAsync(user);
+            bool isAdmin = roles.Contains("Admin");
+
+            List<AppUser> agencies;
+
+            if (isAdmin)
+            {
+                // جميع الوكالات (حسب وجود AgencyName)
+                agencies = await _userManager.Users
+                    .Where(u => u.AgencyName != null)
+                    .ToListAsync();
+            }
+            else
+            {
+                var userCompany = user.HRCompany ?? user.ManagedCompany;
+                if (userCompany == null)
+                    return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
+
+                // فقط الوكالات المرتبطة بالشركة
+                agencies = await _userManager.Users
+                    .Where(u => u.AgencyName != null &&
+                                (u.HRCompany == userCompany || u.ManagedCompany == userCompany))
+                    .ToListAsync();
+            }
+
+            var totalApplications = 0;
+            var accepted = 0;
+            var rejected = 0;
+            var agencyReports = new List<object>();
+
+            foreach (var agency in agencies)
+            {
+                var spec = new ApplicationByAgencyySpec(agency.Id, fromDate, toDate);
+                var applications = await _applicationRepo.GetAllWithSpecAsync(spec);
+
+                if (applications == null || !applications.Any())
+                    continue;
+
+                var shortlistedCount = applications.Count(a => a.IsShortlisted);
+                var totalApplicationsForAgency = applications.Count();
+                var rejectedCount = totalApplicationsForAgency - shortlistedCount;
+
+                totalApplications += totalApplicationsForAgency;
+                accepted += shortlistedCount;
+                rejected += rejectedCount;
+
+                var acceptanceRate = totalApplicationsForAgency > 0 ? (double)shortlistedCount / totalApplicationsForAgency * 100 : 0;
+                var rejectionRate = totalApplicationsForAgency > 0 ? (double)rejectedCount / totalApplicationsForAgency * 100 : 0;
+
+                var report = new
+                {
+                    agencyName = agency.AgencyName,
+                    acceptanceRate = acceptanceRate,
+                    rejectionRate = rejectionRate
+                };
+
+                agencyReports.Add(report);
+            }
+
+            var summary = new
+            {
+                totalApplications = totalApplications,
+                accepted = accepted,
+                rejected = rejected
+            };
+
+            var result = new
+            {
+                summary = summary,
+                agencyReports = agencyReports
+            };
+
+            return Ok(result);
+        }
+        #endregion
+
+
+
+        #region GetCompanyAcceptanceRejectionReport
+        [Authorize(Roles = "HR,Manager")]
+        [HttpGet("company-acceptance-rejection-report")]
+        public async Task<ActionResult<CompanyAcceptanceRejectionReportDto>> GetCompanyAcceptanceRejectionReport(DateTime fromDate, DateTime toDate)
+        {
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new ApiResponse(401, "User email not found in token"));
+
+            var user = await _userManager.Users
+                .Include(u => u.HRCompany)
+                .Include(u => u.ManagedCompany)
+                .FirstOrDefaultAsync(u => u.Email == userEmail);
+
+            if (user == null)
+                return Unauthorized(new ApiResponse(401, "User not found"));
+
+            var userCompany = user.HRCompany ?? user.ManagedCompany;
+            if (userCompany == null)
+                return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
+
+            var spec = new ApplicationsByCompanyySpec(userCompany.Id, fromDate, toDate);
+            var applications = await _applicationRepo.GetAllWithSpecAsync(spec);
+
+            if (applications == null || !applications.Any())
+                return Ok(new CompanyAcceptanceRejectionReportDto
+                {
+                    TotalApplications = 0,
+                    Accepted = 0,
+                    Rejected = 0,
+                    CompanyReports = new List<CompanyAcceptanceRejectionDto>()
+                });
+
+            var total = applications.Count();
+            var accepted = applications.Count(a => a.IsShortlisted);
+            var rejected = total - accepted;
+
+            var companyReport = new CompanyAcceptanceRejectionDto
+            {
+                CompanyName = userCompany.Name,
+                AcceptanceRate = total > 0 ? (double)accepted / total * 100 : 0,
+                RejectionRate = total > 0 ? (double)rejected / total * 100 : 0
+            };
+
+            var result = new CompanyAcceptanceRejectionReportDto
+            {
+                TotalApplications = total,
+                Accepted = accepted,
+                Rejected = rejected,
+                CompanyReports = new List<CompanyAcceptanceRejectionDto> { companyReport }
+            };
+
+            return Ok(result);
+        }
+        #endregion
+
+
+
+
+
         #endregion
 
     }

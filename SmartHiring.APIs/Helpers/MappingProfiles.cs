@@ -255,7 +255,10 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.JobTitle))
             .ForMember(dest => dest.JobAppliedNumber, opt => opt.MapFrom(src => src.Applications.Count));
 
+        CreateMap<Application, AgencyAcceptanceRejectionReportDto>()
+            .ForMember(dest => dest.AgencyName, opt => opt.MapFrom(src => src.Agency.DisplayName));
 
-        
+
+
     }
 }
