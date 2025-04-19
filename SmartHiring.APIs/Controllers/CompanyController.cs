@@ -52,7 +52,6 @@ namespace SmartHiring.APIs.Controllers
             var companyWithMembers = await _unitOfWork.Repository<Company>().GetByEntityWithSpecAsync(
                 new CompanyWithMembersSpec(company.Id)
             );
-
             if (companyWithMembers == null)
                 return NotFound(new ApiResponse(404, "Company not found"));
 
