@@ -39,6 +39,7 @@ namespace SmartHiring.APIs
 			builder.Services.AddApplicationServices();
 			builder.Services.AddIdentityServices(builder.Configuration);
 
+
 			builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
 
 			builder.Services.AddCors(Options =>
@@ -60,6 +61,7 @@ namespace SmartHiring.APIs
 
 			using var Scope = app.Services.CreateScope();
 			var Services = Scope.ServiceProvider;
+
 
 			var LoggerFactory = Services.GetRequiredService<ILoggerFactory>();
 			try
