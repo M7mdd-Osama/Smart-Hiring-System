@@ -89,6 +89,7 @@ namespace SmartHiring.APIs.Controllers
 
         #region Mohsen
 
+        #region GetTopAgenciesByApplications
         [Authorize(Roles = "Admin,Manager")]
         [HttpGet("top-agencies-by-applications")]
         public async Task<ActionResult<TopAgencyDto>> GetTopAgenciesByApplications(DateTime fromDate, DateTime toDate)
@@ -149,7 +150,7 @@ namespace SmartHiring.APIs.Controllers
                 TopAgencies = grouped
             });
         }
-
+        #endregion
 
 
 
@@ -533,6 +534,7 @@ namespace SmartHiring.APIs.Controllers
         //}
         //#endregion
 
+        #region GetCompanyPostStats
         [Authorize(Roles = "Admin,Manager,HR")]
         [HttpGet("company-post-stats")]
         public async Task<IActionResult> GetCompanyPostStats([FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
@@ -575,6 +577,7 @@ namespace SmartHiring.APIs.Controllers
 
             return Ok(dto);
         }
+        #endregion
 
         #region GetApplicantStats
         [Authorize(Roles = "HR,Manager")]
