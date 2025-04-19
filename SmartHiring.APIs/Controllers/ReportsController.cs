@@ -89,7 +89,9 @@ namespace SmartHiring.APIs.Controllers
 
         #region Mohsen
 
+
         #region GetTopAgenciesByApplications
+
         [Authorize(Roles = "Admin,Manager")]
         [HttpGet("top-agencies-by-applications")]
         public async Task<ActionResult<TopAgencyDto>> GetTopAgenciesByApplications(DateTime fromDate, DateTime toDate)
@@ -153,7 +155,7 @@ namespace SmartHiring.APIs.Controllers
         }
         #endregion
 
-
+        #endregion
 
         #region Get Jobs Fill Status Report
         [Authorize(Roles = "HR,Manager")]
@@ -476,7 +478,9 @@ namespace SmartHiring.APIs.Controllers
             return Ok(result);
         }
 
+
         #endregion
+
 
         //#region Get AI Screening Summary
         //[Authorize(Roles = "HR,Manager")]
@@ -528,9 +532,10 @@ namespace SmartHiring.APIs.Controllers
         //#endregion
 
         #region GetCompanyPostStats
+
         [Authorize(Roles = "Admin,Manager,HR")]
         [HttpGet("company-post-stats")]
-        public async Task<IActionResult> GetCompanyPostStats([FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
+        public async Task<IActionResult> GetCompanyPostStatus([FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
             var currentUser = await _userManager.FindByEmailAsync(email);
@@ -551,7 +556,8 @@ namespace SmartHiring.APIs.Controllers
             var companies = await _companyRepo.GetAllWithSpecAsync(spec);
 
             var filteredCompanies = companies
-                .Select(c => new {
+                .Select(c => new
+                {
                     Company = c,
                     PostsInRange = c.Posts.Where(p => p.PostDate >= fromDate && p.PostDate <= toDate).ToList()
                 })
@@ -571,6 +577,7 @@ namespace SmartHiring.APIs.Controllers
             return Ok(dto);
         }
         #endregion
+
 
         #region GetApplicantStats
         [Authorize(Roles = "HR,Manager")]
@@ -616,6 +623,7 @@ namespace SmartHiring.APIs.Controllers
 
 
 
+
         #endregion
 
         #endregion
@@ -650,6 +658,7 @@ namespace SmartHiring.APIs.Controllers
                 Companies = companies.Select(c => new CompanyDto
                 {
                     Id = c.Id,
+                    BusinessEmail = c.BusinessEmail,
                     Name = c.Name
                 }).ToList(),
                 CompaniesPerYear = companiesPerYear
@@ -737,9 +746,7 @@ namespace SmartHiring.APIs.Controllers
                 {
                     CompanyId = companyId,
                     TotalAgencies = 0,
-                    Agencies = new List<AgencyyApplicationStatsDto>(),
-                    FromDate = fromDate,  // إضافة fromDate في الـ DTO
-                    ToDate = toDate      // إضافة toDate في الـ DTO
+                    Agencies = new List<AgencyyApplicationStatsDto>()
                 });
             }
 
@@ -747,8 +754,6 @@ namespace SmartHiring.APIs.Controllers
             && a.AgencyId != null
             && a.ApplicationDate >= fromDate
             && a.ApplicationDate <= toDate);
-
-
 
             var agencyIds = applications.Select(a => a.AgencyId).Distinct().ToList();
 
@@ -775,8 +780,6 @@ namespace SmartHiring.APIs.Controllers
                 CompanyId = companyId,
                 TotalAgencies = agencyStats.Count(),
                 Agencies = agencyStats,
-                FromDate = fromDate,  // إضافة fromDate في الـ DTO
-                ToDate = toDate      // إضافة toDate في الـ DTO
             };
 
             return Ok(report);
@@ -902,10 +905,10 @@ namespace SmartHiring.APIs.Controllers
                 Jobs = paidPosts.Select(p => new PaidJobInfoDto
                 {
                     JobId = p.Id,
+                    City = p.City,
+                    Requirements = p.Requirements,
                     JobName = p.JobTitle
-                }).ToList(),
-                FromDate = fromDate,  // إضافة التاريخ إلى النتيجة
-                ToDate = toDate       // إضافة التاريخ إلى النتيجة
+                }).ToList()
             };
 
             return Ok(report);
@@ -941,11 +944,8 @@ namespace SmartHiring.APIs.Controllers
                 if (!postIds.Any())
                     return Ok(new
                     {
-                        Title = "Jobs, Total Application",
-                        FromDate = fromDate.ToString("yyyy-MM-dd"),
-                        ToDate = toDate.ToString("yyyy-MM-dd"),
-                        Year = DateTime.Now.Year,
-                        Total = 0,
+                        TotalApplications = 0,
+                        TotalJob = 0,
                         Jobs = new List<JobApplicationsCountDto>()
                     });
 
@@ -966,11 +966,8 @@ namespace SmartHiring.APIs.Controllers
 
             var response = new
             {
-                Title = "Jobs, Total Application",
-                FromDate = fromDate.ToString("yyyy-MM-dd"),
-                ToDate = toDate.ToString("yyyy-MM-dd"),
-                Year = DateTime.Now.Year,
-                Total = jobStats.Sum(j => j.JobAppliedNumber),
+                TotalApplications = jobStats.Sum(j => j.JobAppliedNumber),
+                TotalJob = jobStats.Sum(j => j.JobAppliedNumber),
                 Jobs = jobStats
             };
 
@@ -1011,7 +1008,7 @@ namespace SmartHiring.APIs.Controllers
             var interviews = await _interviewRepo.GetAllWithSpecAsync(spec);
 
             // Calculate the total number of interviews  
-            var totalInterviews = interviews.Count();
+            var totalInterviews = interviews.Count()+1;
 
             // Filter out the pending interviews  
             var pendingInterviewsList = interviews
@@ -1019,14 +1016,13 @@ namespace SmartHiring.APIs.Controllers
                 .Select(i => new PendingInterviewDto
                 {
                     JobInterviewName = i.Post.JobTitle,
+                    Location = i.Location,
                     Date = i.Date
                 }).ToList();
 
             // Create the summary DTO with the added date range information  
             var result = new PendingInterviewSummaryDto
             {
-                FromDate = fromDate, // Add the fromDate parameter to the DTO  
-                ToDate = toDate,     // Add the toDate parameter to the DTO  
                 TotalInterviews = totalInterviews,
                 TotalPendingInterviews = pendingInterviewsList.Count,
                 PendingInterviews = pendingInterviewsList
@@ -1084,9 +1080,7 @@ namespace SmartHiring.APIs.Controllers
             {
                 TotalJobs = filteredJobs.Count(),
                 JobsClosed = closedJobs,
-                TotalClosedJobs = closedJobs.Count,
-                FromDate = fromDate,
-                ToDate = toDate
+                TotalClosedJobs = closedJobs.Count(),
             };
 
             return Ok(report);
