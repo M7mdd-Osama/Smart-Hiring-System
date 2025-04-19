@@ -42,7 +42,6 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.LogoUrl, O => O.MapFrom<PictureUrlResolver<Post, PostToReturnDto>>())
             .ForMember(dest => dest.HRName, opt => opt.MapFrom(src => src.HR.DisplayName))
             .ForMember(dest => dest.TotalApplications, opt => opt.MapFrom(src => src.Applications.Count))
-            .ForMember(dest => dest.SelectedCandidates, opt => opt.MapFrom(src => src.CandidateLists.Count))
             .ForMember(dest => dest.JobCategories, opt => opt.MapFrom(src => src.PostJobCategories.Select(c => c.JobCategory.Name)))
             .ForMember(dest => dest.JobTypes, opt => opt.MapFrom(src => src.PostJobTypes.Select(t => t.JobType.TypeName)))
             .ForMember(dest => dest.Workplaces, opt => opt.MapFrom(src => src.PostWorkplaces.Select(w => w.Workplace.WorkplaceType)))
@@ -197,7 +196,8 @@ public class MappingProfiles : Profile
             .ForMember(d => d.Email, o => o.MapFrom(s => s.Applicant.Email))
             .ForMember(d => d.ApplicantPhone, o => o.MapFrom(s => s.Applicant.Phone))
             .ForMember(d => d.CompanyPhone, o => o.MapFrom(s => s.HR.HRCompany.Phone))
-            .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.HR.HRCompany.Name));
+            .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.HR.HRCompany.Name))
+            .ForMember(d => d.BusinessEmail, o => o.MapFrom(s => s.HR.HRCompany.BusinessEmail));
 
         CreateMap<SubmitApplicationDto, Applicant>();
 
@@ -223,19 +223,18 @@ public class MappingProfiles : Profile
 
 
 
-        // لو حبيت تعمل map بين الكيان و DTO:
         CreateMap<Company, CompanyCountReportDto>()
-            .ForMember(dest => dest.TotalCompanies, opt => opt.Ignore()); // هنحسب العدد بنفسنا
+            .ForMember(dest => dest.TotalCompanies, opt => opt.Ignore()); 
 
         CreateMap<AppUser, AgencyCountReportDto>()
-            .ForMember(dest => dest.TotalAgencies, opt => opt.Ignore()); // هنحسب العدد في الكود
+            .ForMember(dest => dest.TotalAgencies, opt => opt.Ignore());
 
         CreateMap<Post, JobClosedCountReportDto>()
-            .ForMember(dest => dest.TotalClosedJobs, opt => opt.MapFrom(src => 1));  // Placeholder for actual job count
+            .ForMember(dest => dest.TotalClosedJobs, opt => opt.MapFrom(src => 1)); 
 
         CreateMap<Post, JobApplicationsCountDto>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.JobTitle)) // ✅ تصحيح هنا
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.JobTitle))
             .ForMember(dest => dest.JobAppliedNumber, opt => opt.MapFrom(src => src.Applications.Count));
 
 

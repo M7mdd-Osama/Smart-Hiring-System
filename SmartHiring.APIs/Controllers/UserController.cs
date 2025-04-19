@@ -73,6 +73,12 @@ namespace SmartHiring.APIs.Controllers
             if (request.AgencyName != null)
                 user.AgencyName = request.AgencyName;
 
+            if (!string.IsNullOrEmpty(request.Email))
+                user.Email = request.Email;
+
+            if (!string.IsNullOrEmpty(request.PhoneNumber))
+                user.PhoneNumber = request.PhoneNumber;
+
             if (roles.Contains("Manager"))
             {
                 if (request.CompanyLogo != null)

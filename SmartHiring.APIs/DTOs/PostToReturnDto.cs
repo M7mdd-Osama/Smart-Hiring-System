@@ -26,7 +26,6 @@
 		public string HRName { get; set; }
 
 		public int TotalApplications { get; set; }
-		public int SelectedCandidates { get; set; }
 
 		public ICollection<string> JobCategories { get; set; }
 		public ICollection<string> JobTypes { get; set; }
