@@ -108,10 +108,8 @@ namespace SmartHiring.APIs.Controllers
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(userEmail))
                 return Unauthorized(new ApiResponse(401, "User email not found in token"));
-
             var user = await _userManager.Users
                 .FirstOrDefaultAsync(u => u.Email == userEmail);
-
             if (user == null)
                 return Unauthorized(new ApiResponse(401, "User not found"));
 
@@ -121,7 +119,8 @@ namespace SmartHiring.APIs.Controllers
             if (!jobs.Any())
                 return NotFound(new ApiResponse(404, "No posts found"));
 
-            var savedPostIds = (await _unitOfWork.Repository<SavedPost>().GetAllWithSpecAsync(new SavedPostSpec(user.Id)))
+            var savedPostIds = (await _unitOfWork.Repository<SavedPost>()
+                                    .GetAllWithSpecAsync(new SavedPostSpec(user.Id)))
                                     .Select(s => s.PostId)
                                     .ToHashSet();
 
@@ -133,7 +132,8 @@ namespace SmartHiring.APIs.Controllers
             foreach (var post in mappedAgencyPosts)
                 post.IsSaved = savedPostIds.Contains(post.Id);
 
-            return Ok(new Pagination<PostToReturnForAgencyDto>(Params.PageIndex, Params.PageSize, mappedAgencyPosts, count));
+            return Ok(new Pagination<PostToReturnForAgencyDto>(Params.PageIndex,
+                Params.PageSize, mappedAgencyPosts, count));
         }
 
         #endregion
@@ -159,7 +159,8 @@ namespace SmartHiring.APIs.Controllers
 
         [Authorize(Roles = "HR,Manager,Agency")]
         [HttpPatch("post_save_status")]
-        public async Task<IActionResult> UpdateSaveStatus([FromQuery] int post_id, [FromBody] SaveStatusDto request)
+        public async Task<IActionResult> UpdateSaveStatus([FromQuery] int post_id,
+                                                          [FromBody] SaveStatusDto request)
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
 
@@ -174,8 +175,9 @@ namespace SmartHiring.APIs.Controllers
             if (post == null)
                 return NotFound(new ApiResponse(404, "Job not found"));
 
-            var savedPost = await _unitOfWork.Repository<SavedPost>().GetFirstOrDefaultAsync(s => s.UserId == user.Id && s.PostId == post_id);
-
+            var savedPost = await _unitOfWork.Repository<SavedPost>()
+                                             .GetFirstOrDefaultAsync(s => s.UserId == user.Id &&
+                                             s.PostId == post_id);
             if (request.Status)
             {
                 if (savedPost == null)
@@ -265,40 +267,44 @@ namespace SmartHiring.APIs.Controllers
 			return Ok(mappedAgencyPosts);
 		}
 
-		#endregion
+        #endregion
 
-		#region Create & Update & Delete Post
+        #region Create & Update & Delete Post
 
-		[Authorize(Roles = "HR")]
-		[HttpPost]
-		public async Task<IActionResult> CreateJob([FromBody] PostCreationDto postDto)
-		{
-			if (!ModelState.IsValid) return BadRequest(ModelState);
+        #region Create Post
+        [Authorize(Roles = "HR")]
+        [HttpPost]
+        public async Task<IActionResult> CreatePost([FromBody] PostCreationDto postDto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-			var userEmail = User.FindFirstValue(ClaimTypes.Email);
-			if (string.IsNullOrEmpty(userEmail))
-				return Unauthorized("User email not found in token");
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized("User email not found in token");
 
-			var hr = await _userManager.Users
-				.Where(u => u.Email == userEmail)
-				.Include(u => u.HRCompany)
-				.FirstOrDefaultAsync();
+            var hr = await _userManager.Users
+                .Where(u => u.Email == userEmail)
+                .Include(u => u.HRCompany)
+                .FirstOrDefaultAsync();
 
-			if (hr == null || hr.HRCompany == null)
-				return BadRequest("HR or company not found.");
+            if (hr == null || hr.HRCompany == null)
+                return BadRequest("HR or company not found.");
 
-			var post = _mapper.Map<Post>(postDto);
-			post.HRId = hr.Id;
-			post.CompanyId = hr.HRCompany.Id;
-			post.PostDate = DateTime.UtcNow;
-			post.PaymentStatus = "Pending Payment";
+            var post = _mapper.Map<Post>(postDto);
+            post.HRId = hr.Id;
+            post.CompanyId = hr.HRCompany.Id;
+            post.PostDate = DateTime.UtcNow;
+            post.PaymentStatus = "Pending Payment";
 
-			await _unitOfWork.Repository<Post>().AddAsync(post);
-			await _unitOfWork.CompleteAsync();
+            await _unitOfWork.Repository<Post>().AddAsync(post);
+            await _unitOfWork.CompleteAsync();
 
-			return Ok(new { message = "Job created successfully", postId = post.Id });
-		}
+            return Ok(new { message = "Job created successfully", postId = post.Id });
+        }
 
+        #endregion
+
+        #region Update Post
         [Authorize(Roles = "HR")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePost(int id, [FromBody] PostUpdateDto updateDto)
@@ -376,6 +382,9 @@ namespace SmartHiring.APIs.Controllers
             return Ok(new ApiResponse(200, "Post updated successfully"));
         }
 
+        #endregion
+
+        #region Delete Post
         [Authorize(Roles = "HR")]
 		[HttpDelete("{id}")]
 		public async Task<IActionResult> DeletePost(int id)
@@ -403,7 +412,9 @@ namespace SmartHiring.APIs.Controllers
 
 			return Ok(new ApiResponse(200, "Post and all related data deleted successfully"));
 		}
+		#endregion
 
 		#endregion
+
 	}
 }

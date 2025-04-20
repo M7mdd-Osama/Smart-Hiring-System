@@ -89,58 +89,65 @@ namespace SmartHiring.APIs.Controllers
 
         #region Mohsen
 
-        #region Get Top Agencies Report
-        [Authorize(Roles = "Manager,HR")]
-        [HttpGet("top-agencies")]
-        [ProducesResponseType(typeof(TopAgencyDto), StatusCodes.Status200OK)]
-        public async Task<ActionResult<TopAgencyDto>> GetTopAgencies()
+        #region GetTopAgenciesByApplications
+
+        [Authorize(Roles = "Admin,Manager")]
+        [HttpGet("top-agencies-by-applications")]
+        public async Task<ActionResult<TopAgencyDto>> GetTopAgenciesByApplications(DateTime fromDate, DateTime toDate)
+
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
-
             if (string.IsNullOrEmpty(userEmail))
                 return Unauthorized(new ApiResponse(401, "User email not found"));
 
-            var user = await _agencyRepo.Users
+            var user = await _userManager.Users
                 .Include(u => u.ManagedCompany)
+                .Include(u => u.HRCompany)
                 .FirstOrDefaultAsync(u => u.Email == userEmail);
 
             if (user == null)
                 return Unauthorized(new ApiResponse(401, "User not found"));
 
-            int? companyId = null;
+            var isAdmin = User.IsInRole("Admin");
 
-            if (User.IsInRole("Manager"))
+            int? companyId = isAdmin ? null : user.ManagedCompany?.Id ?? user.HRCompany?.Id;
+
+            if (isAdmin)
             {
-                companyId = user.ManagedCompany?.Id;
-                if (companyId == null)
-                    return BadRequest(new ApiResponse(400, "Manager not associated with a company"));
+                var agencies = await _userManager.GetUsersInRoleAsync("Agency");
+
+                var report = new TopAgencyDto
+                {
+                    TotalAgencies = agencies.Count,
+                    TopAgencies = agencies.Select(a => new TopAgencyItemDto
+                    {
+                        Id = a.Id,
+                        Name = a.DisplayName,
+                        JobAppliedNumber = 0 
+                    }).ToList()
+                };
+
+                return Ok(report);
             }
+            var spec = new ApplicationsWithPostAndAgencySpec(companyId, fromDate, toDate);
+            var applications = await _applicationRepo.GetAllWithSpecAsync(spec);
 
-            var spec = new HiredInterviewsWithHRSpec(companyId);
-            var interviews = await _interviewRepo.GetAllWithSpecAsync(spec);
-
-            var grouped = interviews
-                .Where(i => i.HR != null)
-                .GroupBy(i => i.HR)
+            var grouped = applications
+                .Where(a => a.Agency != null)
+                .GroupBy(a => a.AgencyId)
                 .Select(g => new TopAgencyItemDto
                 {
-                    Id = g.Key.Id.ToString(),
-                    Name = $"{g.Key.FirstName} {g.Key.LastName}",
+                    Id = g.Key,
+                    Name = g.First().Agency.DisplayName,
                     JobAppliedNumber = g.Count()
                 })
-                .OrderByDescending(a => a.JobAppliedNumber)
                 .ToList();
 
-            var agencyUsers = await _agencyRepo.GetUsersInRoleAsync("Agency");
-
-            var reportDto = new TopAgencyDto
+            return Ok(new TopAgencyDto
             {
-                TotalAgencies = agencyUsers.Count,
-                TopAgenciesCount = grouped.Count,
-                TopAgencies = grouped,
-            };
-
-            return Ok(reportDto);
+                TotalAgencies = grouped.Count,
+                TopAgencies = grouped
+            });
         }
         #endregion
 
@@ -148,7 +155,7 @@ namespace SmartHiring.APIs.Controllers
         [Authorize(Roles = "HR,Manager")]
         [HttpGet("jobs/fill-status")]
         [ProducesResponseType(typeof(JobFillStatusReportDto), StatusCodes.Status200OK)]
-        public async Task<ActionResult<JobFillStatusReportDto>> GetJobsFillStatusReport()
+        public async Task<ActionResult<JobFillStatusReportDto>> GetJobsFillStatusReport(DateTime fromDate, DateTime toDate)
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
 
@@ -168,7 +175,7 @@ namespace SmartHiring.APIs.Controllers
             if (company == null)
                 return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
 
-            var spec = new JobsWithInterviewsSpec(company.Id);
+            var spec = new JobsWithInterviewsSpec(company.Id, fromDate, toDate);
             var jobs = await _postRepo.GetAllWithSpecAsync(spec);
 
             var filledJobs = jobs
@@ -195,53 +202,54 @@ namespace SmartHiring.APIs.Controllers
         #endregion
 
         #region Get AI Screening Ratio
-        [Authorize(Roles = "Admin,HR")]
-        [HttpGet("ai/acceptance-rejection-ratio/{jobId}")]
-        [ProducesResponseType(typeof(AIScreeningReportDto), StatusCodes.Status200OK)]
-        public async Task<ActionResult<AIScreeningReportDto>> GetAIScreeningRatio(int jobId)
-        {
-            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+        //[Authorize(Roles = "Admin,HR")]
+        //[HttpGet("ai/acceptance-rejection-ratio/{jobId}")]
+        //[ProducesResponseType(typeof(AIScreeningReportDto), StatusCodes.Status200OK)]
+        //public async Task<ActionResult<AIScreeningReportDto>> GetAIScreeningRatio(int jobId)
+        //{
+        //    var userEmail = User.FindFirstValue(ClaimTypes.Email);
 
-            if (string.IsNullOrEmpty(userEmail))
-                return Unauthorized(new ApiResponse(401, "User email not found"));
+        //    if (string.IsNullOrEmpty(userEmail))
+        //        return Unauthorized(new ApiResponse(401, "User email not found"));
 
-            var user = await _agencyRepo.Users
-                .Include(u => u.HRCompany)
-                .FirstOrDefaultAsync(u => u.Email == userEmail);
+        //    var user = await _agencyRepo.Users
+        //        .Include(u => u.HRCompany)
+        //        .FirstOrDefaultAsync(u => u.Email == userEmail);
 
-            if (user == null)
-                return Unauthorized(new ApiResponse(401, "User not found"));
+        //    if (user == null)
+        //        return Unauthorized(new ApiResponse(401, "User not found"));
 
-            if (User.IsInRole("HR"))
-            {
-                var jobSpec = new JobWithCompanySpec(jobId);
-                var job = await _postRepo.GetByEntityWithSpecAsync(jobSpec);
+        //    if (User.IsInRole("HR"))
+        //    {
+        //        var jobSpec = new JobWithCompanySpec(jobId);
+        //        var job = await _postRepo.GetByEntityWithSpecAsync(jobSpec);
 
-                if (job == null || job.CompanyId != user.HRCompany?.Id)
-                    return Forbid();
-            }
+        //        if (job == null || job.CompanyId != user.HRCompany?.Id)
+        //            return Forbid();
+        //    }
 
-            var spec = new ApplicationsForJobSpec(jobId);
-            var applications = await _applicationRepo.GetAllWithSpecAsync(spec);
+        //    var spec = new ApplicationsForJobSpec(jobId);
+        //    var applications = await _applicationRepo.GetAllWithSpecAsync(spec);
 
-            var accepted = applications.Count(a => a.IsShortlisted);
-            var rejected = applications.Count(a => !a.IsShortlisted);
+        //    var accepted = applications.Count(a => a.IsShortlisted);
+        //    var rejected = applications.Count(a => !a.IsShortlisted);
 
-            var result = new AIScreeningReportDto
-            {
-                AcceptedByAI = accepted,
-                RejectedByAI = rejected
-            };
+        //    var result = new AIScreeningReportDto
+        //    {
+        //        AcceptedByAI = accepted,
+        //        RejectedByAI = rejected
+        //    };
 
-            return Ok(result);
-        }
+        //    return Ok(result);
+        //}
         #endregion
 
         #region Get Interview Success Rate
         [Authorize(Roles = "HR")]
         [HttpGet("interview/success-rate/{jobId}")]
         [ProducesResponseType(typeof(InterviewSuccessRateDto), StatusCodes.Status200OK)]
-        public async Task<ActionResult<InterviewSuccessRateDto>> GetInterviewSuccessRate(int jobId)
+        public async Task<ActionResult<InterviewSuccessRateDto>> GetInterviewSuccessRate(
+            int jobId, DateTime fromDate, DateTime toDate)
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(userEmail))
@@ -265,7 +273,7 @@ namespace SmartHiring.APIs.Controllers
             if (job == null || job.CompanyId != user.HRCompany.Id)
                 return Forbid();
 
-            var spec = new InterviewsForJobSpec(jobId);
+            var spec = new InterviewsForJobSpec(jobId, fromDate, toDate);
             var interviews = await _interviewRepo.GetAllWithSpecAsync(spec);
 
             var total = interviews.Count();
@@ -300,7 +308,8 @@ namespace SmartHiring.APIs.Controllers
         [Authorize(Roles = "Manager,HR")]
         [HttpGet("applications/{companyId}")]
         [ProducesResponseType(typeof(PostApplicationsDto), StatusCodes.Status200OK)]
-        public async Task<ActionResult<PostApplicationsDto>> GetPostApplications(int companyId)
+        public async Task<ActionResult<PostApplicationsDto>> GetPostApplications(
+            int companyId, DateTime fromDate, DateTime toDate)
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(userEmail))
@@ -319,14 +328,14 @@ namespace SmartHiring.APIs.Controllers
             if (userCompanyId != companyId)
                 return Forbid();
 
-            var spec = new PostsWithApplicationsSpec(companyId);
+            var spec = new PostsWithApplicationsSpec(companyId, fromDate, toDate);
             var posts = await _postRepo.GetAllWithSpecAsync(spec);
 
             var jobData = posts.Select(p => new JobApplicationDataDto
             {
                 JobName = p.JobTitle,
-                ApplicationNumber = p.Applications?.Count ?? 0,
-                JobId = p.Id.ToString()
+                JobId = p.Id.ToString(),
+                ApplicationNumber = p.Applications?.Count() ?? 0
             }).ToList();
 
             var totalApplications = jobData.Sum(j => j.ApplicationNumber);
@@ -346,7 +355,8 @@ namespace SmartHiring.APIs.Controllers
         [Authorize(Roles = "HR")]
         [HttpGet("jobs/top-applications-by-rank")]
         [ProducesResponseType(typeof(RankedApplicationsReportDto), StatusCodes.Status200OK)]
-        public async Task<ActionResult<RankedApplicationsReportDto>> GetTopApplicationsByRank()
+        public async Task<ActionResult<RankedApplicationsReportDto>> GetTopApplicationsByRank(
+            DateTime fromDate, DateTime toDate)
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(userEmail))
@@ -363,7 +373,7 @@ namespace SmartHiring.APIs.Controllers
             if (company == null)
                 return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
 
-            var spec = new ApplicationsWithJobSpec(company.Id);
+            var spec = new ApplicationsWithJobSpec(company.Id, fromDate, toDate);
             var applications = await _applicationRepo.GetAllWithSpecAsync(spec);
 
             var topApplications = applications
@@ -384,10 +394,11 @@ namespace SmartHiring.APIs.Controllers
         #endregion
 
         #region Get Most Vs Least Applied Jobs
+
         [Authorize(Roles = "Manager,HR")]
         [HttpGet("jobs/most-vs-least-applied")]
         [ProducesResponseType(typeof(JobApplicationComparisonDto), StatusCodes.Status200OK)]
-        public async Task<ActionResult<JobApplicationComparisonDto>> GetMostVsLeastAppliedJobs()
+        public async Task<ActionResult<JobApplicationComparisonDto>> GetMostVsLeastAppliedJobs(DateTime fromDate, DateTime toDate)
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(userEmail))
@@ -405,7 +416,8 @@ namespace SmartHiring.APIs.Controllers
             if (companyId == null)
                 return Forbid();
 
-            var spec = new PostsWithApplicationsSpec(companyId.Value);
+            // Get all posts (حتى اللي مالهاش تطبيقات)
+            var spec = new PostsWithApplicationsSpec(companyId.Value, fromDate, toDate);
             var posts = await _postRepo.GetAllWithSpecAsync(spec);
 
             if (!posts.Any())
@@ -417,89 +429,193 @@ namespace SmartHiring.APIs.Controllers
                     LeastJobCount = 0,
                     CandidatesData = new CandidatesDataDto
                     {
-                        MostJobCandidates = new List<string>(),
-                        LeastJobCandidates = new List<string>()
+                        MostJobTitle = new List<string> { "N/A" },
+                        LeastJobTitle = new List<string> { "N/A" }
                     }
                 });
             }
 
-            var ordered = posts
+            // 👇 نرجع كل الوظائف مهما كان عليها Applications
+            var jobsWithCounts = posts
                 .Select(p => new
                 {
-                    Count = p.Applications?.Count ?? 0,
-                    Candidates = p.Applications?
-                        .Select(a => $"{a.Applicant.FName} {a.Applicant.LName}")
-                        .ToList() ?? new List<string>()
+                    Title = p.JobTitle,
+                    Count = p.Applications?.Count ?? 0
                 })
-                .OrderByDescending(p => p.Count)
                 .ToList();
 
-            var most = ordered.First();
-            var least = ordered.Last();
+            var maxCount = jobsWithCounts.Max(j => j.Count);
+            var minCount = jobsWithCounts.Min(j => j.Count);
+
+            var mostJobTitles = jobsWithCounts
+                .Where(j => j.Count == maxCount)
+                .Select(j => j.Title)
+                .ToList();
+
+            var leastJobTitles = jobsWithCounts
+                .Where(j => j.Count == minCount && !mostJobTitles.Contains(j.Title)) // نستبعد الـ most
+                .Select(j => j.Title)
+                .ToList();
 
             var result = new JobApplicationComparisonDto
             {
-                TotalJobsApplied = ordered.Sum(p => p.Count),
-                MostJobCount = most.Count,
-                LeastJobCount = least.Count,
+                TotalJobsApplied = jobsWithCounts.Count, // عدد الوظائف بالكامل
+                MostJobCount = mostJobTitles.Count,
+                LeastJobCount = leastJobTitles.Count,
                 CandidatesData = new CandidatesDataDto
                 {
-                    MostJobCandidates = most.Candidates,
-                    LeastJobCandidates = least.Candidates
+                    MostJobTitle = mostJobTitles,
+                    LeastJobTitle = leastJobTitles.Any() ? leastJobTitles : new List<string> { "N/A" }
                 }
             };
 
             return Ok(result);
         }
+
+
         #endregion
 
-        #region Get AI Screening Summary
-        [Authorize(Roles = "HR,Manager")]
-        [HttpGet("ai-screening/summary/{jobId}")]
-        [ProducesResponseType(typeof(AIScreeningSummaryDto), StatusCodes.Status200OK)]
-        public async Task<ActionResult<AIScreeningSummaryDto>> GetAIScreeningSummary(int jobId)
+        //#region Get AI Screening Summary
+        //[Authorize(Roles = "HR,Manager")]
+        //[HttpGet("ai-screening/summary/{jobId}")]
+        //[ProducesResponseType(typeof(AIScreeningSummaryDto), StatusCodes.Status200OK)]
+        //public async Task<ActionResult<AIScreeningSummaryDto>> GetAIScreeningSummary(int jobId)
+        //{
+        //    var userEmail = User.FindFirstValue(ClaimTypes.Email);
+        //    if (string.IsNullOrEmpty(userEmail))
+        //        return Unauthorized(new ApiResponse(401, "User email not found"));
+
+        //    var user = await _agencyRepo.Users
+        //        .Include(u => u.HRCompany)
+        //        .Include(u => u.ManagedCompany)
+        //        .FirstOrDefaultAsync(u => u.Email == userEmail);
+
+        //    if (user == null)
+        //        return Unauthorized(new ApiResponse(401, "User not found"));
+
+        //    var jobSpec = new JobWithCompanySpec(jobId);
+        //    var job = await _postRepo.GetByEntityWithSpecAsync(jobSpec);
+
+        //    var userCompanyId = user.HRCompany?.Id ?? user.ManagedCompany?.Id;
+
+        //    if (job == null || job.CompanyId != userCompanyId)
+        //        return Forbid();
+
+        //    var spec = new ApplicationsWithApplicantSpec(jobId);
+        //    var applications = await _applicationRepo.GetAllWithSpecAsync(spec);
+
+        //    var accepted = applications
+        //        .Where(a => a.IsShortlisted)
+        //        .Select(a => _mapper.Map<ApplicantDto>(a.Applicant))
+        //        .ToList();
+
+        //    var rejected = applications
+        //        .Where(a => !a.IsShortlisted)
+        //        .Select(a => _mapper.Map<ApplicantDto>(a.Applicant))
+        //        .ToList();
+
+        //    var result = new AIScreeningSummaryDto
+        //    {
+        //        AcceptedApplicants = accepted,
+        //        RejectedApplicants = rejected
+        //    };
+
+        //    return Ok(result);
+        //}
+        //#endregion
+
+        #region Get Company Post Status
+
+        [Authorize(Roles = "Admin,Manager,HR")]
+        [HttpGet("company-post-stats")]
+        public async Task<IActionResult> GetCompanyPostStatus([FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
         {
-            var userEmail = User.FindFirstValue(ClaimTypes.Email);
-            if (string.IsNullOrEmpty(userEmail))
-                return Unauthorized(new ApiResponse(401, "User email not found"));
+            var email = User.FindFirstValue(ClaimTypes.Email);
+            var currentUser = await _userManager.FindByEmailAsync(email);
 
-            var user = await _agencyRepo.Users
-                .Include(u => u.HRCompany)
-                .Include(u => u.ManagedCompany)
-                .FirstOrDefaultAsync(u => u.Email == userEmail);
+            int? companyId = null;
 
-            if (user == null)
-                return Unauthorized(new ApiResponse(401, "User not found"));
-
-            var jobSpec = new JobWithCompanySpec(jobId);
-            var job = await _postRepo.GetByEntityWithSpecAsync(jobSpec);
-
-            var userCompanyId = user.HRCompany?.Id ?? user.ManagedCompany?.Id;
-
-            if (job == null || job.CompanyId != userCompanyId)
-                return Forbid();
-
-            var spec = new ApplicationsWithApplicantSpec(jobId);
-            var applications = await _applicationRepo.GetAllWithSpecAsync(spec);
-
-            var accepted = applications
-                .Where(a => a.IsShortlisted)
-                .Select(a => _mapper.Map<ApplicantDto>(a.Applicant))
-                .ToList();
-
-            var rejected = applications
-                .Where(a => !a.IsShortlisted)
-                .Select(a => _mapper.Map<ApplicantDto>(a.Applicant))
-                .ToList();
-
-            var result = new AIScreeningSummaryDto
+            var roles = await _userManager.GetRolesAsync(currentUser);
+            if (roles.Contains("Manager") && currentUser.ManagedCompany != null)
             {
-                AcceptedApplicants = accepted,
-                RejectedApplicants = rejected
+                companyId = currentUser.ManagedCompany.Id;
+            }
+            else if (roles.Contains("HR") && currentUser.HRCompany != null)
+            {
+                companyId = currentUser.HRCompany.Id;
+            }
+
+            var spec = new CompaniesWithPostsSpec(companyId);
+            var companies = await _companyRepo.GetAllWithSpecAsync(spec);
+
+            var filteredCompanies = companies
+                .Select(c => new
+                {
+                    Company = c,
+                    PostsInRange = c.Posts.Where(p => p.PostDate >= fromDate && p.PostDate <= toDate).ToList()
+                })
+                .ToList();
+
+            var dto = new CompanyPostStatsDto
+            {
+                TotalCompanies = filteredCompanies.Count,
+                TotalPosts = filteredCompanies.Sum(c => c.PostsInRange.Count),
+                PostsPerCompany = filteredCompanies.Select(c => new CompanyPostCountDto
+                {
+                    CompanyName = c.Company.Name,
+                    TotalPosts = c.PostsInRange.Count
+                }).ToList()
             };
 
-            return Ok(result);
+            return Ok(dto);
         }
+        #endregion
+
+        #region GetApplicantStats
+        [Authorize(Roles = "HR,Manager")]
+        [HttpGet("applicant-stats")]
+        public async Task<IActionResult> GetApplicantStats([FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate)
+        {
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            var currentUser = await _userManager.FindByEmailAsync(userEmail);
+
+            string hrId = null;
+            int? companyId = null;
+
+            if (User.IsInRole("HR"))
+            {
+                hrId = currentUser.Id;
+            }
+            else if (User.IsInRole("Manager"))
+            {
+                companyId = currentUser.HRCompany?.Id;
+            }
+
+            var spec = new ApplicantsWithAgencySpec(hrId, companyId, fromDate, toDate);
+            var applications = await _applicationRepo.GetAllWithSpecAsync(spec);
+
+            var distinctApplicants = applications
+                .GroupBy(a => a.ApplicantId)
+                .Select(g => g.First())
+                .ToList();
+
+            var dto = new ApplicantStatsDto
+            {
+                TotalApplicants = distinctApplicants.Count,
+                ApplicantData = distinctApplicants.Select(a => new ApplicantInfoDto
+                {
+                    ApplicantName = $"{a.Applicant.FName} {a.Applicant.LName}",
+                    AgencyName = a.Agency?.DisplayName ?? "N/A",
+                    Phone = a.Applicant.Phone
+                }).ToList()
+            };
+
+            return Ok(dto);
+        }
+
+
+
+
         #endregion
 
         #endregion
@@ -589,7 +705,6 @@ namespace SmartHiring.APIs.Controllers
         }
         #endregion
 
-
         #region Get Agency Count By Company
         [Authorize(Roles = "Admin,Manager,HR")]
         [HttpGet("companies/{companyId}/agencies-count")]
@@ -631,8 +746,6 @@ namespace SmartHiring.APIs.Controllers
             && a.AgencyId != null
             && a.ApplicationDate >= fromDate
             && a.ApplicationDate <= toDate);
-
-
 
             var agencyIds = applications.Select(a => a.AgencyId).Distinct().ToList();
 
@@ -704,7 +817,6 @@ namespace SmartHiring.APIs.Controllers
                 applications = (await _applicationRepo.GetAllWithSpecAsync(spec)).ToList();
             }
 
-            // Apply date filtering using ApplicationDate
             if (fromDate.HasValue)
                 applications = applications.Where(a => a.ApplicationDate >= fromDate.Value).ToList();
 
@@ -743,8 +855,6 @@ namespace SmartHiring.APIs.Controllers
         }
         #endregion
 
-
-
         #region Get Paid Jobs Created Report 
         [Authorize(Roles = "Admin,Manager,HR")]
         [HttpGet("jobs/created")]
@@ -767,7 +877,7 @@ namespace SmartHiring.APIs.Controllers
 
             if (userRoles.Contains("Admin"))
             {
-                var spec = new PaidJobsByCompanySpec(fromDate, toDate); // Pass dates to the spec
+                var spec = new PaidJobsByCompanySpec(fromDate, toDate); 
                 paidPosts = (await _postRepo.GetAllWithSpecAsync(spec)).ToList();
             }
             else
@@ -776,7 +886,7 @@ namespace SmartHiring.APIs.Controllers
                 if (company == null)
                     return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
 
-                var spec = new PaidJobsByCompanySpec(company.Id, fromDate, toDate); // Pass dates to the spec
+                var spec = new PaidJobsByCompanySpec(company.Id, fromDate, toDate);
                 paidPosts = (await _postRepo.GetAllWithSpecAsync(spec)).ToList();
             }
 
@@ -796,8 +906,8 @@ namespace SmartHiring.APIs.Controllers
         }
         #endregion
 
-
         #region Get Applications Count Per Job 
+
         [Authorize(Roles = "HR,Manager,Agency")]
         [HttpGet("jobs/applications-count")]
         public async Task<ActionResult<object>> GetApplicationsCountPerJob(DateTime fromDate, DateTime toDate)
@@ -815,24 +925,33 @@ namespace SmartHiring.APIs.Controllers
                 return Unauthorized(new ApiResponse(401, "User not found"));
 
             var userRoles = await _userManager.GetRolesAsync(user);
-            IEnumerable<Post> posts;
+            List<Post> posts;
 
             if (userRoles.Contains("Agency"))
             {
-                // Filter applications by ApplicationDate
-                var applications = await _applicationRepo.GetAllAsync(a => a.AgencyId == user.Id && a.ApplicationDate >= fromDate && a.ApplicationDate <= toDate);
-                var postIds = applications.Select(a => a.PostId).Distinct().ToList();
+                var agencyApplications = await _applicationRepo.GetAllAsync(a =>
+                    a.AgencyId == user.Id &&
+                    a.ApplicationDate >= fromDate && a.ApplicationDate <= toDate);
 
-                if (!postIds.Any())
-                    return Ok(new
-                    {
-                        TotalApplications = 0,
-                        TotalJob = 0,
-                        Jobs = new List<JobApplicationsCountDto>()
-                    });
+                var postIds = agencyApplications.Select(a => a.PostId).Distinct().ToList();
 
-                var spec = new PostsWithApplicationsSpec(postIds);
-                posts = await _postRepo.GetAllWithSpecAsync(spec);
+                var spec = new PostsWithApplicationsSpec(p => postIds.Contains(p.Id));
+                posts = (await _postRepo.GetAllWithSpecAsync(spec)).ToList();
+
+                var jobStats = posts.Select(post => new JobApplicationsCountDto
+                {
+                    Name = post.JobTitle,
+                    JobAppliedNumber = post.Applications.Count(a => a.AgencyId == user.Id &&
+                                                                     a.ApplicationDate >= fromDate &&
+                                                                     a.ApplicationDate <= toDate)
+                }).ToList();
+
+                return Ok(new
+                {
+                    TotalApplications = jobStats.Sum(j => j.JobAppliedNumber),
+                    TotalJob = jobStats.Count,
+                    Jobs = jobStats
+                });
             }
             else
             {
@@ -840,37 +959,40 @@ namespace SmartHiring.APIs.Controllers
                 if (userCompany == null)
                     return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
 
-                var spec = new PostsWithApplicationsSpec(userCompany.Id);
-                posts = await _postRepo.GetAllWithSpecAsync(spec);
+                var spec = new PostsWithApplicationsSpec(p =>
+                    p.CompanyId == userCompany.Id &&
+                    p.PaymentStatus == "Paid" &&
+                    p.PostDate >= fromDate && p.PostDate <= toDate);
+
+                posts = (await _postRepo.GetAllWithSpecAsync(spec)).ToList();
+
+                var jobStats = posts.Select(post => new JobApplicationsCountDto
+                {
+                    Name = post.JobTitle,
+                    JobAppliedNumber = post.Applications.Count()
+                }).ToList();
+
+                return Ok(new
+                {
+                    TotalApplications = jobStats.Sum(j => j.JobAppliedNumber),
+                    TotalJob = jobStats.Count,
+                    Jobs = jobStats
+                });
             }
-
-            var jobStats = _mapper.Map<List<JobApplicationsCountDto>>(posts);
-
-            var response = new
-            {
-                TotalApplications = jobStats.Sum(j => j.JobAppliedNumber),
-                TotalJob = jobStats.Sum(j => j.JobAppliedNumber),
-                Jobs = jobStats
-            };
-
-            return Ok(response);
         }
+
         #endregion
-
-
 
         #region Get Pending Interview Summary  
         [Authorize(Roles = "HR,Manager")]
         [HttpGet("interviews/pending-summary")]
         public async Task<ActionResult<PendingInterviewSummaryDto>> GetPendingInterviewSummary(DateTime fromDate, DateTime toDate)
         {
-            // Retrieve the user's email from the token  
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
 
             if (string.IsNullOrEmpty(userEmail))
                 return Unauthorized(new ApiResponse(401, "User email not found in token"));
 
-            // Retrieve the user from the database  
             var user = await _userManager.Users
                 .Include(u => u.HRCompany)
                 .Include(u => u.ManagedCompany)
@@ -879,22 +1001,17 @@ namespace SmartHiring.APIs.Controllers
             if (user == null)
                 return Unauthorized(new ApiResponse(401, "User not found"));
 
-            // Determine the user's company (either HRCompany or ManagedCompany)  
             var userCompany = user.HRCompany ?? user.ManagedCompany;
 
             if (userCompany == null)
                 return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
 
-            // Create the specification for filtering interviews based on the date range and company  
             var spec = new InterviewsWithApplicantsSpec(fromDate, toDate, userCompany.Id);
 
-            // Retrieve interviews matching the specification  
             var interviews = await _interviewRepo.GetAllWithSpecAsync(spec);
 
-            // Calculate the total number of interviews  
-            var totalInterviews = interviews.Count()+1;
+            var totalInterviews = interviews.Count();
 
-            // Filter out the pending interviews  
             var pendingInterviewsList = interviews
                 .Where(i => i.InterviewStatus == InterviewStatus.Pending)
                 .Select(i => new PendingInterviewDto
@@ -904,7 +1021,6 @@ namespace SmartHiring.APIs.Controllers
                     Date = i.Date
                 }).ToList();
 
-            // Create the summary DTO with the added date range information  
             var result = new PendingInterviewSummaryDto
             {
                 TotalInterviews = totalInterviews,
@@ -915,7 +1031,6 @@ namespace SmartHiring.APIs.Controllers
             return Ok(result);
         }
         #endregion
-
 
         #region Get Closed Jobs Count
         [Authorize(Roles = "HR,Manager")]
@@ -945,7 +1060,6 @@ namespace SmartHiring.APIs.Controllers
 
             var filteredJobs = allCompanyJobs.AsQueryable();
 
-            // Use PostDate for date filtering
             if (fromDate.HasValue)
                 filteredJobs = filteredJobs.Where(j => j.PostDate >= fromDate.Value);
             if (toDate.HasValue)
@@ -971,7 +1085,6 @@ namespace SmartHiring.APIs.Controllers
             return Ok(report);
         }
         #endregion
-
 
 
         #region GetAgencyAcceptanceRejectionReport
@@ -1124,9 +1237,6 @@ namespace SmartHiring.APIs.Controllers
             return Ok(result);
         }
         #endregion
-
-
-
 
 
         #endregion

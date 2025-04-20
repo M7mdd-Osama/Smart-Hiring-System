@@ -39,9 +39,11 @@ namespace SmartHiring.APIs.Controllers
 			_tokenService = tokenService;
 		}
 
-		#region Register
+        #region Register
 
-		[HttpPost("RegisterCompany")]
+        #region RegisterCompany
+
+        [HttpPost("RegisterCompany")]
 		public async Task<ActionResult> RegisterCompany([FromForm] RegisterCompanyDto model)
 		{
 			if (await _dbContext.Companies.AnyAsync(c => c.Name == model.CompanyName))
@@ -64,16 +66,16 @@ namespace SmartHiring.APIs.Controllers
 			{
 				Name = model.CompanyName,
 				BusinessEmail = model.Email,
-                Phone = model.PhoneNumber,
-                Password = _passwordHasher.HashPassword(null, model.Password),
+				Phone = model.PhoneNumber,
+				Password = _passwordHasher.HashPassword(null, model.Password),
 				LogoUrl = logoPath,
 				EmailConfirmed = false,
 				ConfirmationCode = AuthHelper.GenerateOTP(),
 				ConfirmationCodeExpires = DateTime.UtcNow.AddMinutes(10),
-				CreatedAt = DateTime.UtcNow 
-            };
+				CreatedAt = DateTime.UtcNow
+			};
 
-            _dbContext.Companies.Add(company);
+			_dbContext.Companies.Add(company);
 			await _dbContext.SaveChangesAsync();
 
 			await _dbContext.SaveChangesAsync();
@@ -83,7 +85,10 @@ namespace SmartHiring.APIs.Controllers
 			return Ok(new ApiResponse(200, "Company registered successfully. Please confirm your email."));
 		}
 
-		[HttpPost("RegisterUsers")]
+        #endregion
+
+        #region RegisterUsers
+        [HttpPost("RegisterUsers")]
 		public async Task<ActionResult<UserDto>> Register(RegisterDto model)
 		{
 			if (model.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
@@ -109,8 +114,8 @@ namespace SmartHiring.APIs.Controllers
 				EmailConfirmed = false,
 				ConfirmationCode = AuthHelper.GenerateOTP(),
 				ConfirmationCodeExpires = DateTime.UtcNow.AddMinutes(10),
-                CreatedAt = DateTime.UtcNow
-            };
+				CreatedAt = DateTime.UtcNow
+			};
 
 			if (model.Role.Equals("HR", StringComparison.OrdinalIgnoreCase) || model.Role.Equals("Manager", StringComparison.OrdinalIgnoreCase))
 			{
@@ -135,27 +140,29 @@ namespace SmartHiring.APIs.Controllers
 
 				await _dbContext.SaveChangesAsync();
 			}
-            else if (model.Role.Equals("Agency", StringComparison.OrdinalIgnoreCase))
-            {
+			else if (model.Role.Equals("Agency", StringComparison.OrdinalIgnoreCase))
+			{
 				if (await _userManager.Users.AnyAsync(u => u.AgencyName == model.AgencyName))
-                    return BadRequest(new ApiResponse(400, "Agency name already exists"));
+					return BadRequest(new ApiResponse(400, "Agency name already exists"));
 
 				user.AgencyName = model.AgencyName;
 
-                var result = await _userManager.CreateAsync(user, model.Password);
-                if (!result.Succeeded)
-                    return BadRequest(new ApiResponse(400, $"Failed to create user: {string.Join(", ", result.Errors.Select(e => e.Description))}"));
-            }
+				var result = await _userManager.CreateAsync(user, model.Password);
+				if (!result.Succeeded)
+					return BadRequest(new ApiResponse(400, $"Failed to create user: {string.Join(", ", result.Errors.Select(e => e.Description))}"));
+			}
 
-            await _userManager.AddToRoleAsync(user, model.Role);
+			await _userManager.AddToRoleAsync(user, model.Role);
 			await _dbContext.SaveChangesAsync();
 
 			await AuthHelper.SendConfirmationEmail(_mailSettings, user.Email, user.ConfirmationCode);
 
 			return Ok(new ApiResponse(200, "User registered successfully. Please confirm your email."));
 		}
+        #endregion
 
-		[HttpPost("ConfirmEmail")]
+        #region ConfirmEmail
+        [HttpPost("ConfirmEmail")]
 		public async Task<ActionResult<UserDto>> ConfirmEmail(ConfirmEmailDto model)
 		{
 			var user = await _userManager.Users
@@ -189,16 +196,16 @@ namespace SmartHiring.APIs.Controllers
 					companyLogo = user.ManagedCompany.LogoUrl;
 				}
 
-                return Ok(new
-                {
-                    DisplayName = !string.IsNullOrEmpty(user.FirstName) && !string.IsNullOrEmpty(user.LastName)
-                        ? $"{user.FirstName} {user.LastName}"
-                        : user.AgencyName ?? "N/A",
-                    user.Email,
-                    Token = await _tokenService.CreateTokenAsync(user, _userManager),
-                    CompanyLogoUrl = companyLogo
-                });
-            }
+				return Ok(new
+				{
+					DisplayName = !string.IsNullOrEmpty(user.FirstName) && !string.IsNullOrEmpty(user.LastName)
+						? $"{user.FirstName} {user.LastName}"
+						: user.AgencyName ?? "N/A",
+					user.Email,
+					Token = await _tokenService.CreateTokenAsync(user, _userManager),
+					CompanyLogoUrl = companyLogo
+				});
+			}
 
 			var company = await _dbContext.Companies.FirstOrDefaultAsync(c => c.BusinessEmail == model.Email);
 
@@ -222,7 +229,10 @@ namespace SmartHiring.APIs.Controllers
 			return Ok(new ApiResponse(200, "Email confirmed successfully."));
 		}
 
-		[HttpPost("ResendOTP")]
+        #endregion
+
+        #region ResendOTP
+        [HttpPost("ResendOTP")]
 		public async Task<IActionResult> ResendOTP(string email)
 		{
 			var user = await _userManager.FindByEmailAsync(email);
@@ -238,6 +248,8 @@ namespace SmartHiring.APIs.Controllers
 
 			return Ok(new ApiResponse(200, "New OTP has been sent"));
 		}
+
+		#endregion
 
 		#endregion
 
@@ -283,11 +295,12 @@ namespace SmartHiring.APIs.Controllers
             });
         }
 
-		#endregion
+        #endregion
 
-		#region Forgot/Reset Password
+        #region Forgot/Reset Password
 
-		[HttpPost("ForgotPassword")]
+        #region Forgot Password
+        [HttpPost("ForgotPassword")]
 		public async Task<IActionResult> ForgotPassword(ForgotPasswordDto model)
 		{
 			var user = await _userManager.FindByEmailAsync(model.Email);
@@ -304,12 +317,14 @@ namespace SmartHiring.APIs.Controllers
 			return Ok(new ApiResponse(200, "OTP has been sent to your email."));
 		}
 
-		[HttpPost("ResetPassword")]
+        #endregion
+
+        #region Reset Password
+        [HttpPost("ResetPassword")]
 		public async Task<IActionResult> ResetPassword(ResetPasswordDto model)
 		{
 			var user = await _userManager.FindByEmailAsync(model.Email);
-			if (user == null)
-				return BadRequest(new ApiResponse(400, "User not found"));
+			if (user == null) return BadRequest(new ApiResponse(400, "User not found"));
 
 			if (user.ConfirmationCodeExpires < DateTime.UtcNow || user.ConfirmationCode != model.Otp)
 				return BadRequest(new ApiResponse(400, "Invalid or expired OTP"));
@@ -322,7 +337,8 @@ namespace SmartHiring.APIs.Controllers
 			var result = await _userManager.ResetPasswordAsync(user, resetToken, model.NewPassword);
 
 			if (!result.Succeeded)
-				return BadRequest(new ApiResponse(400, $"Failed to reset password: {string.Join(", ", result.Errors.Select(e => e.Description))}"));
+				return BadRequest(new ApiResponse(400, $"Failed to reset password: " +
+					$"{string.Join(", ", result.Errors.Select(e => e.Description))}"));
 
 			user.ConfirmationCode = null;
 			user.ConfirmationCodeExpires = null;
@@ -330,6 +346,8 @@ namespace SmartHiring.APIs.Controllers
 
 			return Ok(new ApiResponse(200, "Password has been reset successfully."));
 		}
+
+		#endregion
 
 		#endregion
 

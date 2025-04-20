@@ -49,7 +49,8 @@ namespace SmartHiring.APIs.Controllers
                     return BadRequest(new ApiResponse(400, "Payment Intent ID is required"));
                 }
 
-                var post = await _paymentService.UpdatePaymentStatus(paymentUpdate.PaymentIntentId, paymentUpdate.IsSuccess);
+                var post = await _paymentService.UpdatePaymentStatus(paymentUpdate.PaymentIntentId, 
+                                                                     paymentUpdate.IsSuccess);
                 if (post is null) return NotFound(new ApiResponse(404, "Payment intent not found"));
 
                 var mappedPost = _mapper.Map<Post, PostPaymentDto>(post);
@@ -67,7 +68,8 @@ namespace SmartHiring.APIs.Controllers
             var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
             try
             {
-                var stripeEvent = EventUtility.ConstructEvent(json, Request.Headers["Stripe-Signature"], EndpointSecret);
+                var stripeEvent = EventUtility.ConstructEvent(json, Request.Headers["Stripe-Signature"],
+                                                              EndpointSecret);
                 var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
 
                 if (stripeEvent.Type == EventTypes.PaymentIntentSucceeded)
