@@ -89,7 +89,6 @@ namespace SmartHiring.APIs.Controllers
 
         #region Mohsen
 
-
         #region GetTopAgenciesByApplications
 
         [Authorize(Roles = "Admin,Manager")]
@@ -150,8 +149,6 @@ namespace SmartHiring.APIs.Controllers
                 TopAgencies = grouped
             });
         }
-        #endregion
-
         #endregion
 
         #region Get Jobs Fill Status Report
@@ -478,7 +475,6 @@ namespace SmartHiring.APIs.Controllers
 
         #endregion
 
-
         //#region Get AI Screening Summary
         //[Authorize(Roles = "HR,Manager")]
         //[HttpGet("ai-screening/summary/{jobId}")]
@@ -528,7 +524,8 @@ namespace SmartHiring.APIs.Controllers
         //}
         //#endregion
 
-        #region Get Company PostStatus
+        #region Get Company Post Status
+
         [Authorize(Roles = "Admin,Manager,HR")]
         [HttpGet("company-post-stats")]
         public async Task<IActionResult> GetCompanyPostStatus([FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
@@ -573,7 +570,6 @@ namespace SmartHiring.APIs.Controllers
             return Ok(dto);
         }
         #endregion
-
 
         #region GetApplicantStats
         [Authorize(Roles = "HR,Manager")]

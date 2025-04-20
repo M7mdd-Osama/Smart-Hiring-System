@@ -101,7 +101,7 @@ namespace SmartHiring.APIs
 
 			#endregion
 
-			app.Run();
-		}
+            app.Run("http://0.0.0.0:7064");
+        }
 	}
 }
