@@ -571,10 +571,10 @@ namespace SmartHiring.APIs.Controllers
         }
         #endregion
 
-        #region GetApplicantStats
+        #region GetApplicantStatus
         [Authorize(Roles = "HR,Manager")]
         [HttpGet("applicant-stats")]
-        public async Task<IActionResult> GetApplicantStats([FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate)
+        public async Task<IActionResult> GetApplicantStatus([FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate)
         {
             var userEmail = User.FindFirstValue(ClaimTypes.Email);
             var currentUser = await _userManager.FindByEmailAsync(userEmail);
