@@ -252,6 +252,10 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.JobTitle))
             .ForMember(dest => dest.JobAppliedNumber, opt => opt.MapFrom(src => src.Applications.Count));
 
+
+        CreateMap<Application, AgencyAcceptanceRejectionReportDto>()
+            .ForMember(dest => dest.AgencyName, opt => opt.MapFrom(src => src.Agency.DisplayName));
+
         CreateMap<Company, CompanyPostCountDto>()
     .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Name))
     .ForMember(dest => dest.TotalPosts, opt => opt.MapFrom(src => src.Posts.Count));
@@ -261,6 +265,7 @@ public class MappingProfiles : Profile
         $"{src.Applicant.FName} {src.Applicant.LName}"))
     .ForMember(dest => dest.AgencyName, opt => opt.MapFrom(src => src.Agency.UserName))
     .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.Applicant.Phone));
+
 
 
     }
