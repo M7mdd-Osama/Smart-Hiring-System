@@ -1007,25 +1007,46 @@ namespace SmartHiring.APIs.Controllers
                 return Unauthorized(new ApiResponse(401, "User is not associated with a company"));
 
             var spec = new InterviewsWithApplicantsSpec(fromDate, toDate, userCompany.Id);
-
             var interviews = await _interviewRepo.GetAllWithSpecAsync(spec);
 
             var totalInterviews = interviews.Count();
 
-            var pendingInterviewsList = interviews
+            var pendingInterviews = interviews
                 .Where(i => i.InterviewStatus == InterviewStatus.Pending)
+                .ToList();
+
+            var pendingInterviewsList = pendingInterviews
                 .Select(i => new PendingInterviewDto
                 {
-                    JobInterviewName = i.Post.JobTitle,
+                    ApplicantName = $"{i.Applicant.FName} {i.Applicant.LName}",
                     Location = i.Location,
-                    Date = i.Date
+                    Date = i.Date,
+                    Time = i.Time
                 }).ToList();
+
+            var agencyPendingSummary = pendingInterviews
+                .SelectMany(i => i.Applicant.Applications
+                    .Where(a => a.PostId == i.PostId && a.Agency != null)
+                    .Select(a => new
+                    {
+                        AgencyName = a.Agency.AgencyName,
+                        ApplicantId = a.ApplicantId
+                    })
+                )
+                .GroupBy(x => x.AgencyName)
+                .Select(g => new AgencyPendingSummaryDto
+                {
+                    AgencyName = g.Key,
+                    PendingApplicantsCount = g.Select(x => x.ApplicantId).Distinct().Count()
+                })
+                .ToList();
 
             var result = new PendingInterviewSummaryDto
             {
                 TotalInterviews = totalInterviews,
                 TotalPendingInterviews = pendingInterviewsList.Count,
-                PendingInterviews = pendingInterviewsList
+                PendingInterviews = pendingInterviewsList,
+                AgenciesPendingSummary = agencyPendingSummary
             };
 
             return Ok(result);
@@ -1085,7 +1106,6 @@ namespace SmartHiring.APIs.Controllers
             return Ok(report);
         }
         #endregion
-
 
         #region GetAgencyAcceptanceRejectionReport
         [Authorize(Roles = "Admin")]
@@ -1180,8 +1200,6 @@ namespace SmartHiring.APIs.Controllers
         }
         #endregion
 
-
-
         #region GetCompanyAcceptanceRejectionReport
         [Authorize(Roles = "HR,Manager")]
         [HttpGet("company-acceptance-rejection-report")]
@@ -1237,7 +1255,6 @@ namespace SmartHiring.APIs.Controllers
             return Ok(result);
         }
         #endregion
-
 
         #endregion
 

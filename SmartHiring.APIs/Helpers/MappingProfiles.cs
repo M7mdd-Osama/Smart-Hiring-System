@@ -221,8 +221,6 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.GetFullName()))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
 
-
-
         CreateMap<Company, CompanyCountReportDto>()
             .ForMember(dest => dest.TotalCompanies, opt => opt.Ignore()); 
 
@@ -257,16 +255,14 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.AgencyName, opt => opt.MapFrom(src => src.Agency.DisplayName));
 
         CreateMap<Company, CompanyPostCountDto>()
-    .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Name))
-    .ForMember(dest => dest.TotalPosts, opt => opt.MapFrom(src => src.Posts.Count));
+            .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Name))
+            .ForMember(dest => dest.TotalPosts, opt => opt.MapFrom(src => src.Posts.Count));
 
         CreateMap<Application, ApplicantInfoDto>()
-    .ForMember(dest => dest.ApplicantName, opt => opt.MapFrom(src =>
-        $"{src.Applicant.FName} {src.Applicant.LName}"))
-    .ForMember(dest => dest.AgencyName, opt => opt.MapFrom(src => src.Agency.UserName))
-    .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.Applicant.Phone));
-
-
+            .ForMember(dest => dest.ApplicantName, opt => opt.MapFrom(src =>
+            $"{src.Applicant.FName} {src.Applicant.LName}"))
+            .ForMember(dest => dest.AgencyName, opt => opt.MapFrom(src => src.Agency.UserName))
+            .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.Applicant.Phone));
 
     }
 }

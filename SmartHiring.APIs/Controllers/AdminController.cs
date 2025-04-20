@@ -73,14 +73,20 @@ namespace SmartHiring.APIs.Controllers
         [HttpPut("companies/{companyId}")]
         public async Task<IActionResult> UpdateCompany(int companyId, [FromForm] UpdateCompanyByAdminDto dto)
         {
-            // Use DbContext for complex query with Include
             var company = await _dbContext.Companies
                 .Include(c => c.Manager)
                 .FirstOrDefaultAsync(c => c.Id == companyId);
 
             if (company == null) return NotFound(new ApiResponse(404, "Company not found"));
 
-            company = _mapper.Map(dto, company);
+            if (dto.Name != null)
+                company.Name = dto.Name;
+
+            if (dto.BusinessEmail != null)
+                company.BusinessEmail = dto.BusinessEmail;
+
+            if (dto.Phone != null)
+                company.Phone = dto.Phone;
 
             if (dto.Password != null)
             {
@@ -231,18 +237,38 @@ namespace SmartHiring.APIs.Controllers
         [HttpPut("agencies/{agencyId}")]
         public async Task<IActionResult> UpdateAgency(string agencyId, [FromBody] UpdateAgencyByAdminDto dto)
         {
-            var existingAgency = await _userManager.Users
-                 .FirstOrDefaultAsync(a => a.Email == dto.Email || a.PhoneNumber == dto.PhoneNumber || a.AgencyName == dto.AgencyName);
-
-            if (existingAgency != null)
-            {
-                return BadRequest(new ApiResponse(400, "Agency with the same Email, Phone, or AgencyName already exists."));
-            }
-
             var agency = await _userManager.FindByIdAsync(agencyId);
             if (agency == null) return NotFound(new ApiResponse(404, "Agency not found"));
 
-            agency = _mapper.Map(dto, agency);
+            if (dto.Email != null && dto.Email != agency.Email)
+            {
+                var emailExists = await _userManager.Users.AnyAsync(a => a.Email == dto.Email && a.Id != agencyId);
+                if (emailExists)
+                    return BadRequest(new ApiResponse(400, "Agency with the same Email already exists."));
+            }
+
+            if (dto.PhoneNumber != null && dto.PhoneNumber != agency.PhoneNumber)
+            {
+                var phoneExists = await _userManager.Users.AnyAsync(a => a.PhoneNumber == dto.PhoneNumber && a.Id != agencyId);
+                if (phoneExists)
+                    return BadRequest(new ApiResponse(400, "Agency with the same Phone already exists."));
+            }
+
+            if (dto.AgencyName != null && dto.AgencyName != agency.AgencyName)
+            {
+                var nameExists = await _userManager.Users.AnyAsync(a => a.AgencyName == dto.AgencyName && a.Id != agencyId);
+                if (nameExists)
+                    return BadRequest(new ApiResponse(400, "Agency with the same AgencyName already exists."));
+            }
+
+            if (dto.AgencyName != null)
+                agency.AgencyName = dto.AgencyName;
+
+            if (dto.Email != null)
+                agency.Email = dto.Email;
+
+            if (dto.PhoneNumber != null)
+                agency.PhoneNumber = dto.PhoneNumber;
 
             if (dto.Password != null)
             {
