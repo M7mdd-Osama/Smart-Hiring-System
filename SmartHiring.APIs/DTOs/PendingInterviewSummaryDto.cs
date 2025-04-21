@@ -6,6 +6,7 @@
         public int TotalInterviews { get; set; }
         public int TotalPendingInterviews { get; set; }
         public List<PendingInterviewDto> PendingInterviews { get; set; }
+        public List<AgencyPendingSummaryDto> AgenciesPendingSummary { get; set; }
 
     }
 }

@@ -10,9 +10,9 @@ namespace SmartHiring.Core.Specifications
                 i.Date < toDate.Date.AddDays(1) &&
                 i.Post.CompanyId == companyId)
         {
-            AddInclude(i => i.Applicant);
+            AddInclude(i => i.Applicant.Applications);
+            AddIncludeString("Applicant.Applications.Agency");
             AddInclude(i => i.Post);
         }
     }
-
 }
