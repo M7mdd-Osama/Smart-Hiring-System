@@ -88,7 +88,7 @@ namespace SmartHiring.Repository
         
         public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> predicate)
 		=> await _dbContext.Set<T>().Where(predicate).ToListAsync();
-		
-	}
+        
+    }
 }
 

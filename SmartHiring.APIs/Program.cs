@@ -10,99 +10,101 @@ using SmartHiring.Repository.Data;
 
 namespace SmartHiring.APIs
 {
-	public class Program
-	{
-		public static async Task Main(string[] args)
-		{
+    public class Program
+    {
+        public static async Task Main(string[] args)
+        {
 
-			var builder = WebApplication.CreateBuilder(args);
+            var builder = WebApplication.CreateBuilder(args);
 
-			#region Configure Services - Add services to the container.
+            #region Configure Services - Add services to the container.
 
-			builder.Services.AddControllers()
-			 .AddJsonOptions(options =>
-			 {
-				 options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-				 options.JsonSerializerOptions.WriteIndented = true;
-				 options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-			 });
+            builder.Services.AddControllers()
+             .AddJsonOptions(options =>
+             {
+                 options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+                 options.JsonSerializerOptions.WriteIndented = true;
+                 options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+             });
 
-			builder.Services.AddEndpointsApiExplorer();
-			builder.Services.AddSwaggerGen();
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
 
-			builder.Services.AddDbContext<SmartHiringDbContext>(Options =>
-				Options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), sqlOptions =>
-				{
-					sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-				}));
+            builder.Services.AddDbContext<SmartHiringDbContext>(Options =>
+                Options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), sqlOptions =>
+                {
+                    sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+                }));
 
-			builder.Services.AddApplicationServices();
-			builder.Services.AddIdentityServices(builder.Configuration);
-
-
-			builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
-
-			builder.Services.AddCors(Options =>
-			{
-				Options.AddPolicy("MyPolicy", options =>
-				{
-					options.AllowAnyHeader();
-					options.AllowAnyMethod();
-					options.AllowAnyOrigin();
-				});
-			});
-
-			#endregion
-
-			var app = builder.Build();
+            builder.Services.AddApplicationServices();
+            builder.Services.AddIdentityServices(builder.Configuration);
 
 
-			#region Update-Database
+            builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
 
-			using var Scope = app.Services.CreateScope();
-			var Services = Scope.ServiceProvider;
+            builder.Services.AddCors(Options =>
+            {
+                Options.AddPolicy("MyPolicy", options =>
+                {
+                    options.AllowAnyHeader();
+                    options.AllowAnyMethod();
+                    options.AllowAnyOrigin();
+                });
+            });
+
+            #endregion
+
+            builder.Services.AddHttpClient();
+
+            var app = builder.Build();
 
 
-			var LoggerFactory = Services.GetRequiredService<ILoggerFactory>();
-			try
-			{
-				var dbContext = Services.GetRequiredService<SmartHiringDbContext>();
-				await dbContext.Database.MigrateAsync();
+            #region Update-Database
 
-				var UserManager = Services.GetRequiredService<UserManager<AppUser>>();
-				var RoleManager = Services.GetRequiredService<RoleManager<IdentityRole>>();
-				await AppIdentitySmartHiringContextSeed.SeedUserAsync(UserManager, RoleManager);
-				//await SmartHiringContextSeed.SeedAsync(dbContext);
-			}
-			catch (Exception ex)
-			{
-				var Logger = LoggerFactory.CreateLogger<Program>();
-				Logger.LogError(ex, "An Error Occurred During Applying The Migration");
-			}
+            using var Scope = app.Services.CreateScope();
+            var Services = Scope.ServiceProvider;
 
-			#endregion
 
-			#region Configure - Configure the HTTP request pipeline.
+            var LoggerFactory = Services.GetRequiredService<ILoggerFactory>();
+            try
+            {
+                var dbContext = Services.GetRequiredService<SmartHiringDbContext>();
+                await dbContext.Database.MigrateAsync();
 
-			app.UseMiddleware<ExceptionMiddleware>();
-			if (app.Environment.IsDevelopment())
-			{
-				app.UseSwaggerMiddlewares();
-			}
-			app.UseStatusCodePagesWithReExecute("/errors/{0}");
-			app.UseHttpsRedirection();
-			app.UseStaticFiles();
-			app.UseCors("MyPolicy");
+                var UserManager = Services.GetRequiredService<UserManager<AppUser>>();
+                var RoleManager = Services.GetRequiredService<RoleManager<IdentityRole>>();
+                await AppIdentitySmartHiringContextSeed.SeedUserAsync(UserManager, RoleManager);
+                //await SmartHiringContextSeed.SeedAsync(dbContext);
+            }
+            catch (Exception ex)
+            {
+                var Logger = LoggerFactory.CreateLogger<Program>();
+                Logger.LogError(ex, "An Error Occurred During Applying The Migration");
+            }
 
-			app.UseAuthentication();
-			app.UseAuthorization();
+            #endregion
 
-			app.MapControllers();
+            #region Configure - Configure the HTTP request pipeline.
 
-			#endregion
+            app.UseMiddleware<ExceptionMiddleware>();
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwaggerMiddlewares();
+            }
+            app.UseStatusCodePagesWithReExecute("/errors/{0}");
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+            app.UseCors("MyPolicy");
 
-			app.Run();
+            app.UseAuthentication();
+            app.UseAuthorization();
 
-		}
-	}
+            app.MapControllers();
+
+            #endregion
+
+            app.Run();
+
+        }
+    }
 }

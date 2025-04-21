@@ -336,6 +336,14 @@ namespace SmartHiring.APIs.Controllers
             if (post == null)
                 return NotFound(new ApiResponse(404, "Post not found or not paid"));
 
+            var existingApplicant = await _unitOfWork.Repository<Applicant>()
+                .GetFirstOrDefaultAsync(a => a.Email.ToLower() == dto.Email.ToLower() || a.Phone == dto.Phone);
+
+            if (existingApplicant != null)
+            {
+                return BadRequest(new ApiResponse(400, "An applicant with this email or phone number already exists."));
+            }
+
             var applicant = _mapper.Map<Applicant>(dto);
             await _unitOfWork.Repository<Applicant>().AddAsync(applicant);
             await _unitOfWork.CompleteAsync();

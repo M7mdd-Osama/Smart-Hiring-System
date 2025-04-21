@@ -200,6 +200,7 @@ public class MappingProfiles : Profile
             .ForMember(d => d.BusinessEmail, o => o.MapFrom(s => s.HR.HRCompany.BusinessEmail));
 
         CreateMap<SubmitApplicationDto, Applicant>();
+            //.ForMember(d => d.Email, o => o.MapFrom(s => s.Email));
 
         #endregion
 
