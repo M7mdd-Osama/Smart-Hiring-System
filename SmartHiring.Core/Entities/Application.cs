@@ -10,7 +10,10 @@ namespace SmartHiring.Core.Entities
 		public DateTime ApplicationDate { get; set; }
 		public string CV_Link { get; set; }
 
-		public int ApplicantId { get; set; }
+		public string? ExtractedResumeText { get; set; }
+		public bool IsEvaluatedByAI { get; set; } = false;
+
+        public int ApplicantId { get; set; }
 		[ForeignKey("ApplicantId")]
 		public Applicant Applicant { get; set; }
 

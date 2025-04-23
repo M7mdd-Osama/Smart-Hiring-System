@@ -18,5 +18,5 @@
 		public ICollection<int> Workplaces { get; set; }
 		public ICollection<string> Skills { get; set; }
 		public ICollection<int> CareerLevels { get; set; }
-	}
+    }
 }

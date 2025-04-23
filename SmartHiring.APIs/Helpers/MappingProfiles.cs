@@ -58,8 +58,9 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.PostJobTypes, opt => opt.MapFrom(src => src.JobTypes.Select(id => new PostJobType { JobTypeId = id })))
             .ForMember(dest => dest.PostWorkplaces, opt => opt.MapFrom(src => src.Workplaces.Select(id => new PostWorkplace { WorkplaceId = id })))
             .ForMember(dest => dest.PostCareerLevels, opt => opt.MapFrom(src => src.CareerLevels.Select(id => new PostCareerLevel { CareerLevelId = id })))
-            .ForMember(dest => dest.PostSkills, opt => opt.MapFrom(src => src.Skills.Select(name => new PostSkill { Skill = new Skill { SkillName = name } })));
-
+            .ForMember(dest => dest.PostSkills, opt => opt.MapFrom(src => src.Skills.Select(name => new PostSkill { Skill = new Skill { SkillName = name } })))
+            .ForMember(dest => dest.AggregatedJobData, opt => opt.Ignore());
+        
         CreateMap<Post, PostPaymentDto>()
             .ForMember(dest => dest.PaymentIntentId, opt => opt.NullSubstitute(null))
             .ForMember(dest => dest.ClientSecret, opt => opt.NullSubstitute(null));
