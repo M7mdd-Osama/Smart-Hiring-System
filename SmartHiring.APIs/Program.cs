@@ -14,7 +14,6 @@ namespace SmartHiring.APIs
     {
         public static async Task Main(string[] args)
         {
-
             var builder = WebApplication.CreateBuilder(args);
 
             #region Configure Services - Add services to the container.
@@ -58,12 +57,10 @@ namespace SmartHiring.APIs
 
             var app = builder.Build();
 
-
             #region Update-Database
 
             using var Scope = app.Services.CreateScope();
             var Services = Scope.ServiceProvider;
-
 
             var LoggerFactory = Services.GetRequiredService<ILoggerFactory>();
             try

@@ -9,6 +9,7 @@ using SmartHiring.APIs.Helpers;
 using SmartHiring.Core;
 using SmartHiring.Core.Entities;
 using SmartHiring.Core.Entities.Identity;
+using SmartHiring.Core.Services;
 using SmartHiring.Core.Specifications;
 using System.Security.Claims;
 
@@ -19,15 +20,24 @@ namespace SmartHiring.APIs.Controllers
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly UserManager<AppUser> _userManager;
+        private readonly PdfTextExtractor _pdfTextExtractor;
+        private readonly IResumeEvaluationService _resumeEvaluationService;
+        private readonly ILogger<ApplicationController> _logger;
 
         public ApplicationController(
             IUnitOfWork unitOfWork,
             IMapper mapper,
-            UserManager<AppUser> userManager)
+            UserManager<AppUser> userManager,
+            PdfTextExtractor pdfTextExtractor,
+            IResumeEvaluationService resumeEvaluationService,
+            ILogger<ApplicationController> logger)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _userManager = userManager;
+            _pdfTextExtractor = pdfTextExtractor;
+            _resumeEvaluationService = resumeEvaluationService;
+            _logger = logger;
         }
 
         #region Get Applications For Post
@@ -336,14 +346,6 @@ namespace SmartHiring.APIs.Controllers
             if (post == null)
                 return NotFound(new ApiResponse(404, "Post not found or not paid"));
 
-            var existingApplicant = await _unitOfWork.Repository<Applicant>()
-                .GetFirstOrDefaultAsync(a => a.Email.ToLower() == dto.Email.ToLower() || a.Phone == dto.Phone);
-
-            if (existingApplicant != null)
-            {
-                return BadRequest(new ApiResponse(400, "An applicant with this email or phone number already exists."));
-            }
-
             var applicant = _mapper.Map<Applicant>(dto);
             await _unitOfWork.Repository<Applicant>().AddAsync(applicant);
             await _unitOfWork.CompleteAsync();
@@ -367,14 +369,44 @@ namespace SmartHiring.APIs.Controllers
                 ApplicationDate = DateTime.UtcNow,
                 CV_Link = cvLink,
                 RankScore = 0,
-                IsShortlisted = false
+                IsShortlisted = false,
+                IsEvaluatedByAI = false
             };
             await _unitOfWork.Repository<Application>().AddAsync(application);
             await _unitOfWork.CompleteAsync();
 
+            try
+            {
+                var cvPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", cvLink.TrimStart('/'));
+                var extractedText = await _pdfTextExtractor.ExtractTextFromPdfAsync(cvPath);
+                application.ExtractedResumeText = extractedText;
+
+                await _unitOfWork.Repository<Application>().UpdateAsync(application);
+                await _unitOfWork.CompleteAsync();
+
+                var prediction = await _resumeEvaluationService.EvaluateResumeAsync(postId, extractedText);
+
+                if (prediction != null)
+                {
+                    application.RankScore = prediction.score;
+                    application.IsShortlisted = prediction.classification.Equals("Accepted", StringComparison.OrdinalIgnoreCase);
+                    application.IsEvaluatedByAI = true;
+
+                    await _unitOfWork.Repository<Application>().UpdateAsync(application);
+                    await _unitOfWork.CompleteAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"AI Evaluation Failed for Application {application.Id}");
+                application.IsEvaluatedByAI = false;
+                await _unitOfWork.Repository<Application>().UpdateAsync(application);
+                await _unitOfWork.CompleteAsync();
+            }
+
             return Ok(new ApiResponse(200, "Application submitted successfully"));
         }
-
         #endregion
+
     }
 }

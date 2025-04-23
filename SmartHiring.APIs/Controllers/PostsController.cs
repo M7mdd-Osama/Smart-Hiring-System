@@ -290,11 +290,32 @@ namespace SmartHiring.APIs.Controllers
             if (hr == null || hr.HRCompany == null)
                 return BadRequest("HR or company not found.");
 
+            var jobTypeNames = await _unitOfWork.Repository<JobType>()
+                .GetAllAsync(j => postDto.JobTypes.Contains(j.Id));
+            var workplaceNames = await _unitOfWork.Repository<Workplace>()
+                .GetAllAsync(w => postDto.Workplaces.Contains(w.Id));
+            var careerLevelNames = await _unitOfWork.Repository<CareerLevel>()
+                .GetAllAsync(c => postDto.CareerLevels.Contains(c.Id));
+
             var post = _mapper.Map<Post>(postDto);
             post.HRId = hr.Id;
             post.CompanyId = hr.HRCompany.Id;
             post.PostDate = DateTime.UtcNow;
             post.PaymentStatus = "Pending Payment";
+
+            post.AggregatedJobData =
+                $"{postDto.JobTitle}\n" +
+                $"Location: {postDto.City}, {postDto.Country}.\n" +
+                $"Duration: {Math.Round((postDto.Deadline - DateTime.UtcNow).TotalDays)} days.\n" +
+                $"About the Role: {postDto.Description}\n" +
+                $"Requirements: {postDto.Requirements}\n" +
+                $"Salary Range: {postDto.MinSalary} - {postDto.MaxSalary} {postDto.Currency}\n" +
+                $"Experience Required: {postDto.MinExperience} - {postDto.MaxExperience} years\n" +
+                $"Skills: {string.Join(", ", postDto.Skills ?? new List<string>())}\n" +
+                $"Job Categories: {string.Join(", ", postDto.JobCategories ?? new List<string>())}\n" +
+                $"Job Types: {string.Join(", ", jobTypeNames.Select(j => j.TypeName))}\n" +
+                $"Workplaces: {string.Join(", ", workplaceNames.Select(w => w.WorkplaceType))}\n" +
+                $"Career Levels: {string.Join(", ", careerLevelNames.Select(c => c.LevelName))}";
 
             await _unitOfWork.Repository<Post>().AddAsync(post);
             await _unitOfWork.CompleteAsync();
@@ -375,6 +396,26 @@ namespace SmartHiring.APIs.Controllers
                     .Select(levelId => new PostCareerLevel { CareerLevelId = levelId })
                     .ToList();
             }
+            var jobTypeNames = await _unitOfWork.Repository<JobType>()
+                .GetAllAsync(j => updateDto.JobTypes.Contains(j.Id));
+            var workplaceNames = await _unitOfWork.Repository<Workplace>()
+                .GetAllAsync(w => updateDto.Workplaces.Contains(w.Id));
+            var careerLevelNames = await _unitOfWork.Repository<CareerLevel>()
+                .GetAllAsync(c => updateDto.CareerLevels.Contains(c.Id));
+
+            post.AggregatedJobData =
+                $"{post.JobTitle}\n" +
+                $"Location: {post.City}, {post.Country}.\n" +
+                $"Duration: {Math.Round((post.Deadline - DateTime.UtcNow).TotalDays)} days.\n" +
+                $"About the Role: {post.Description}\n" +
+                $"Requirements: {post.Requirements}\n" +
+                $"Salary Range: {post.MinSalary} - {post.MaxSalary} {post.Currency}\n" +
+                $"Experience Required: {post.MinExperience} - {post.MaxExperience} years\n" +
+                $"Skills: {string.Join(", ", updateDto.Skills ?? post.PostSkills.Select(s => s.Skill.SkillName))}\n" +
+                $"Job Categories: {string.Join(", ", updateDto.JobCategories ?? post.PostJobCategories.Select(p => p.JobCategory.Name))}\n" +
+                $"Job Types: {string.Join(", ", jobTypeNames.Select(j => j.TypeName))}\n" +
+                $"Workplaces: {string.Join(", ", workplaceNames.Select(w => w.WorkplaceType))}\n" +
+                $"Career Levels: {string.Join(", ", careerLevelNames.Select(c => c.LevelName))}";
 
             await _postRepository.UpdateAsync(post);
             await _postRepository.SaveChangesAsync();

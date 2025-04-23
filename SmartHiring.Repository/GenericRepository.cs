@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core;
+using SmartHiring.Core.Entities;
 using SmartHiring.Core.Repositories;
 using SmartHiring.Core.Specifications;
 using SmartHiring.Repository.Data;
@@ -88,7 +90,7 @@ namespace SmartHiring.Repository
         
         public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> predicate)
 		=> await _dbContext.Set<T>().Where(predicate).ToListAsync();
-        
+
     }
 }
 
