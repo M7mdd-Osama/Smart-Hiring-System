@@ -17,6 +17,10 @@ namespace SmartHiring.Core.Specifications
             (companyId == null || P.CompanyId == companyId)
             &&
             (!onlyPaid || P.PaymentStatus == "Paid")
+            &&
+            (userRole == "HR" || P.PaymentStatus == "Paid" || P.SavedPosts.Any(sp => sp.UserId == userRole)) 
+            &&
+            (userRole != "Agency" || P.Deadline >= DateTime.Now)
             )
         { }
     }

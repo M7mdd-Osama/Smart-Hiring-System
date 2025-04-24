@@ -35,6 +35,8 @@ namespace SmartHiring.APIs.Controllers
         }
 
         #region Companies
+
+        #region Get Companies
         [HttpGet("companies")]
         public async Task<ActionResult<IEnumerable<CompanyDto>>> GetCompanies([FromQuery] string? search)
         {
@@ -42,7 +44,9 @@ namespace SmartHiring.APIs.Controllers
             var companies = await _unitOfWork.Repository<Company>().GetAllWithSpecAsync(spec);
             return Ok(_mapper.Map<IEnumerable<CompanyDto>>(companies));
         }
+        #endregion
 
+        #region Create Company
         [HttpPost("companies")]
         public async Task<IActionResult> CreateCompany([FromForm] CreateCompanyByAdminDto dto)
         {
@@ -69,7 +73,9 @@ namespace SmartHiring.APIs.Controllers
 
             return Ok(new ApiResponse(200, "Company created successfully"));
         }
+        #endregion
 
+        #region Update Company
         [HttpPut("companies/{companyId}")]
         public async Task<IActionResult> UpdateCompany(int companyId, [FromForm] UpdateCompanyByAdminDto dto)
         {
@@ -104,7 +110,9 @@ namespace SmartHiring.APIs.Controllers
             await _unitOfWork.CompleteAsync();
             return Ok(new ApiResponse(200, "Company updated successfully"));
         }
+        #endregion
 
+        #region Delete Company
         [HttpDelete("companies/{companyId}")]
         public async Task<IActionResult> DeleteCompany(int companyId)
         {
@@ -181,11 +189,13 @@ namespace SmartHiring.APIs.Controllers
                 return StatusCode(500, new ApiResponse(500, $"An error occurred: {ex.Message}"));
             }
         }
+        #endregion
 
         #endregion
 
         #region Agencies
 
+        #region Get Agencies
         [HttpGet("agencies")]
         public async Task<ActionResult<IEnumerable<AgencyDto>>> GetAgencies([FromQuery] string? search)
         {
@@ -197,7 +207,9 @@ namespace SmartHiring.APIs.Controllers
             }
             return Ok(_mapper.Map<IEnumerable<AgencyDto>>(agencies));
         }
+        #endregion
 
+        #region Create Agency
         [HttpPost("agencies")]
         public async Task<IActionResult> CreateAgency([FromBody] CreateAgencyByAdminDto dto)
         {
@@ -233,7 +245,9 @@ namespace SmartHiring.APIs.Controllers
 
             return Ok(new ApiResponse(200, "Agency created successfully"));
         }
+        #endregion
 
+        #region Update Agency
         [HttpPut("agencies/{agencyId}")]
         public async Task<IActionResult> UpdateAgency(string agencyId, [FromBody] UpdateAgencyByAdminDto dto)
         {
@@ -279,7 +293,9 @@ namespace SmartHiring.APIs.Controllers
             await _userManager.UpdateAsync(agency);
             return Ok(new ApiResponse(200, "Agency updated successfully"));
         }
+        #endregion
 
+        #region Delete Agency
         [HttpDelete("agencies/{agencyId}")]
         public async Task<IActionResult> DeleteAgency(string agencyId)
         {
@@ -290,6 +306,7 @@ namespace SmartHiring.APIs.Controllers
             await _userManager.DeleteAsync(agency);
             return Ok(new ApiResponse(200, $"Agency has been deleted."));
         }
+        #endregion
 
         #endregion
     }
