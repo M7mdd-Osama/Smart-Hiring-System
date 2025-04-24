@@ -19,6 +19,8 @@ namespace SmartHiring.Core.Specifications
             (userRole == "HR" || P.PaymentStatus == "Paid" || P.SavedPosts.Any(sp => sp.UserId == userId))
             &&
             (userRole == "HR" || P.PaymentStatus == "Paid" || !onlyPaid || P.PaymentStatus == "Paid")
+            &&
+            (userRole != "Agency" || P.Deadline >= DateTime.Now)
             )
         {
             AddIncludes();
