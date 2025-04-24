@@ -54,6 +54,10 @@ namespace SmartHiring.APIs
             #endregion
 
             builder.Services.AddHttpClient();
+            //builder.WebHost.ConfigureKestrel(serverOptions =>
+            //{
+            //    serverOptions.ListenAnyIP(7065);
+            //});
 
             var app = builder.Build();
 
