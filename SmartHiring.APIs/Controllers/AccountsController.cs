@@ -21,14 +21,16 @@ namespace SmartHiring.APIs.Controllers
 		private readonly IPasswordHasher<Company> _passwordHasher;
 		private readonly SignInManager<AppUser> _signInManager;
 		private readonly ITokenService _tokenService;
+        private readonly IConfiguration _configuration;
 
-		public AccountsController(UserManager<AppUser> userManager,
+        public AccountsController(UserManager<AppUser> userManager,
 			RoleManager<IdentityRole> roleManager,
 			SmartHiringDbContext dbContext,
 			ImailSettings mailSettings,
 			IPasswordHasher<Company> passwordHasher,
 			SignInManager<AppUser> signInManager,
-			ITokenService tokenService)
+			ITokenService tokenService,
+			IConfiguration configuration)
 		{
 			_userManager = userManager;
 			_roleManager = roleManager;
@@ -37,7 +39,8 @@ namespace SmartHiring.APIs.Controllers
 			_passwordHasher = passwordHasher;
 			_signInManager = signInManager;
 			_tokenService = tokenService;
-		}
+            _configuration = configuration;
+        }
 
         #region Register
 
@@ -196,16 +199,17 @@ namespace SmartHiring.APIs.Controllers
 					companyLogo = user.ManagedCompany.LogoUrl;
 				}
 
-				return Ok(new
-				{
-					DisplayName = !string.IsNullOrEmpty(user.FirstName) && !string.IsNullOrEmpty(user.LastName)
-						? $"{user.FirstName} {user.LastName}"
-						: user.AgencyName ?? "N/A",
-					user.Email,
-					Token = await _tokenService.CreateTokenAsync(user, _userManager),
-					CompanyLogoUrl = companyLogo
-				});
-			}
+                var resolvedLogoUrl = new LogoUrlResolverFactory<AppUser, object>(_configuration).Resolve(user, null, companyLogo, null);
+                return Ok(new
+                {
+                    DisplayName = !string.IsNullOrEmpty(user.FirstName) && !string.IsNullOrEmpty(user.LastName)
+                        ? $"{user.FirstName} {user.LastName}"
+                        : user.AgencyName ?? "N/A",
+                    user.Email,
+                    Token = await _tokenService.CreateTokenAsync(user, _userManager),
+                    CompanyLogoUrl = resolvedLogoUrl
+                });
+            }
 
 			var company = await _dbContext.Companies.FirstOrDefaultAsync(c => c.BusinessEmail == model.Email);
 
@@ -284,6 +288,8 @@ namespace SmartHiring.APIs.Controllers
 				companyLogo = user.ManagedCompany.LogoUrl;
 			}
 
+            var resolvedLogoUrl = new LogoUrlResolverFactory<AppUser, object>(_configuration).Resolve(user, null, null, null);
+
             return Ok(new
             {
                 DisplayName = !string.IsNullOrEmpty(user.FirstName) && !string.IsNullOrEmpty(user.LastName)
@@ -291,7 +297,7 @@ namespace SmartHiring.APIs.Controllers
                     : user.AgencyName ?? "N/A",
                 user.Email,
                 Token = await _tokenService.CreateTokenAsync(user, _userManager),
-                CompanyLogoUrl = companyLogo
+                CompanyLogoUrl = resolvedLogoUrl
             });
         }
 
