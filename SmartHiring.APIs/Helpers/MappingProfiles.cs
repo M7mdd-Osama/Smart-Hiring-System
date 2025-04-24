@@ -17,7 +17,7 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.ManagerName, opt => opt.MapFrom(src => src.Manager != null ? src.Manager.DisplayName : null))
             .ForMember(dest => dest.ManagerEmail, opt => opt.MapFrom(src => src.Manager != null ? src.Manager.Email : null))
             .ForMember(dest => dest.PhoneNumberManager, opt => opt.MapFrom(src => src.Manager != null ? src.Manager.PhoneNumber : null))
-            .ForMember(d => d.LogoUrl, O => O.MapFrom<PictureUrlResolver<Company, CompanyDto>>());
+            .ForMember(d => d.LogoUrl, O => O.MapFrom<LogoUrlResolverFactory<Company, CompanyDto>>());
 
         CreateMap<AppUser, AgencyDto>();
 
@@ -39,7 +39,7 @@ public class MappingProfiles : Profile
 
         CreateMap<Post, PostToReturnDto>()
             .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company.Name))
-            .ForMember(dest => dest.LogoUrl, O => O.MapFrom<PictureUrlResolver<Post, PostToReturnDto>>())
+            .ForMember(dest => dest.LogoUrl, O => O.MapFrom<LogoUrlResolverFactory<Post, PostToReturnDto>>())
             .ForMember(dest => dest.HRName, opt => opt.MapFrom(src => src.HR.DisplayName))
             .ForMember(dest => dest.TotalApplications, opt => opt.MapFrom(src => src.Applications.Count))
             .ForMember(dest => dest.JobCategories, opt => opt.MapFrom(src => src.PostJobCategories.Select(c => c.JobCategory.Name)))
@@ -104,10 +104,7 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Applicant.GetFullName()))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Applicant.Email))
             .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.Applicant.Phone))
-            .ForMember(dest => dest.CV_Link, opt => opt.MapFrom(src =>
-                src.Applicant.Applications.Any(a => a.PostId == src.CandidateList.PostId)
-                ? src.Applicant.Applications.First(a => a.PostId == src.CandidateList.PostId).CV_Link
-                : ""))
+            .ForMember(dest => dest.CV_Link, opt => opt.MapFrom<CandidateApplicationCVResolver<CandidateListApplicant, CandidateListApplicantDto>>())
             .ForMember(dest => dest.InterviewStatus, opt => opt.MapFrom(src =>
                 src.CandidateList.Post.Interviews.Any(i => i.ApplicantId == src.ApplicantId)
                 ? src.CandidateList.Post.Interviews.First(i => i.ApplicantId == src.ApplicantId).InterviewStatus.ToString()
@@ -139,7 +136,7 @@ public class MappingProfiles : Profile
         CreateMap<Company, CompanyMembersDto>()
                 .ForMember(dest => dest.CompanyId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Name))
-                .ForMember(dest => dest.LogoUrl, O => O.MapFrom<PictureUrlResolver<Company, CompanyMembersDto>>());
+                .ForMember(dest => dest.LogoUrl, O => O.MapFrom<LogoUrlResolverFactory<Company, CompanyMembersDto>>());
 
         CreateMap<AppUser, MembersInfoDto>()
             .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.GetFullName()))
@@ -173,7 +170,8 @@ public class MappingProfiles : Profile
         #region For Manager API
 
         CreateMap<Application, PendingCandidateListApplicantDto>()
-            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Applicant.GetFullName()));
+            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Applicant.GetFullName()))
+            .ForMember(d => d.CV_Link, O => O.MapFrom<ApplicationCVResolver>());
 
         #endregion
 
@@ -181,7 +179,7 @@ public class MappingProfiles : Profile
 
         CreateMap<Post, PostToReturnForAgencyDto>()
             .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company.Name))
-            .ForMember(dest => dest.LogoUrl, opt => opt.MapFrom<PictureUrlResolver<Post, PostToReturnForAgencyDto>>())
+            .ForMember(dest => dest.LogoUrl, opt => opt.MapFrom<LogoUrlResolverFactory<Post, PostToReturnForAgencyDto>>())
             .ForMember(dest => dest.JobCategories, opt => opt.MapFrom(src => src.PostJobCategories.Select(c => c.JobCategory.Name)))
             .ForMember(dest => dest.JobTypes, opt => opt.MapFrom(src => src.PostJobTypes.Select(t => t.JobType.TypeName)))
             .ForMember(dest => dest.Workplaces, opt => opt.MapFrom(src => src.PostWorkplaces.Select(w => w.Workplace.WorkplaceType)))
@@ -214,8 +212,7 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.DisplayName));
 
         CreateMap<Application, ApplicationRankedDto>()
-
-            .ForMember(dest => dest.CV_Link, opt => opt.MapFrom(src => src.CV_Link))
+            .ForMember(d => d.CV_Link, O => O.MapFrom<CVUrlResolverFactory<Application, ApplicationRankedDto>>())
             .ForMember(dest => dest.Rank, opt => opt.MapFrom(src => src.RankScore));
 
 

@@ -24,6 +24,7 @@ namespace SmartHiring.APIs.Extensions
             Services.AddScoped<PdfTextExtractor>();
             Services.AddScoped<IResumeEvaluationService,ResumeEvaluationService>();
             Services.AddHttpClient<ResumeEvaluationService>();
+
             #region Error Handling
 
             Services.Configure<ApiBehaviorOptions>(Options =>
@@ -45,7 +46,12 @@ namespace SmartHiring.APIs.Extensions
             Services.AddScoped<IPasswordHasher<Company>, PasswordHasher<Company>>();
             Services.AddTransient<ImailSettings, EmailSettings>(); // Send Email by mailKit and mimeKit
             Services.AddScoped<IPaymentService, PaymentService>();
-            Services.AddScoped(typeof(PictureUrlResolver<,>));
+            Services.AddScoped(typeof(GenericUrlResolver<,>));
+            Services.AddScoped(typeof(LogoUrlResolverFactory<,>));
+            Services.AddScoped(typeof(CVUrlResolverFactory<,>));
+            Services.AddScoped(typeof(CandidateApplicationCVResolver<,>));
+            Services.AddScoped<ApplicationCVResolver>();
+
             #endregion
 
             return Services;

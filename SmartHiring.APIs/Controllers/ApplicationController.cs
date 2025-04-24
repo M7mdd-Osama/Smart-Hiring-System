@@ -245,11 +245,11 @@ namespace SmartHiring.APIs.Controllers
                     .ToList();
 
                 var applicantDtos = applications
-                    .Select((app, index) => new PendingCandidateListApplicantDto
+                    .Select((app, index) =>
                     {
-                        FullName = $"{app.Applicant.FName} {app.Applicant.LName}",
-                        CV_Link = app.CV_Link,
-                        Rank = index + 1
+                        var dto = _mapper.Map<PendingCandidateListApplicantDto>(app);
+                        dto.Rank = index + 1;
+                        return dto;
                     }).ToList();
 
                 return new PendingCandidateListDto
