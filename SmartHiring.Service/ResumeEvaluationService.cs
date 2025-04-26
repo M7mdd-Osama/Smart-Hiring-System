@@ -26,7 +26,6 @@ namespace SmartHiring.Service
                 .WaitAndRetryAsync(3, retryAttempt =>
                     TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
         }
-
         public async Task<PredictionResult?> EvaluateResumeAsync(int postId, string resumeText)
         {
             return await _retryPolicy.ExecuteAsync(async () =>
@@ -46,7 +45,6 @@ namespace SmartHiring.Service
 
                     var response = await _httpClient.PostAsync("http://localhost:8000/evaluate_cv/", content);
 
-                    // Don't use EnsureSuccessStatusCode here, handle the response manually
                     if (!response.IsSuccessStatusCode)
                     {
                         var errorContent = await response.Content.ReadAsStringAsync();

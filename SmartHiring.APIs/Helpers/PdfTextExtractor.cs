@@ -20,4 +20,3 @@ namespace SmartHiring.APIs.Helpers
         }
     }
 }
-
