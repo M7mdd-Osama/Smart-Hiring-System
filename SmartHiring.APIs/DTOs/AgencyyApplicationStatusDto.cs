@@ -1,8 +1,7 @@
 ﻿namespace SmartHiring.APIs.DTOs
 {
-    public class AgencyyApplicationStatsDto
+    public class AgencyyApplicationStatusDto
     {
-        public string AgencyId { get; set; }
         public string AgencyName { get; set; }
         public int TotalApplications { get; set; }
     }

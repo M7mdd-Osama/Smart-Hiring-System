@@ -7,11 +7,12 @@ namespace SmartHiring.Core.Specifications
         public ApplicationsWithAgencySpec()
             : base(a => a.AgencyId != null)
         {
+            AddInclude(a => a.Agency);
         }
-
         public ApplicationsWithAgencySpec(int companyId)
             : base(a => a.AgencyId != null && a.Post.CompanyId == companyId)
         {
+            AddInclude(a => a.Agency);
             AddInclude(a => a.Post); 
         }
     }

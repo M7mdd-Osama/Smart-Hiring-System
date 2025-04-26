@@ -1,10 +1,4 @@
 ﻿using SmartHiring.Core.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace SmartHiring.Core.Specifications
 {
@@ -22,8 +16,4 @@ namespace SmartHiring.Core.Specifications
             AddInclude(app => app.Post);
         }
     }
-
-
-
-
 }

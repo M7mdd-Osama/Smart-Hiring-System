@@ -1,7 +1,4 @@
-﻿using Newtonsoft.Json;
-using System.Text.Json.Serialization;
-
-namespace SmartHiring.APIs.DTOs
+﻿namespace SmartHiring.APIs.DTOs
 {
     public class CandidatesDataDto
     {

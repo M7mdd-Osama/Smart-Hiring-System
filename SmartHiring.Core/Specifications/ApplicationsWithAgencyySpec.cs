@@ -8,7 +8,6 @@ namespace SmartHiring.Core.Specifications
         {
             AddInclude(a => a.Agency);
         }
-
         public ApplicationsWithAgencyySpec(int companyId)
             : base(a => a.Post.CompanyId == companyId)
         {

@@ -1,9 +1,4 @@
 ﻿using SmartHiring.Core.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartHiring.Core.Specifications
 {
@@ -12,8 +7,8 @@ namespace SmartHiring.Core.Specifications
         public ApplicationsByCompanyySpec(int companyId, DateTime fromDate, DateTime toDate)
             : base(a =>
                 a.Post.CompanyId == companyId &&
-                a.ApplicationDate.Date >= fromDate.Date &&
-                a.ApplicationDate.Date <= toDate.Date)
+                a.ApplicationDate >= fromDate.Date &&
+                a.ApplicationDate < toDate.Date.AddDays(1))
         {
             AddInclude(a => a.Post);
             AddInclude(a => a.Post.Company);
