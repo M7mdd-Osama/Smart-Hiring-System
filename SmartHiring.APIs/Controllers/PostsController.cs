@@ -396,12 +396,21 @@ namespace SmartHiring.APIs.Controllers
                     .Select(levelId => new PostCareerLevel { CareerLevelId = levelId })
                     .ToList();
             }
-            var jobTypeNames = await _unitOfWork.Repository<JobType>()
-                .GetAllAsync(j => updateDto.JobTypes.Contains(j.Id));
-            var workplaceNames = await _unitOfWork.Repository<Workplace>()
-                .GetAllAsync(w => updateDto.Workplaces.Contains(w.Id));
-            var careerLevelNames = await _unitOfWork.Repository<CareerLevel>()
-                .GetAllAsync(c => updateDto.CareerLevels.Contains(c.Id));
+
+            var jobTypeNames = updateDto.JobTypes != null
+                ? await _unitOfWork.Repository<JobType>().GetAllAsync(j => updateDto.JobTypes.Contains(j.Id))
+                : post.PostJobTypes.Select(pjt => pjt.JobType).ToList();
+
+            var workplaceNames = updateDto.Workplaces != null
+                ? await _unitOfWork.Repository<Workplace>().GetAllAsync(w => updateDto.Workplaces.Contains(w.Id))
+                : post.PostWorkplaces.Select(pw => pw.Workplace).ToList();
+
+            var careerLevelNames = updateDto.CareerLevels != null
+                ? await _unitOfWork.Repository<CareerLevel>().GetAllAsync(c => updateDto.CareerLevels.Contains(c.Id))
+                : post.PostCareerLevels.Select(pc => pc.CareerLevel).ToList();
+
+            var skills = updateDto.Skills ?? post.PostSkills.Select(s => s.Skill.SkillName).ToList();
+            var jobCategories = updateDto.JobCategories ?? post.PostJobCategories.Select(p => p.JobCategory.Name).ToList();
 
             post.AggregatedJobData =
                 $"{post.JobTitle}\n" +
@@ -411,8 +420,8 @@ namespace SmartHiring.APIs.Controllers
                 $"Requirements: {post.Requirements}\n" +
                 $"Salary Range: {post.MinSalary} - {post.MaxSalary} {post.Currency}\n" +
                 $"Experience Required: {post.MinExperience} - {post.MaxExperience} years\n" +
-                $"Skills: {string.Join(", ", updateDto.Skills ?? post.PostSkills.Select(s => s.Skill.SkillName))}\n" +
-                $"Job Categories: {string.Join(", ", updateDto.JobCategories ?? post.PostJobCategories.Select(p => p.JobCategory.Name))}\n" +
+                $"Skills: {string.Join(", ", skills)}\n" +
+                $"Job Categories: {string.Join(", ", jobCategories)}\n" +
                 $"Job Types: {string.Join(", ", jobTypeNames.Select(j => j.TypeName))}\n" +
                 $"Workplaces: {string.Join(", ", workplaceNames.Select(w => w.WorkplaceType))}\n" +
                 $"Career Levels: {string.Join(", ", careerLevelNames.Select(c => c.LevelName))}";
@@ -422,7 +431,6 @@ namespace SmartHiring.APIs.Controllers
 
             return Ok(new ApiResponse(200, "Post updated successfully"));
         }
-
         #endregion
 
         #region Delete Post

@@ -2,11 +2,10 @@
 
 namespace SmartHiring.Core.Specifications
 {
-
     public class CompaniesWithPostsSpec : BaseSpec<Company>
     {
-        public CompaniesWithPostsSpec(int? companyId)
-            : base(c => companyId == null || c.Id == companyId)
+        public CompaniesWithPostsSpec()
+            : base(c => true)
         {
             AddInclude(c => c.Posts);
         }

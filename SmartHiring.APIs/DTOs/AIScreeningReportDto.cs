@@ -2,7 +2,7 @@
 {
     public class AIScreeningReportDto
     {
-        public int AcceptedByAI { get; set; }
-        public int RejectedByAI { get; set; }
+        public double AcceptanceRatioByAI { get; set; }
+        public double RejectionRatioByAI { get; set; }
     }
 }

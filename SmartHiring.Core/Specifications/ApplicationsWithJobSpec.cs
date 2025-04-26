@@ -14,7 +14,8 @@ namespace SmartHiring.Core.Specifications
         public ApplicationsWithJobSpec(int companyId, DateTime fromDate, DateTime toDate)
             : base(a => a.Post.CompanyId == companyId &&
                         a.Post.PostDate >= fromDate &&
-                        a.Post.PostDate <= toDate)
+                        a.Post.PostDate <= toDate &&
+                        a.IsShortlisted)
         {
             AddInclude(a => a.Applicant);
             AddInclude(a => a.Post);

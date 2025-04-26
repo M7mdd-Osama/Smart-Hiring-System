@@ -2,8 +2,7 @@
 {
     public class ApplicationDetailDto
     {
-        public int Id { get; set; }
-        public DateTime CreatedAt { get; set; } // فعليًا هو ApplicationDate
+        public DateTime CreatedAt { get; set; }
         public string FormattedDate { get; set; }
     }
 }

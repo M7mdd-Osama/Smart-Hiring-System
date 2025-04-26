@@ -60,7 +60,7 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.PostCareerLevels, opt => opt.MapFrom(src => src.CareerLevels.Select(id => new PostCareerLevel { CareerLevelId = id })))
             .ForMember(dest => dest.PostSkills, opt => opt.MapFrom(src => src.Skills.Select(name => new PostSkill { Skill = new Skill { SkillName = name } })))
             .ForMember(dest => dest.AggregatedJobData, opt => opt.Ignore());
-        
+
         CreateMap<Post, PostPaymentDto>()
             .ForMember(dest => dest.PaymentIntentId, opt => opt.NullSubstitute(null))
             .ForMember(dest => dest.ClientSecret, opt => opt.NullSubstitute(null));
@@ -199,40 +199,39 @@ public class MappingProfiles : Profile
             .ForMember(d => d.BusinessEmail, o => o.MapFrom(s => s.HR.HRCompany.BusinessEmail));
 
         CreateMap<SubmitApplicationDto, Applicant>();
-            //.ForMember(d => d.Email, o => o.MapFrom(s => s.Email));
+        //.ForMember(d => d.Email, o => o.MapFrom(s => s.Email));
 
         #endregion
 
-        CreateMap<Interview, CandidateReportToReturnDto>()
-
-            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Applicant.GetFullName()))
-            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));
-
+        #region Reports
+        
         CreateMap<AppUser, TopAgencyItemDto>()
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.DisplayName));
+        
+        CreateMap<Interview, CandidateReportToReturnDto>()
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Applicant.GetFullName()))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));        
 
         CreateMap<Application, ApplicationRankedDto>()
             .ForMember(d => d.CV_Link, O => O.MapFrom<CVUrlResolverFactory<Application, ApplicationRankedDto>>())
             .ForMember(dest => dest.Rank, opt => opt.MapFrom(src => src.RankScore));
-
-
+        
         CreateMap<Applicant, ApplicantDto>()
             .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.GetFullName()))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
 
         CreateMap<Company, CompanyCountReportDto>()
-            .ForMember(dest => dest.TotalCompanies, opt => opt.Ignore()); 
+            .ForMember(dest => dest.TotalCompanies, opt => opt.Ignore());
 
         CreateMap<AppUser, AgencyCountReportDto>()
             .ForMember(dest => dest.TotalAgencies, opt => opt.Ignore());
 
         CreateMap<Post, JobClosedCountReportDto>()
-            .ForMember(dest => dest.TotalClosedJobs, opt => opt.MapFrom(src => 1)); 
+            .ForMember(dest => dest.TotalClosedJobs, opt => opt.MapFrom(src => 1));
 
         CreateMap<Post, JobApplicationsCountDto>()
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.JobTitle))
             .ForMember(dest => dest.JobAppliedNumber, opt => opt.MapFrom(src => src.Applications.Count));
-
 
         CreateMap<Interview, PendingInterviewCandidateDto>()
             .ForMember(dest => dest.CandidateName, opt => opt.MapFrom(src => src.Applicant.GetFullName()))
@@ -240,7 +239,6 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.InterviewDate, opt => opt.MapFrom(src => src.Date))
             .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.Post.JobTitle));
 
-
         CreateMap<Interview, CandidateReportToReturnDto>()
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Applicant.GetFullName()))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.InterviewStatus.ToString()));
@@ -248,7 +246,6 @@ public class MappingProfiles : Profile
         CreateMap<Post, JobApplicationsCountDto>()
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.JobTitle))
             .ForMember(dest => dest.JobAppliedNumber, opt => opt.MapFrom(src => src.Applications.Count));
-
 
         CreateMap<Application, AgencyAcceptanceRejectionReportDto>()
             .ForMember(dest => dest.AgencyName, opt => opt.MapFrom(src => src.Agency.DisplayName));
@@ -258,10 +255,10 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.TotalPosts, opt => opt.MapFrom(src => src.Posts.Count));
 
         CreateMap<Application, ApplicantInfoDto>()
-            .ForMember(dest => dest.ApplicantName, opt => opt.MapFrom(src =>
-            $"{src.Applicant.FName} {src.Applicant.LName}"))
+            .ForMember(dest => dest.ApplicantName, opt => opt.MapFrom(src => $"{src.Applicant.FName} {src.Applicant.LName}"))
             .ForMember(dest => dest.AgencyName, opt => opt.MapFrom(src => src.Agency.UserName))
             .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.Applicant.Phone));
 
+        #endregion
     }
 }

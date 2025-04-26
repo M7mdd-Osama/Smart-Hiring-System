@@ -4,6 +4,5 @@
     {
         public string JobName { get; set; }
         public int ApplicationNumber { get; set; }
-        public string JobId { get; set; }
     }
 }
