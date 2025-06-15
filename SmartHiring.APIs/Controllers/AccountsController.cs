@@ -77,7 +77,6 @@ namespace SmartHiring.APIs.Controllers
 				ConfirmationCodeExpires = DateTime.UtcNow.AddMinutes(10),
 				CreatedAt = DateTime.UtcNow
 			};
-
 			_dbContext.Companies.Add(company);
 			await _dbContext.SaveChangesAsync();
 

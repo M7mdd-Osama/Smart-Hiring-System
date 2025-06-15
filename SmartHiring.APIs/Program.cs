@@ -55,10 +55,10 @@ namespace SmartHiring.APIs
 
             builder.Services.AddHttpClient(); // For The FastApi
 
-            builder.WebHost.ConfigureKestrel(serverOptions =>
-            {
-                serverOptions.ListenAnyIP(7065);
-            });
+            //builder.WebHost.ConfigureKestrel(serverOptions =>
+            //{
+            //    serverOptions.ListenAnyIP(7065);
+            //});
 
             var app = builder.Build();
 
