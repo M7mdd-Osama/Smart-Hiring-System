@@ -12,6 +12,7 @@ namespace SmartHiring.Core.Specifications
 			AddInclude(i => i.Post.Company);
 			AddInclude(i => i.Applicant.Applications);
 			AddIncludeString("Applicant.Applications.Agency");
-		}
-	}
+            AddInclude(i => i.Post.Company.Manager);
+        }
+    }
 }

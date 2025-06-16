@@ -17,6 +17,7 @@ namespace SmartHiring.Core.Entities
 		public string Location { get; set; }
 
 		public InterviewStatus InterviewStatus { get; set; }
+		public int Score { get; set; }
 
 		public string HRId { get; set; }
 		[ForeignKey("HRId")]

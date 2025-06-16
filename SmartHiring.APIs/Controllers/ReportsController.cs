@@ -240,8 +240,8 @@ namespace SmartHiring.APIs.Controllers
                     .ToList();
             }
 
-            var accepted = applications.Count(a => a.IsShortlisted);
-            var rejected = applications.Count(a => !a.IsShortlisted);
+            var accepted = applications.Count(a => a.IsShortlisted == true);
+            var rejected = applications.Count(a => !a.IsShortlisted == true);
             var total = accepted + rejected;
 
             double acceptanceRatio = total == 0 ? 0 : (double)accepted / total;
@@ -514,7 +514,7 @@ namespace SmartHiring.APIs.Controllers
             }
 
             var accepted = applications
-                .Where(a => a.IsShortlisted)
+                .Where(a => a.IsShortlisted == true)
                 .Select(a => new ApplicantDto
                 {
                     FullName = $"{a.Applicant.FName} {a.Applicant.LName}",
@@ -523,7 +523,7 @@ namespace SmartHiring.APIs.Controllers
                 .ToList();
 
             var rejected = applications
-                .Where(a => !a.IsShortlisted)
+                .Where(a => !a.IsShortlisted == true)
                 .Select(a => new ApplicantDto
                 {
                     FullName = $"{a.Applicant.FName} {a.Applicant.LName}",
@@ -1134,7 +1134,7 @@ namespace SmartHiring.APIs.Controllers
                 if (applications == null || !applications.Any())
                     continue;
 
-                var shortlistedCount = applications.Count(a => a.IsShortlisted);
+                var shortlistedCount = applications.Count(a => a.IsShortlisted == true);
                 var totalApplicationsForAgency = applications.Count();
                 var rejectedCount = totalApplicationsForAgency - shortlistedCount;
 
@@ -1206,7 +1206,7 @@ namespace SmartHiring.APIs.Controllers
                 });
 
             var total = applications.Count();
-            var accepted = applications.Count(a => a.IsShortlisted);
+            var accepted = applications.Count(a => a.IsShortlisted == true);
             var rejected = total - accepted;
 
             var companyReport = new CompanyAcceptanceRejectionDto

@@ -15,7 +15,7 @@ namespace SmartHiring.Core.Specifications
             : base(a => a.Post.CompanyId == companyId &&
                         a.Post.PostDate >= fromDate &&
                         a.Post.PostDate <= toDate &&
-                        a.IsShortlisted)
+                        a.IsShortlisted == true)
         {
             AddInclude(a => a.Applicant);
             AddInclude(a => a.Post);

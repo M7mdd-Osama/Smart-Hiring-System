@@ -5,5 +5,6 @@
         public string FullName { get; set; }
         public string CV_Link { get; set; }
         public int Rank { get; set; }
+        public double RankScore { get; set; }
     }
 }

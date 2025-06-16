@@ -48,5 +48,59 @@ namespace SmartHiring.APIs.Helpers
 			await smtp.SendAsync(mail);
 			await smtp.DisconnectAsync(true);
 		}
-	}
+        public async Task SendMailWithAttachment(string to, string subject, string htmlBody, byte[] attachment, string attachmentName)
+        {
+                var mail = new MimeMessage
+                {
+                    Sender = MailboxAddress.Parse(_options.Email),
+                    Subject = subject
+                };
+                mail.To.Add(MailboxAddress.Parse(to));
+                mail.From.Add(new MailboxAddress(_options.DisplayName, _options.Email));
+
+                var builder = new BodyBuilder
+                {
+                    HtmlBody = htmlBody
+                };
+
+                builder.Attachments.Add(attachmentName, attachment, ContentType.Parse("application/pdf"));
+                mail.Body = builder.ToMessageBody();
+
+                using var smtp = new SmtpClient();
+                await smtp.ConnectAsync(_options.Host, _options.Port, SecureSocketOptions.StartTls);
+                await smtp.AuthenticateAsync(_options.Email, _options.Password);
+                await smtp.SendAsync(mail);
+                await smtp.DisconnectAsync(true);
+        }
+        public async Task SendMailWithAttachmentAndReplyTo(string to, string subject, string htmlBody, byte[] attachment, string attachmentName, string replyToEmail, string replyToName)
+        {
+            var mail = new MimeMessage
+            {
+                Sender = MailboxAddress.Parse(_options.Email),
+                Subject = subject
+            };
+            mail.To.Add(MailboxAddress.Parse(to));
+            mail.From.Add(new MailboxAddress(_options.DisplayName, _options.Email));
+
+            // إضافة Reply-To
+            if (!string.IsNullOrWhiteSpace(replyToEmail))
+            {
+                mail.ReplyTo.Add(new MailboxAddress(replyToName, replyToEmail));
+            }
+
+            var builder = new BodyBuilder
+            {
+                HtmlBody = htmlBody
+            };
+
+            builder.Attachments.Add(attachmentName, attachment, ContentType.Parse("application/pdf"));
+            mail.Body = builder.ToMessageBody();
+
+            using var smtp = new SmtpClient();
+            await smtp.ConnectAsync(_options.Host, _options.Port, SecureSocketOptions.StartTls);
+            await smtp.AuthenticateAsync(_options.Email, _options.Password);
+            await smtp.SendAsync(mail);
+            await smtp.DisconnectAsync(true);
+        }
+    }
 }

@@ -21,7 +21,7 @@ namespace SmartHiring.APIs.Extensions
             Services.AddScoped<PasswordHasher<AppUser>>();
             Services.AddAutoMapper(typeof(MappingProfiles));
             Services.AddScoped<IUnitOfWork, UnitOfWork>();
-            Services.AddScoped<PdfTextExtractor>();
+            Services.AddScoped<ResumeTextExtractor>();
             Services.AddScoped<IResumeEvaluationService,ResumeEvaluationService>();
             Services.AddHttpClient<ResumeEvaluationService>();
 
