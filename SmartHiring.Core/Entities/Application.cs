@@ -6,7 +6,7 @@ namespace SmartHiring.Core.Entities
 	public class Application : BaseEntity
 	{
 		public double RankScore { get; set; }
-		public bool IsShortlisted { get; set; }
+		public bool? IsShortlisted { get; set; }
 		public DateTime ApplicationDate { get; set; }
 		public string CV_Link { get; set; }
 

@@ -1,0 +1,1003 @@
+using Microsoft.AspNetCore.Identity;
+
+namespace SmartHiring.Core.Entities.Identity
+{
+	public class AppUser : IdentityUser
+	{
+        public string DisplayName => !string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName)
+               ? $"{FirstName} {LastName}"
+               : AgencyName ?? "N/A";
+        public string? FirstName { get; set; }
+		public string? LastName { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public string? ConfirmationCode { get; set; }
+		public DateTime? ConfirmationCodeExpires { get; set; }
+		public string? AgencyName { get; set; }
+
+		public Address Address { get; set; }
+
+		public Company? HRCompany { get; set; } 
+
+		public Company? ManagedCompany { get; set; }
+
+        public ICollection<Application>? Applications { get; set; } = new HashSet<Application>(); 
+		public ICollection<AgencyApplicant>? AgencyApplicants { get; set; } = new HashSet<AgencyApplicant>(); 
+		public ICollection<Interview>? Interviews { get; set; } = new HashSet<Interview>();
+		public ICollection<Post>? Posts { get; set; } = new HashSet<Post>();
+		public ICollection<SavedPost> SavedPosts { get; set; } = new HashSet<SavedPost>();
+		public ICollection<Note> Notes { get; set; } = new HashSet<Note>();
+	}
+}
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace SmartHiring.Core.Entities.Identity
+{
+	public class Address
+	{
+		public int Id { get; set; }
+		public string City { get; set; }
+		public string Country { get; set; }
+		public string AppUserId { get; set; } 
+		[ForeignKey("AppUserId")]
+		public AppUser User { get; set; }
+	}
+}
+using SmartHiring.Core.Entities.Identity;
+
+namespace SmartHiring.Core.Entities
+{
+	public class AgencyApplicant
+	{
+		public string AgencyId { get; set; }
+		public AppUser Agency { get; set; }
+
+		public int ApplicantId { get; set; }
+		public Applicant Applicant { get; set; }
+	}
+}
+namespace SmartHiring.Core.Entities
+{
+	public class Applicant : BaseEntity
+	{
+		public string FName { get; set; }
+		public string LName { get; set; }
+		public string Email { get; set; }
+		public DateTime? DateOfBirth { get; set; }
+		public string Phone { get; set; }
+
+		public ICollection<ApplicantSkill> ApplicantSkills { get; set; } = new HashSet<ApplicantSkill>();
+
+		public ICollection<ApplicantAddress> ApplicantAddresses { get; set; } = new HashSet<ApplicantAddress>();
+		public ICollection<Application> Applications { get; set; } = new HashSet<Application>();
+		public ICollection<CandidateListApplicant> CandidateListApplicants { get; set; } = new HashSet<CandidateListApplicant>();
+    }
+}
+namespace SmartHiring.Core.Entities
+{
+	public class ApplicantAddress
+	{
+		public int ApplicantId { get; set; }
+		public string Country { get; set; }
+		public Applicant Applicant { get; set; }
+
+		public string City { get; set; }
+		public string ZIP { get; set; }
+	}
+}
+namespace SmartHiring.Core.Entities
+{
+	public class ApplicantSkill
+	{
+		public int ApplicantId { get; set; }
+		public Applicant Applicant { get; set; }
+
+		public int SkillId { get; set; }
+		public Skill Skill { get; set; }
+	}
+}
+using SmartHiring.Core.Entities.Identity;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace SmartHiring.Core.Entities
+{
+	public class Application : BaseEntity
+	{
+		public double RankScore { get; set; }
+		public bool IsShortlisted { get; set; }
+		public DateTime ApplicationDate { get; set; }
+		public string CV_Link { get; set; }
+
+		public string? ExtractedResumeText { get; set; }
+		public bool IsEvaluatedByAI { get; set; } = false;
+
+        public int ApplicantId { get; set; }
+		[ForeignKey("ApplicantId")]
+		public Applicant Applicant { get; set; }
+
+		public int PostId { get; set; }
+		public Post Post { get; set; }
+
+		public string AgencyId { get; set; }
+		[ForeignKey("AgencyId")]
+		public AppUser Agency { get; set; }
+	}
+}
+namespace SmartHiring.Core.Entities
+{
+	public class BaseEntity
+	{
+		public int Id { get; set; }
+	}
+}
+using SmartHiring.Core.Entities.Identity;
+
+namespace SmartHiring.Core.Entities
+{
+	public class CandidateList : BaseEntity
+	{
+		public DateTime GeneratedDate { get; set; }
+		public string Status { get; set; }
+
+		public string ManagerId { get; set; }
+		public AppUser Manager { get; set; }
+		public int PostId { get; set; }
+		public Post Post { get; set; }
+
+		public ICollection<CandidateListApplicant> CandidateListApplicants { get; set; } = new HashSet<CandidateListApplicant>();
+	}
+}
+namespace SmartHiring.Core.Entities
+{
+	public class CandidateListApplicant
+	{
+		public int ApplicantId { get; set; }
+		public Applicant Applicant { get; set; }
+
+		public int CandidateListId { get; set; }
+		public CandidateList CandidateList { get; set; }
+	}
+}
+namespace SmartHiring.Core.Entities
+{
+	public class CareerLevel : BaseEntity
+	{
+		public string LevelName { get; set; }
+		public ICollection<PostCareerLevel> PostCareerLevels { get; set; } = new HashSet<PostCareerLevel>();
+	}
+}
+using SmartHiring.Core.Entities.Identity;
+
+namespace SmartHiring.Core.Entities
+{
+	public class Company : BaseEntity
+	{
+		public string Name { get; set; }
+		public string BusinessEmail { get; set; }
+
+		public string Password { get; set; }
+		public string? LogoUrl { get; set; }
+
+		public string? ConfirmationCode { get; set; }
+		public DateTime? ConfirmationCodeExpires { get; set; }
+		public bool EmailConfirmed { get; set; } = false;
+        public string Phone { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string? ManagerId { get; set; }
+		public AppUser? Manager { get; set; }
+
+		public string? HRId { get; set; }
+		public AppUser? HR { get; set; }
+
+		public ICollection<Post> Posts { get; set; } = new HashSet<Post>();
+
+	}
+}
+namespace SmartHiring.Core.Entities
+{
+	public class Email
+	{
+		public string To { get; set; }
+		public string Subject { get; set; }
+		public string Body { get; set; }
+	}
+}
+using SmartHiring.Core.Entities.Identity;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace SmartHiring.Core.Entities
+{
+	public enum InterviewStatus
+	{
+		Pending,
+		Under_Interview,
+		Hired,
+		Rejected
+	}
+	public class Interview : BaseEntity
+	{
+		public DateTime Date { get; set; }
+		public TimeSpan Time { get; set; }
+		public string Location { get; set; }
+
+		public InterviewStatus InterviewStatus { get; set; }
+
+		public string HRId { get; set; }
+		[ForeignKey("HRId")]
+		public AppUser HR { get; set; }
+
+		public int PostId { get; set; }
+		[ForeignKey("PostId")]
+		public Post Post { get; set; }
+
+		public int ApplicantId { get; set; }
+		public Applicant Applicant { get; set; }
+
+    }
+}
+namespace SmartHiring.Core.Entities
+{
+	public class JobCategory : BaseEntity
+	{
+		public string Name { get; set; }
+		public ICollection<PostJobCategory> PostJobCategories { get; set; } = new HashSet<PostJobCategory>();
+	}
+}
+namespace SmartHiring.Core.Entities
+{
+	public class JobType : BaseEntity
+	{
+		public string TypeName { get; set; }
+		public ICollection<PostJobType> PostJobTypes { get; set; } = new HashSet<PostJobType>();
+	}
+}
+using System.ComponentModel.DataAnnotations.Schema;
+using SmartHiring.Core.Entities.Identity;
+
+namespace SmartHiring.Core.Entities
+{
+    public class Note : BaseEntity
+    {
+        public string Header { get; set; }
+        public string Content { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string UserId { get; set; }
+        [ForeignKey("UserId")]
+        public AppUser User { get; set; }
+
+        public bool IsSeen { get; set; } = false;
+        public int PostId { get; set; }
+        [ForeignKey("PostId")]
+        public Post Post { get; set; }
+    }
+}
+using SmartHiring.Core.Entities.Identity;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace SmartHiring.Core.Entities
+{
+    public class Post : BaseEntity
+	{
+		public string JobTitle { get; set; }
+		public string Description { get; set; }
+		public string Requirements { get; set; }
+		public DateTime PostDate { get; set; }
+		public DateTime Deadline { get; set; }
+        public string JobStatus { get; set; } = "Open";
+		public decimal MinSalary { get; set; }
+		public decimal MaxSalary { get; set; }
+		public string Currency { get; set; } // EGP, USD, etc.  
+		public int MinExperience { get; set; }
+		public int MaxExperience { get; set; }
+		public string PaymentStatus { get; set; } = "Pending Payment";
+		public string Country { get; set; }
+		public string City { get; set; }
+		public string HRId { get; set; }
+		[ForeignKey("HRId")]
+		public AppUser HR { get; set; }
+		public int CompanyId { get; set; }
+		[ForeignKey("CompanyId")]
+		public Company Company { get; set; }
+
+		public ICollection<PostJobCategory> PostJobCategories { get; set; } = new HashSet<PostJobCategory>();
+		public ICollection<PostJobType> PostJobTypes { get; set; } = new HashSet<PostJobType>();
+		public ICollection<PostWorkplace> PostWorkplaces { get; set; } = new HashSet<PostWorkplace>();
+		public ICollection<PostSkill> PostSkills { get; set; } = new HashSet<PostSkill>();
+		public ICollection<PostCareerLevel> PostCareerLevels { get; set; } = new HashSet<PostCareerLevel>();
+		public ICollection<Application> Applications { get; set; } = new HashSet<Application>();
+		public ICollection<CandidateList> CandidateLists { get; set; } = new HashSet<CandidateList>();
+		public ICollection<Interview> Interviews { get; set; } = new HashSet<Interview>();
+		public ICollection<SavedPost> SavedPosts { get; set; } = new HashSet<SavedPost>();
+		public ICollection<Note> Notes { get; set; } = new HashSet<Note>();
+
+		public string? PaymentIntentId { get; set; }
+		public string? ClientSecret { get; set; }
+
+        public string? AggregatedJobData { get; set; }
+
+    }
+}
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace SmartHiring.Core.Entities
+{
+	public class PostCareerLevel
+	{
+		public int PostId { get; set; }
+		[ForeignKey("PostId")]
+		public Post Post { get; set; }
+
+		public int CareerLevelId { get; set; }
+		[ForeignKey("CareerLevelId")]
+		public CareerLevel CareerLevel { get; set; }
+	}
+}
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace SmartHiring.Core.Entities
+{
+	public class PostJobCategory
+	{
+		public int PostId { get; set; }
+		[ForeignKey("PostId")]
+		public Post Post { get; set; }
+
+		public int JobCategoryId { get; set; }
+		[ForeignKey("JobCategoryId")]
+		public JobCategory JobCategory { get; set; }
+	}
+}
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace SmartHiring.Core.Entities
+{
+	public class PostJobType
+	{
+		public int PostId { get; set; }
+		[ForeignKey("PostId")]
+		public Post Post { get; set; }
+		public int JobTypeId { get; set; }
+		[ForeignKey("JobTypeId")]
+		public JobType JobType { get; set; }
+
+	}
+}
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace SmartHiring.Core.Entities
+{
+	public class PostSkill
+	{
+		public int PostId { get; set; }
+		[ForeignKey("PostId")]
+		public Post Post { get; set; }
+
+		public int SkillId { get; set; }
+		[ForeignKey("SkillId")]
+		public Skill Skill { get; set; }
+
+	}
+}
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace SmartHiring.Core.Entities
+{
+	public class PostWorkplace
+	{
+		public int PostId { get; set; }
+		[ForeignKey("PostId")]
+		public Post Post { get; set; }
+		public int WorkplaceId { get; set; }
+		[ForeignKey("WorkplaceId")]
+		public Workplace Workplace { get; set; }
+
+	}
+}
+namespace SmartHiring.Core.Entities
+{
+    public class PredictionResult
+    {
+        public string classification { get; set; }
+        public double score { get; set; }
+    }
+}
+namespace SmartHiring.Core.Entities
+{
+    public class ResumeRequest
+    {
+        public int job_id { get; set; }
+        public string resume_text { get; set; }
+    }
+}
+using SmartHiring.Core.Entities.Identity;
+
+namespace SmartHiring.Core.Entities
+{
+	public class SavedPost
+	{
+		public string UserId { get; set; }
+		public AppUser User { get; set; }
+		public int PostId { get; set; }
+		public Post Post { get; set; }
+	}
+}
+namespace SmartHiring.Core.Entities
+{
+	public class Skill : BaseEntity
+	{
+		public string SkillName { get; set; }
+		public ICollection<PostSkill> PostSkills { get; set; } = new HashSet<PostSkill>();
+		public ICollection<ApplicantSkill> ApplicantSkills { get; set; } = new HashSet<ApplicantSkill>();
+	}
+}
+namespace SmartHiring.Core.Entities
+{
+	public class Workplace :BaseEntity
+	{
+		public string WorkplaceType { get; set; }
+		public ICollection<PostWorkplace> PostWorkplaces { get; set; } = new HashSet<PostWorkplace>();
+	}
+}
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+using SmartHiring.Core.Entities.Identity;
+using System.Reflection;
+
+namespace SmartHiring.Repository.Data
+{
+	public class SmartHiringDbContext : IdentityDbContext<AppUser>
+	{
+		public SmartHiringDbContext(DbContextOptions<SmartHiringDbContext> options) : base(options)
+		{
+		}
+
+		protected override void OnModelCreating(ModelBuilder modelBuilder)
+		{
+			base.OnModelCreating(modelBuilder);
+			modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+		}
+
+		public DbSet<Applicant> Applicants { get; set; }
+		public DbSet<Company> Companies { get; set; }
+		public DbSet<Post> Posts { get; set; }
+		public DbSet<Application> Applications { get; set; }
+		public DbSet<Interview> Interviews { get; set; }
+		public DbSet<CandidateList> CandidateLists { get; set; }
+		public DbSet<CandidateListApplicant> CandidateListApplicants { get; set; }
+		public DbSet<ApplicantAddress> ApplicantAddresses { get; set; }
+		public DbSet<AgencyApplicant> AgencyApplicants { get; set; }
+
+		public DbSet<JobType> JobTypes { get; set; }
+		public DbSet<ApplicantSkill> ApplicantSkills { get; set; }
+		public DbSet<Workplace> Workplaces { get; set; }
+		public DbSet<CareerLevel> CareerLevels { get; set; }
+		public DbSet<Skill> Skills { get; set; }
+		public DbSet<JobCategory> JobCategories { get; set; }
+
+		public DbSet<PostJobType> PostJobTypes { get; set; }
+		public DbSet<PostWorkplace> PostWorkplaces { get; set; }
+		public DbSet<PostCareerLevel> PostCareerLevels { get; set; }
+		public DbSet<PostSkill> PostSkills { get; set; }
+		public DbSet<PostJobCategory> PostJobCategories { get; set; }
+		public DbSet<SavedPost> SavedPosts { get; set; }
+		public DbSet<Note> Notes { get; set; }
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class AgencyApplicantsConfig : IEntityTypeConfiguration<AgencyApplicant>
+	{
+		public void Configure(EntityTypeBuilder<AgencyApplicant> builder)
+		{
+			builder.ToTable("AgencyApplicants");
+
+			builder.HasKey(aa => new { aa.AgencyId, aa.ApplicantId });
+
+			builder.HasOne(aa => aa.Agency)
+				.WithMany(a => a.AgencyApplicants)
+				.HasForeignKey(aa => aa.AgencyId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasOne(aa => aa.Applicant)
+				.WithMany()
+				.HasForeignKey(aa => aa.ApplicantId)
+				.OnDelete(DeleteBehavior.Cascade);
+		}
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class ApplicantAddressConfig : IEntityTypeConfiguration<ApplicantAddress>
+	{
+		public void Configure(EntityTypeBuilder<ApplicantAddress> builder)
+		{
+			builder.ToTable("Applicant_Addresses");
+
+			builder.HasKey(aa => new { aa.ApplicantId, aa.Country });
+
+			builder.HasOne(aa => aa.Applicant)
+				.WithMany(a => a.ApplicantAddresses)
+				.HasForeignKey(aa => aa.ApplicantId);
+
+			builder.Property(aa => aa.Country)
+				.IsRequired()
+				.HasMaxLength(100);
+
+			builder.Property(aa => aa.City)
+				.IsRequired()
+				.HasMaxLength(100);
+
+			builder.Property(aa => aa.ZIP)
+				.HasMaxLength(20)
+				.IsRequired(false);
+		}
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class ApplicantConfig : IEntityTypeConfiguration<Applicant>
+	{
+		public void Configure(EntityTypeBuilder<Applicant> builder)
+		{
+			builder.ToTable("Applicants");
+
+			builder.HasKey(a => a.Id);
+
+			builder.Property(a => a.FName)
+				.IsRequired()
+				.HasMaxLength(100);
+
+			builder.Property(a => a.LName)
+				.IsRequired()
+				.HasMaxLength(100);
+
+			builder.Property(a => a.Email)
+				.IsRequired()
+				.HasMaxLength(150);
+
+			builder.Property(a => a.DateOfBirth)
+				.IsRequired(false)
+				.HasColumnType("date");
+
+			builder.HasMany(a => a.ApplicantAddresses)
+				.WithOne(a => a.Applicant)
+				.HasForeignKey(a => a.ApplicantId);
+
+			builder.HasMany(a => a.CandidateListApplicants)
+				   .WithOne(cla => cla.Applicant)
+				   .HasForeignKey(cla => cla.ApplicantId);
+		}
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class ApplicantSkillConfig: IEntityTypeConfiguration<ApplicantSkill>
+	{
+		public void Configure(EntityTypeBuilder<ApplicantSkill> builder)
+		{
+			builder.HasKey(AS => new { AS.ApplicantId, AS.SkillId });
+
+			builder.HasOne(AS => AS.Applicant)
+				   .WithMany(a => a.ApplicantSkills)
+				   .HasForeignKey(AS => AS.ApplicantId)
+				   .OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasOne(AS => AS.Skill)
+				   .WithMany(s => s.ApplicantSkills)
+				   .HasForeignKey(AS => AS.SkillId)
+				   .OnDelete(DeleteBehavior.Cascade);
+		}
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class ApplicationConfig : IEntityTypeConfiguration<Application>
+	{
+		public void Configure(EntityTypeBuilder<Application> builder)
+		{
+			builder.ToTable("Applications");
+
+			builder.HasKey(app => app.Id);
+			builder.Property(app => app.Id).ValueGeneratedOnAdd();
+
+			builder.Property(app => app.RankScore).IsRequired();
+			builder.Property(app => app.IsShortlisted).IsRequired();
+			builder.Property(app => app.ApplicationDate).IsRequired();
+			builder.Property(app => app.CV_Link).IsRequired().HasMaxLength(500);
+
+			builder.HasOne(app => app.Agency)
+				   .WithMany(a => a.Applications)
+				   .HasForeignKey(app => app.AgencyId)
+				   .OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasOne(a => a.Applicant)
+				   .WithMany(a => a.Applications)
+				   .HasForeignKey(a => a.ApplicantId)
+				   .OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasOne(a => a.Post)
+				   .WithMany(p => p.Applications)
+				   .HasForeignKey(a => a.PostId)
+				   .OnDelete(DeleteBehavior.NoAction);
+		}
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class CandidateListApplicantsConfig : IEntityTypeConfiguration<CandidateListApplicant>
+	{
+		public void Configure(EntityTypeBuilder<CandidateListApplicant> builder)
+		{
+			builder.ToTable("CandidateListApplicants");
+
+			builder.HasKey(cla =>new { cla.CandidateListId, cla.ApplicantId });
+
+			builder.HasOne(cla => cla.CandidateList)
+				.WithMany(cl => cl.CandidateListApplicants)
+				.HasForeignKey(cla => cla.CandidateListId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasOne(cla => cla.Applicant)
+				.WithMany(a => a.CandidateListApplicants)
+				.HasForeignKey(cla => cla.ApplicantId)
+				.OnDelete(DeleteBehavior.Cascade);
+		}
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class CandidateListConfig : IEntityTypeConfiguration<CandidateList>
+	{
+		public void Configure(EntityTypeBuilder<CandidateList> builder)
+		{
+			builder.ToTable("CandidateLists");
+
+			builder.HasKey(cl => cl.Id);
+			builder.Property(cl => cl.Id).ValueGeneratedOnAdd();
+
+			builder.Property(cl => cl.GeneratedDate).IsRequired();
+			builder.Property(cl => cl.Status).IsRequired().HasMaxLength(50);
+
+			builder.HasOne(cl => cl.Manager)
+				   .WithMany()
+				   .HasForeignKey(cl => cl.ManagerId)
+				   .OnDelete(DeleteBehavior.NoAction);
+
+			builder.HasOne(cl => cl.Post)
+				   .WithMany(p => p.CandidateLists)
+				   .HasForeignKey(cl => cl.PostId)
+				   .OnDelete(DeleteBehavior.Cascade);
+		}
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class CompanyConfig : IEntityTypeConfiguration<Company>
+	{
+		public void Configure(EntityTypeBuilder<Company> builder)
+		{
+			builder.ToTable("Companies");
+
+			builder.HasKey(c => c.Id);
+
+			builder.Property(c => c.Name)
+				.IsRequired()
+				.HasMaxLength(200);
+
+			builder.Property(c => c.BusinessEmail)
+				.IsRequired()
+				.HasMaxLength(150);
+
+			builder.Property(c => c.LogoUrl)
+				.HasMaxLength(500)
+				.IsUnicode(false);
+
+			builder.HasOne(c => c.Manager)
+				.WithOne(a => a.ManagedCompany)
+				.HasForeignKey<Company>(c => c.ManagerId)
+				.OnDelete(DeleteBehavior.NoAction);
+
+			builder.HasOne(c => c.HR)
+				.WithOne(h => h.HRCompany)
+				.HasForeignKey<Company>(h => h.HRId)
+				.OnDelete(DeleteBehavior.NoAction);
+		}
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class InterviewConfig : IEntityTypeConfiguration<Interview>
+	{
+		public void Configure(EntityTypeBuilder<Interview> builder)
+		{
+			builder.ToTable("Interviews");
+
+			builder.HasKey(i => i.Id);
+
+			builder.Property(i => i.Date)
+				.IsRequired()
+				.HasColumnType("date");
+
+			builder.Property(i => i.Time)
+				.IsRequired()
+				.HasColumnType("time");
+
+			builder.Property(i => i.InterviewStatus)
+				.HasConversion<string>()
+				.HasColumnType("nvarchar(20)")
+				.HasMaxLength(50);
+
+			builder.Property(i => i.Location)
+				.HasMaxLength(200);
+
+			builder.HasOne(i => i.HR)
+				.WithMany(h => h.Interviews)
+				.HasForeignKey(i => i.HRId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasOne(i => i.Post)
+				.WithMany(p => p.Interviews)
+				.HasForeignKey(i => i.PostId)
+				.OnDelete(DeleteBehavior.NoAction);
+
+			builder.HasOne(i => i.Applicant)
+				.WithMany()
+				.HasForeignKey(i => i.ApplicantId)
+				.OnDelete(DeleteBehavior.NoAction);
+		}
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+    public class NoteConfig : IEntityTypeConfiguration<Note>
+    {
+        public void Configure(EntityTypeBuilder<Note> builder)
+        {
+            builder.ToTable("Notes");
+
+            builder.HasKey(n => n.Id);
+            builder.Property(n => n.Header)
+            .HasMaxLength(20)
+                .IsRequired();
+
+            builder.Property(n => n.Content)
+                .IsRequired()
+                .HasMaxLength(1000);
+
+            builder.Property(n => n.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            builder.HasOne(n => n.User)
+                .WithMany(u => u.Notes)
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(n => n.Post)
+                .WithMany(u => u.Notes)
+                .HasForeignKey(n => n.PostId)
+                .OnDelete(DeleteBehavior.NoAction);
+        }
+    }
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class PostCareerLevelConfig : IEntityTypeConfiguration<PostCareerLevel>
+	{
+		public void Configure(EntityTypeBuilder<PostCareerLevel> builder)
+		{
+			builder.HasKey(pc => new { pc.PostId, pc.CareerLevelId });
+
+			builder.HasOne(pc => pc.Post)
+				.WithMany(p => p.PostCareerLevels)
+				.HasForeignKey(pc => pc.PostId);
+
+			builder.HasOne(pc => pc.CareerLevel)
+				.WithMany(cl => cl.PostCareerLevels)
+				.HasForeignKey(pc => pc.CareerLevelId);
+		}
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class PostConfig : IEntityTypeConfiguration<Post>
+	{
+		public void Configure(EntityTypeBuilder<Post> builder)
+		{
+			builder.ToTable("Posts");
+
+			builder.HasKey(p => p.Id);
+
+			builder.Property(p => p.JobTitle)
+				.IsRequired()
+				.HasMaxLength(150);
+
+			builder.Property(p => p.Description)
+				.IsRequired();
+
+			builder.Property(p => p.Requirements)
+				.IsRequired();
+
+			builder.Property(p => p.PostDate)
+				.IsRequired();
+
+			builder.Property(p => p.Deadline)
+				.IsRequired();
+
+
+			builder.Property(p => p.MinSalary)
+			.HasColumnType("decimal(18,2)");
+
+			builder.Property(p => p.MaxSalary)
+			.HasColumnType("decimal(18,2)");
+
+			builder.HasOne(p => p.HR)
+				.WithMany(h => h.Posts)
+				.HasForeignKey(p => p.HRId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+		}
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class PostJobCategoryConfig : IEntityTypeConfiguration<PostJobCategory>
+	{
+		public void Configure(EntityTypeBuilder<PostJobCategory> builder)
+		{
+			builder.HasKey(pjc => new { pjc.PostId, pjc.JobCategoryId });
+
+			builder.HasOne(pjc => pjc.Post)
+				.WithMany(p => p.PostJobCategories)
+				.HasForeignKey(pjc => pjc.PostId);
+
+			builder.HasOne(pjc => pjc.JobCategory)
+				.WithMany(jc => jc.PostJobCategories)
+				.HasForeignKey(pjc => pjc.JobCategoryId);
+		}
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class PostJobTypeConfig : IEntityTypeConfiguration<PostJobType>
+	{
+		public void Configure(EntityTypeBuilder<PostJobType> builder)
+		{
+			builder.HasKey(pjt => new { pjt.PostId, pjt.JobTypeId });
+
+			builder.HasOne(pjt => pjt.Post)
+				.WithMany(p => p.PostJobTypes)
+				.HasForeignKey(pjt => pjt.PostId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasOne(pjt => pjt.JobType)
+				.WithMany(jt => jt.PostJobTypes)
+				.HasForeignKey(pjt => pjt.JobTypeId)
+				.OnDelete(DeleteBehavior.NoAction);
+		}
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class PostSkillConfig : IEntityTypeConfiguration<PostSkill>
+	{
+		public void Configure(EntityTypeBuilder<PostSkill> builder)
+		{
+			builder.HasKey(ps => new { ps.PostId, ps.SkillId });
+
+			builder.HasOne(ps => ps.Post)
+				.WithMany(p => p.PostSkills)
+				.HasForeignKey(ps => ps.PostId);
+
+			builder.HasOne(ps => ps.Skill)
+				.WithMany(s => s.PostSkills)
+				.HasForeignKey(ps => ps.SkillId);
+		}
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class PostWorkplaceConfig : IEntityTypeConfiguration<PostWorkplace>
+	{
+		public void Configure(EntityTypeBuilder<PostWorkplace> builder)
+		{
+			builder.HasKey(pw => new { pw.PostId, pw.WorkplaceId });
+
+			builder.HasOne(pw => pw.Post)
+				.WithMany(p => p.PostWorkplaces)
+				.HasForeignKey(pw => pw.PostId);
+
+			builder.HasOne(pw => pw.Workplace)
+				.WithMany(w => w.PostWorkplaces)
+				.HasForeignKey(pw => pw.WorkplaceId);
+		}
+	}
+}
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using SmartHiring.Core.Entities;
+
+namespace SmartHiring.Repository.Data.Configurations
+{
+	public class SavedPostsConfig : IEntityTypeConfiguration<SavedPost>
+	{
+		public void Configure(EntityTypeBuilder<SavedPost> builder)
+		{
+			builder.HasKey(sp => new { sp.UserId, sp.PostId });
+
+			builder.HasOne(sp => sp.User)
+				.WithMany(u => u.SavedPosts)
+				.HasForeignKey(sp => sp.UserId)
+				.OnDelete(DeleteBehavior.SetNull);
+
+			builder.HasOne(sp => sp.Post)
+				.WithMany(p => p.SavedPosts)
+				.HasForeignKey(sp => sp.PostId)
+				.OnDelete(DeleteBehavior.Restrict);
+		}
+	}
+}

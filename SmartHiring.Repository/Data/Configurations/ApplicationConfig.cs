@@ -14,7 +14,6 @@ namespace SmartHiring.Repository.Data.Configurations
 			builder.Property(app => app.Id).ValueGeneratedOnAdd();
 
 			builder.Property(app => app.RankScore).IsRequired();
-			builder.Property(app => app.IsShortlisted).IsRequired();
 			builder.Property(app => app.ApplicationDate).IsRequired();
 			builder.Property(app => app.CV_Link).IsRequired().HasMaxLength(500);
 

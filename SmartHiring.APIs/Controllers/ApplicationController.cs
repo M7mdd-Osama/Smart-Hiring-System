@@ -20,7 +20,7 @@ namespace SmartHiring.APIs.Controllers
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly UserManager<AppUser> _userManager;
-        private readonly PdfTextExtractor _pdfTextExtractor;
+        private readonly ResumeTextExtractor _resumeTextExtractor;
         private readonly IResumeEvaluationService _resumeEvaluationService;
         private readonly ILogger<ApplicationController> _logger;
 
@@ -28,14 +28,14 @@ namespace SmartHiring.APIs.Controllers
             IUnitOfWork unitOfWork,
             IMapper mapper,
             UserManager<AppUser> userManager,
-            PdfTextExtractor pdfTextExtractor,
+            ResumeTextExtractor resumeTextExtractor,
             IResumeEvaluationService resumeEvaluationService,
             ILogger<ApplicationController> logger)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _userManager = userManager;
-            _pdfTextExtractor = pdfTextExtractor;
+            _resumeTextExtractor = resumeTextExtractor;
             _resumeEvaluationService = resumeEvaluationService;
             _logger = logger;
         }
@@ -71,11 +71,11 @@ namespace SmartHiring.APIs.Controllers
             var appliedDtos = _mapper.Map<List<ApplicationDto>>(allApplications);
 
             var filtered = appliedDtos
-                .Where(a => allApplications.Any(app => app.Id == a.Id && app.IsShortlisted))
+                .Where(a => allApplications.Any(app => app.Id == a.Id && app.IsShortlisted == true))
                 .ToList();
 
             var disqualified = appliedDtos
-                .Where(a => allApplications.Any(app => app.Id == a.Id && !app.IsShortlisted))
+                .Where(a => allApplications.Any(app => app.Id == a.Id && !app.IsShortlisted == true))
                 .ToList();
 
             var result = new
@@ -143,7 +143,7 @@ namespace SmartHiring.APIs.Controllers
 
         #endregion
 
-        #region Create CandidateList For Manager
+        #region Create CandidateList For Manager and Events
 
         [Authorize(Roles = "HR")]
         [HttpPost("{postId}/CreateCandidateList")]
@@ -165,16 +165,19 @@ namespace SmartHiring.APIs.Controllers
                 return Forbid();
 
             var candidateLists = await _unitOfWork.Repository<CandidateList>().GetAllAsync();
-            var existingList = candidateLists.Any(cl => cl.PostId == postId && (cl.Status == "Pending" || cl.Status == "Accepted"));
+            var existingList = candidateLists.Any(cl => cl.PostId == postId && (cl.Status == "Accepted"));
 
             if (existingList)
-                return BadRequest(new ApiResponse(400, "Cannot create a new candidate list. There's already one Pending or Accepted."));
+                return BadRequest(new ApiResponse(400, "You cannot resend the candidate list. An accepted list already exists for this post."));
 
             var manager = await _userManager.Users
                 .FirstOrDefaultAsync(u => u.ManagedCompany != null && u.ManagedCompany.Id == user.HRCompany.Id);
 
             if (manager == null)
                 return NotFound(new ApiResponse(404, "No manager found for this company."));
+
+            if (request.MinimumScore < 0 || request.MinimumScore > 100)
+                return BadRequest(new ApiResponse(400, "Minimum score must be between 0 and 100."));
 
             var spec = new AcceptedApplicationsByPostIdSpec(postId);
             var filteredCandidates = await _unitOfWork.Repository<Application>().GetAllWithSpecAsync(spec);
@@ -183,18 +186,18 @@ namespace SmartHiring.APIs.Controllers
                 return NotFound(new ApiResponse(404, "No filtered candidates found for this post."));
 
             var topCandidates = filteredCandidates
+                .Where(app => app.RankScore >= request.MinimumScore)
                 .OrderByDescending(app => app.RankScore)
-                .Take(request.TopN)
                 .ToList();
 
             if (!topCandidates.Any())
-                return BadRequest(new ApiResponse(400, "No candidates available for selection."));
+                return BadRequest(new ApiResponse(400, "No candidates meet the required score."));
 
             var candidateList = new CandidateList
             {
                 PostId = postId,
                 ManagerId = manager.Id,
-                Status = "Pending",
+                Status = "Accepted",
                 GeneratedDate = DateTime.UtcNow
             };
 
@@ -215,7 +218,7 @@ namespace SmartHiring.APIs.Controllers
 
         #endregion
 
-        #region Get Pending CandidateLists
+        #region Get CandidateLists For Manager
 
         [Authorize(Roles = "Manager")]
         [HttpGet("{postId}/PendingCandidateList")]
@@ -233,7 +236,7 @@ namespace SmartHiring.APIs.Controllers
                 .GetAllWithSpecAsync(new CandidateListWithApplicantsSpec(postId));
 
             if (candidateLists == null || !candidateLists.Any())
-                return NotFound(new ApiResponse(404, "No pending candidate list found for this post."));
+                return NotFound(new ApiResponse(404, "No candidate list found for this post."));
 
             var result = candidateLists.Select(cl =>
             {
@@ -264,37 +267,37 @@ namespace SmartHiring.APIs.Controllers
 
         #endregion
 
-        #region Candidate List Approval by manager
+        //#region Candidate List Approval by manager
 
-        [Authorize(Roles = "Manager")]
-        [HttpPatch("CandidateList/{candidateListId}/Approval")]
-        public async Task<IActionResult> ApproveCandidateList(int candidateListId, [FromBody] CandidateListApprovalDto request)
-        {
-            var userEmail = User.FindFirstValue(ClaimTypes.Email);
-            if (string.IsNullOrEmpty(userEmail))
-                return Unauthorized(new ApiResponse(401, "User email not found in token"));
-            var manager = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
-            if (manager == null) return Unauthorized(new ApiResponse(401, "Manager not found"));
+        //[Authorize(Roles = "Manager")]
+        //[HttpPatch("CandidateList/{candidateListId}/Approval")]
+        //public async Task<IActionResult> ApproveCandidateList(int candidateListId, [FromBody] CandidateListApprovalDto request)
+        //{
+        //    var userEmail = User.FindFirstValue(ClaimTypes.Email);
+        //    if (string.IsNullOrEmpty(userEmail))
+        //        return Unauthorized(new ApiResponse(401, "User email not found in token"));
+        //    var manager = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+        //    if (manager == null) return Unauthorized(new ApiResponse(401, "Manager not found"));
 
-            var candidateList = await _unitOfWork.Repository<CandidateList>().GetByIdAsync(candidateListId);
-            if (candidateList == null || candidateList.ManagerId != manager.Id) return Forbid();
+        //    var candidateList = await _unitOfWork.Repository<CandidateList>().GetByIdAsync(candidateListId);
+        //    if (candidateList == null || candidateList.ManagerId != manager.Id) return Forbid();
 
-            if (candidateList.Status != "Pending")
-                return BadRequest(new ApiResponse(400, "This list has already been processed."));
+        //    if (candidateList.Status != "Pending")
+        //        return BadRequest(new ApiResponse(400, "This list has already been processed."));
 
-            candidateList.Status = request.IsApproved ? "Accepted" : "Rejected";
+        //    candidateList.Status = request.IsApproved ? "Accepted" : "Rejected";
 
-            await _unitOfWork.Repository<CandidateList>().UpdateAsync(candidateList);
-            await _unitOfWork.CompleteAsync();
+        //    await _unitOfWork.Repository<CandidateList>().UpdateAsync(candidateList);
+        //    await _unitOfWork.CompleteAsync();
 
-            if (request.IsApproved)
-            {
-                return Ok(new { message = "Candidate list approved and moved to interview scheduling." });
-            }
-            return Ok(new { message = "Candidate list rejected." });
-        }
+        //    if (request.IsApproved)
+        //    {
+        //        return Ok(new { message = "Candidate list approved and moved to interview scheduling." });
+        //    }
+        //    return Ok(new { message = "Candidate list rejected." });
+        //}
 
-        #endregion
+        //#endregion
 
         #region Display Hired Applicants
 
@@ -346,6 +349,12 @@ namespace SmartHiring.APIs.Controllers
             if (post == null)
                 return NotFound(new ApiResponse(404, "Post not found or not paid"));
 
+            var allowedExtensions = new[] { ".pdf", ".docx", ".txt" };
+            var ext = Path.GetExtension(dto.CVFile.FileName).ToLower();
+
+            if (!allowedExtensions.Contains(ext))
+                return BadRequest(new ApiResponse(400, "Unsupported file format"));
+
             var applicant = _mapper.Map<Applicant>(dto);
             await _unitOfWork.Repository<Applicant>().AddAsync(applicant);
             await _unitOfWork.CompleteAsync();
@@ -369,7 +378,7 @@ namespace SmartHiring.APIs.Controllers
                 ApplicationDate = DateTime.UtcNow,
                 CV_Link = cvLink,
                 RankScore = 0,
-                IsShortlisted = false,
+                IsShortlisted = null,
                 IsEvaluatedByAI = false
             };
             await _unitOfWork.Repository<Application>().AddAsync(application);
@@ -378,7 +387,7 @@ namespace SmartHiring.APIs.Controllers
             try
             {
                 var cvPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", cvLink.TrimStart('/'));
-                var extractedText = await _pdfTextExtractor.ExtractTextFromPdfAsync(cvPath);
+                var extractedText = await _resumeTextExtractor.ExtractTextAsync(cvPath);
                 application.ExtractedResumeText = extractedText;
 
                 await _unitOfWork.Repository<Application>().UpdateAsync(application);
@@ -395,17 +404,25 @@ namespace SmartHiring.APIs.Controllers
                     await _unitOfWork.Repository<Application>().UpdateAsync(application);
                     await _unitOfWork.CompleteAsync();
                 }
+                else
+                {
+                    _logger.LogWarning($"Prediction result is null for application {application.Id}");
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"AI Evaluation Failed for Application {application.Id}");
+
                 application.IsEvaluatedByAI = false;
+
                 await _unitOfWork.Repository<Application>().UpdateAsync(application);
                 await _unitOfWork.CompleteAsync();
-            }
 
+                return Ok(new ApiResponse(200, "Application submitted successfully, but AI evaluation failed or model is unavailable"));
+            }
             return Ok(new ApiResponse(200, "Application submitted successfully"));
         }
+
         #endregion
 
     }

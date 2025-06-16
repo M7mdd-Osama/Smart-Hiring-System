@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using MailKit.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MimeKit;
 using SmartHiring.APIs.DTOs;
 using SmartHiring.APIs.Errors;
 using SmartHiring.APIs.Helpers;
@@ -187,57 +189,86 @@ namespace SmartHiring.APIs.Controllers
 
             interview.InterviewStatus = dto.Status == "Hired" ? InterviewStatus.Hired : InterviewStatus.Rejected;
             interview.HRId = hr.Id;
+            interview.Score = dto.Score;
 
             await _unitOfWork.Repository<Interview>().UpdateAsync(interview);
             await _unitOfWork.CompleteAsync();
 
-            if (dto.Status == "Hired" && interview.Applicant.Applications.Any())
+            var applicant = interview.Applicant;
+            var post = interview.Post;
+            var company = post.Company;
+
+            if (dto.Status == "Rejected")
             {
-                var application = interview.Applicant.Applications.FirstOrDefault(a => a.PostId == interview.PostId);
+                var emailBody = $@"
+                    <h3>Dear {applicant.FName} {applicant.LName},</h3>
+                    <p>Thank you for taking the time to interview for the <b>{post.JobTitle}</b> position at <b>{company.Name}</b>.</p>
+                    <p>After careful consideration, we regret to inform you that we have decided to move forward with another candidate at this time.</p>
+                    <p>Your interview score was: <b>{dto.Score}/100</b>.</p>
+                    <p>We encourage you to apply again in the future, and we appreciate your interest in our company.</p>
+                    <p>Best regards,</p>
+                    <p><b>{company.Name} HR Team</b></p>";
+
+                var rejectionEmail = new Email
+                {
+                    To = applicant.Email,
+                    Subject = "Interview Result - Smart Hiring",
+                    Body = emailBody
+                };
+
+                await _mailSettings.SendMail(rejectionEmail, false);
+            }
+            else if (dto.Status == "Hired")
+            {
+                var application = applicant.Applications.FirstOrDefault(a => a.PostId == post.Id);
                 var agency = application?.Agency;
 
                 if (agency != null)
                 {
-                    var emailBody = $@"
-                    <h3>Dear {agency.FirstName} {agency.LastName},</h3>
+                    var contractPdf = ContractPdfGenerator.Generate(interview);
 
-                    <p>We are pleased to inform you that a candidate submitted through your agency, <b>{agency.AgencyName}</b>, has successfully secured a position!</p>
+                    var htmlBody = $@"
+                        <h3>Dear {agency.FirstName} {agency.LastName},</h3>
 
-                    <h4>- Candidate Details:</h4>
-                    <ul>
-                        <li><b>Name:</b> {interview.Applicant.FName} {interview.Applicant.LName}</li>
-                        <li><b>Email:</b> {interview.Applicant.Email}</li>
-                        <li><b>Phone:</b> {interview.Applicant.Phone}</li>
-                    </ul>
+                        <p>We are pleased to inform you that a candidate submitted through your agency, <b>{agency.AgencyName}</b>, has successfully secured a position!</p>
 
-                    <h4>- Job Details:</h4>
-                    <ul>
-                        <li><b>Position:</b> {interview.Post.JobTitle}</li>
-                        <li><b>Company:</b> {interview.Post.Company.Name}</li>
-                        <li><b>Business Contact:</b> {interview.Post.Company.BusinessEmail}</li>
-                    </ul>
+                        <h4>- Candidate Details:</h4>
+                        <ul>
+                            <li><b>Name:</b> {applicant.FName} {applicant.LName}</li>
+                            <li><b>Email:</b> {applicant.Email}</li>
+                            <li><b>Phone:</b> {applicant.Phone}</li>
+                        </ul>
 
-                    <p>We appreciate your efforts in connecting top talent with leading companies. To discuss commission details or any follow-up, please feel free to contact the business email above.</p>
+                        <h4>- Job Details:</h4>
+                        <ul>
+                            <li><b>Position:</b> {post.JobTitle}</li>
+                            <li><b>Company:</b> {company.Name}</li>
+                            <li><b>Business Contact:</b> {company.BusinessEmail}</li>
+                        </ul>
 
-                    <p>Thank you for your continued partnership!</p>
+                        <p>We appreciate your efforts in connecting top talent with leading companies. To discuss commission details or any follow-up, please feel free to contact the business email above.</p>
 
-                    <p>Best regards,</p>
-                    <p><b>Smart Hiring Team</b></p>";
+                        <p>Thank you for your continued partnership!</p>
 
-                    var email = new Email
-                    {
-                        To = agency.Email,
-                        Subject = "Candidate Hired Notification - Smart Hiring",
-                        Body = emailBody
-                    };
-
-                    await _mailSettings.SendMail(email, false);
+                        <p>Best regards,</p>
+                        <p><b>Smart Hiring Team</b></p>";
+                    
+                    await _mailSettings.SendMailWithAttachmentAndReplyTo(
+                        agency.Email,
+                        "Hired Candidate - Employment Contract",
+                        htmlBody,
+                        contractPdf,
+                        "EmploymentContract.pdf",
+                        company.BusinessEmail,
+                        company.Name);
+                }
+                else
+                {
+                    Console.WriteLine("❌ AGENCY IS NULL OR NOT LOADED");
                 }
             }
-
             return Ok(new ApiResponse(200, $"Interview status updated to '{dto.Status}' successfully."));
         }
-
         #endregion
 
         #region Delete CandidateList

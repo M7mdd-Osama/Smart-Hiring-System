@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartHiring.Repository.Data;
 
@@ -11,9 +12,10 @@ using SmartHiring.Repository.Data;
 namespace SmartHiring.Repository.Data.Migrations
 {
     [DbContext(typeof(SmartHiringDbContext))]
-    partial class SmartHiringContextModelSnapshot : ModelSnapshot
+    [Migration("20250615120024_allow IsShortelisted nullable")]
+    partial class allowIsShortelistednullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -558,9 +560,6 @@ namespace SmartHiring.Repository.Data.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("PostId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Score")
                         .HasColumnType("int");
 
                     b.Property<TimeSpan>("Time")
