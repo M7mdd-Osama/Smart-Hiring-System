@@ -81,7 +81,7 @@ namespace SmartHiring.APIs.Controllers
 
                     if (userRole == "Manager")
                     {
-                        var hasPendingCandidateList = post.CandidateLists?.Any(cl => cl.Status == "Pending") ?? false;
+                        var hasPendingCandidateList = post.CandidateLists?.Any(cl => cl.Status == "Accepted") ?? false;
                         postDto.HasPendingCandidateList = hasPendingCandidateList;
                     }
                     else
